@@ -4,9 +4,9 @@
 package snowman
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowball"
 )
 
 // Tracks the state of a snowman block

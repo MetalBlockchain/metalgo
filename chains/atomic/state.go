@@ -7,13 +7,13 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/linkeddb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database/linkeddb"
+	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils/hashing"
 )
 
 var errDuplicatedOperation = errors.New("duplicated operation on provided value")

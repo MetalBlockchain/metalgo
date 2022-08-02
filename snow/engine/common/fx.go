@@ -4,7 +4,7 @@
 package common
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/ids"
 )
 
 // Fx wraps an instance of a feature extension

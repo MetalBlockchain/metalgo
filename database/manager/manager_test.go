@@ -12,12 +12,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/avalanchego/database/leveldb"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/database/meterdb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/MetalBlockchain/avalanchego/database/leveldb"
+	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/avalanchego/database/meterdb"
+	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/version"
 )
 
 func TestNewSingleLevelDB(t *testing.T) {

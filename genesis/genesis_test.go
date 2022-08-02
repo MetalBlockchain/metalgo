@@ -12,11 +12,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/avalanchego/vms/platformvm"
 )
 
 func TestValidateConfig(t *testing.T) {
@@ -243,15 +243,15 @@ func TestGenesisFromFile(t *testing.T) {
 			customConfig: customGenesisConfigJSON,
 			err:          "cannot override genesis config for standard network mainnet (1)",
 		},
-		"fuji": {
-			networkID:    constants.FujiID,
+		"tahoe": {
+			networkID:    constants.TahoeID,
 			customConfig: customGenesisConfigJSON,
-			err:          "cannot override genesis config for standard network fuji (5)",
+			err:          "cannot override genesis config for standard network tahoe (5)",
 		},
-		"fuji (with custom specified)": {
-			networkID:    constants.FujiID,
+		"tahoe (with custom specified)": {
+			networkID:    constants.TahoeID,
 			customConfig: localGenesisConfigJSON, // won't load
-			err:          "cannot override genesis config for standard network fuji (5)",
+			err:          "cannot override genesis config for standard network tahoe (5)",
 		},
 		"local": {
 			networkID:    constants.LocalID,
@@ -266,7 +266,7 @@ func TestGenesisFromFile(t *testing.T) {
 		"custom": {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
-			expected:     "a1d1838586db85fe94ab1143560c3356df9ba2445794b796bba050be89f4fcb4",
+			expected:     "18dc0a7ab9b257b86ee65870649a0dabbb76c03d0ca9f5c44a43ce0d0a7f20c6",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -329,9 +329,9 @@ func TestGenesisFromFlag(t *testing.T) {
 			networkID: constants.MainnetID,
 			err:       "cannot override genesis config for standard network mainnet (1)",
 		},
-		"fuji": {
-			networkID: constants.FujiID,
-			err:       "cannot override genesis config for standard network fuji (5)",
+		"tahoe": {
+			networkID: constants.TahoeID,
+			err:       "cannot override genesis config for standard network tahoe (5)",
 		},
 		"local": {
 			networkID: constants.LocalID,
@@ -345,7 +345,7 @@ func TestGenesisFromFlag(t *testing.T) {
 		"custom": {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
-			expected:     "a1d1838586db85fe94ab1143560c3356df9ba2445794b796bba050be89f4fcb4",
+			expected:     "18dc0a7ab9b257b86ee65870649a0dabbb76c03d0ca9f5c44a43ce0d0a7f20c6",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -422,24 +422,24 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.AVMID,
-					expectedID: "2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM",
+					expectedID: "35N6YCBV33rHJWAtMELT4EZkFfzU7eusLUnhWcDXjHoxh1AiN",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2q9e4r6Mu3U68nU1fYjgbR6JvwrRx36CohpAX5UQxse55x1Q5",
+					expectedID: "28fJD1hMz2PSRJKJt7YT41urTPR37rUNUcdeJ8daoiwP6DGnAR",
 				},
 			},
 		},
 		{
-			networkID: constants.FujiID,
+			networkID: constants.TahoeID,
 			vmTest: []vmTest{
 				{
 					vmID:       constants.AVMID,
-					expectedID: "2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm",
+					expectedID: "N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8",
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "yH8D7ThNJkxmtkuv2jgBa4P1Rn3Qpr4pPr7QYNfcdoS6k6HWp",
+					expectedID: "t34kbq3fgdNaurCHn4aJpayuE46vh5AozKPZZG6MrjE2F7XP6",
 				},
 			},
 		},
@@ -448,7 +448,7 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.AVMID,
-					expectedID: "2eNy1mUFdmaxXNj1eQHUe7Np4gju9sJsEtWQ4MX3ToiNKuADed",
+					expectedID: "2EwQEpAoKi3b8GgAhKGprkGiJYFduE9bbbEANMWioSWXsb6ZQz",
 				},
 				{
 					vmID:       constants.EVMID,
@@ -493,15 +493,15 @@ func TestAVAXAssetID(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z",
+			expectedID: "YE6TDrJaTWF79KfqtL5KLiYgyTYnTp7jZzHEwWhQ4sDvLmraX",
 		},
 		{
-			networkID:  constants.FujiID,
-			expectedID: "U8iRqJoiJm8xZHAacmvYyZVwqQx6uDNtQeP3CQ6fcgQk3JqnK",
+			networkID:  constants.TahoeID,
+			expectedID: "2QpCJwPk3nzi1VqJEuaFA44WM2UUzraBXQyH6jMGLTLQhqoe4n",
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "2fombhL7aGPwj3KH4bfrmJwW6PVnMobf9Y2fn9GwxiAAJyFDbe",
+			expectedID: "ui6eSQwLELPt3zZsreVkdSFhimBdAyXgADd7CGfQ58NeDNzCS",
 		},
 	}
 

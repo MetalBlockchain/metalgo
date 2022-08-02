@@ -9,19 +9,19 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/api/server"
-	"github.com/ava-labs/avalanchego/chains"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/profiler"
-	"github.com/ava-labs/avalanchego/vms"
-	"github.com/ava-labs/avalanchego/vms/registry"
+	"github.com/MetalBlockchain/avalanchego/api"
+	"github.com/MetalBlockchain/avalanchego/api/server"
+	"github.com/MetalBlockchain/avalanchego/chains"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/avalanchego/utils/profiler"
+	"github.com/MetalBlockchain/avalanchego/vms"
+	"github.com/MetalBlockchain/avalanchego/vms/registry"
 
-	cjson "github.com/ava-labs/avalanchego/utils/json"
+	cjson "github.com/MetalBlockchain/avalanchego/utils/json"
 )
 
 const (

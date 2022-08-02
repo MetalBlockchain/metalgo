@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
 )
 
 var (

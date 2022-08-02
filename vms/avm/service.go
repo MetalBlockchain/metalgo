@@ -10,20 +10,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/keystore"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/avalanchego/api"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/utils/crypto"
+	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/avalanchego/utils/json"
+	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
+	"github.com/MetalBlockchain/avalanchego/vms/components/keystore"
+	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
+	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
 
-	safemath "github.com/ava-labs/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
 )
 
 const (

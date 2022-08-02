@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils/hashing"
 )
 
 type sortHashOfData [][]byte

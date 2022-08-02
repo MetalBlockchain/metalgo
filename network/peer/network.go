@@ -4,9 +4,9 @@
 package peer
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/message"
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/message"
+	"github.com/MetalBlockchain/avalanchego/utils"
 )
 
 // Network defines the interface that is used by a peer to help establish a well

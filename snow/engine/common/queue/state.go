@@ -6,13 +6,13 @@ package queue
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/cache/metercacher"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/linkeddb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/cache"
+	"github.com/MetalBlockchain/avalanchego/cache/metercacher"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database/linkeddb"
+	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

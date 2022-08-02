@@ -6,13 +6,13 @@ package avax
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/cache/metercacher"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/linkeddb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/cache"
+	"github.com/MetalBlockchain/avalanchego/cache/metercacher"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database/linkeddb"
+	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
+	"github.com/MetalBlockchain/avalanchego/ids"
 )
 
 var (

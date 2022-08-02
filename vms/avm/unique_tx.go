@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/MetalBlockchain/avalanchego/cache"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
 )
 
 var (

@@ -6,15 +6,15 @@ package indexer
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/database/versiondb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/codec/linearcodec"
+	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/avalanchego/database/versiondb"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow"
+	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,10 +6,10 @@ package gsubnetlookup
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow"
 
-	subnetlookuppb "github.com/ava-labs/avalanchego/proto/pb/subnetlookup"
+	subnetlookuppb "github.com/MetalBlockchain/avalanchego/proto/pb/subnetlookup"
 )
 
 var _ subnetlookuppb.SubnetLookupServer = &Server{}

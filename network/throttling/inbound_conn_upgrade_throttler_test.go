@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
 	"github.com/stretchr/testify/assert"
 )
 

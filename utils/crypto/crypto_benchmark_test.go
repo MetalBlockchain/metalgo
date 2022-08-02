@@ -6,8 +6,8 @@ package crypto
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/hashing"
 )
 
 // NumVerifies is the number of verifications to run per operation

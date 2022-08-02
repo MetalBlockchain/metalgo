@@ -4,7 +4,7 @@
 package message
 
 import (
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 )
 
 // Field that may be packed into a message

@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	ids "github.com/ava-labs/avalanchego/ids"
+	ids "github.com/MetalBlockchain/avalanchego/ids"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"

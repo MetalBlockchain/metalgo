@@ -6,7 +6,7 @@ package hierarchycodec
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/codec"
 )
 
 func TestVectors(t *testing.T) {

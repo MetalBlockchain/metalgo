@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/ids"
 )
 
 func TestSet(t *testing.T) {

@@ -4,7 +4,7 @@
 package common
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/ids"
 )
 
 type BootstrapableEngine interface {

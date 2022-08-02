@@ -9,12 +9,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/common/queue"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
 )
 
 var errMissingVtxDependenciesOnAccept = errors.New("attempting to execute blocked vertex")

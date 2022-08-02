@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/reflectcodec"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/codec/reflectcodec"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 )
 
 const (

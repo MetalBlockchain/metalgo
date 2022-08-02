@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
 )
 
 // Window is an interface which represents a sliding window of elements.

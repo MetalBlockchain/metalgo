@@ -4,9 +4,9 @@
 package snowstorm
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/events"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow/events"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 )
 
 var _ events.Blockable = &rejector{}

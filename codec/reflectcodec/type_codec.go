@@ -9,8 +9,8 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 )
 
 const (

@@ -8,20 +8,20 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
-	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
-	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
-	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/snow"
+	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/common/queue"
+	"github.com/MetalBlockchain/avalanchego/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/avalanchego/snow/validators"
 
-	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	avagetter "github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/getter"
 )
 
 var (

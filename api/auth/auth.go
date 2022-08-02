@@ -18,11 +18,11 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/password"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils/password"
+	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
 
-	cjson "github.com/ava-labs/avalanchego/utils/json"
+	cjson "github.com/MetalBlockchain/avalanchego/utils/json"
 )
 
 const (

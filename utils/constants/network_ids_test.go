@@ -18,11 +18,11 @@ func TestGetHRP(t *testing.T) {
 		},
 		{
 			id:  TestnetID,
-			hrp: FujiHRP,
+			hrp: TahoeHRP,
 		},
 		{
-			id:  FujiID,
-			hrp: FujiHRP,
+			id:  TahoeID,
+			hrp: TahoeHRP,
 		},
 		{
 			id:  LocalID,
@@ -54,11 +54,11 @@ func TestNetworkName(t *testing.T) {
 		},
 		{
 			id:   TestnetID,
-			name: FujiName,
+			name: TahoeName,
 		},
 		{
-			id:   FujiID,
-			name: FujiName,
+			id:   TahoeID,
+			name: TahoeName,
 		},
 		{
 			id:   LocalID,
@@ -98,8 +98,8 @@ func TestNetworkID(t *testing.T) {
 			id:   TestnetID,
 		},
 		{
-			name: FujiName,
-			id:   FujiID,
+			name: TahoeName,
+			id:   TahoeID,
 		},
 		{
 			name: LocalName,

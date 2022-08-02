@@ -10,8 +10,8 @@ package registry
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	vms "github.com/ava-labs/avalanchego/vms"
+	ids "github.com/MetalBlockchain/avalanchego/ids"
+	vms "github.com/MetalBlockchain/avalanchego/vms"
 	gomock "github.com/golang/mock/gomock"
 )
 

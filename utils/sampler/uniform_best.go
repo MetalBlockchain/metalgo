@@ -8,7 +8,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
 )
 
 var (

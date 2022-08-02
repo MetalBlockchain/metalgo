@@ -4,8 +4,8 @@
 package validators
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/version"
 )
 
 // Connector represents a handler that is called when a connection is marked as

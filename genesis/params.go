@@ -6,8 +6,8 @@ package genesis
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
 )
 
 type StakingConfig struct {
@@ -53,8 +53,8 @@ func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.TxFeeConfig
-	case constants.FujiID:
-		return FujiParams.TxFeeConfig
+	case constants.TahoeID:
+		return TahoeParams.TxFeeConfig
 	case constants.LocalID:
 		return LocalParams.TxFeeConfig
 	default:
@@ -66,8 +66,8 @@ func GetStakingConfig(networkID uint32) StakingConfig {
 	switch networkID {
 	case constants.MainnetID:
 		return MainnetParams.StakingConfig
-	case constants.FujiID:
-		return FujiParams.StakingConfig
+	case constants.TahoeID:
+		return TahoeParams.StakingConfig
 	case constants.LocalID:
 		return LocalParams.StakingConfig
 	default:

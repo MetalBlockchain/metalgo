@@ -12,9 +12,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/filesystem"
-	"github.com/ava-labs/avalanchego/vms"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/filesystem"
+	"github.com/MetalBlockchain/avalanchego/vms"
 )
 
 var (

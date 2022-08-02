@@ -6,7 +6,7 @@ package mockdb
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database"
 )
 
 var (

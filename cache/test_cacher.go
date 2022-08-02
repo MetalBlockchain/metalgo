@@ -6,7 +6,7 @@ package cache
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/ids"
 )
 
 // CacherTests is a list of all Cacher tests

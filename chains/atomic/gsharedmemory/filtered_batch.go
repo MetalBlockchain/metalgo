@@ -4,7 +4,7 @@
 package gsharedmemory
 
 import (
-	sharedmemorypb "github.com/ava-labs/avalanchego/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/MetalBlockchain/avalanchego/proto/pb/sharedmemory"
 )
 
 type filteredBatch struct {

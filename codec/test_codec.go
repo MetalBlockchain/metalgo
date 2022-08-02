@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 )
 
 var Tests = []func(c GeneralCodec, t testing.TB){

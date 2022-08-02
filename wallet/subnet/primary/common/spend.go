@@ -4,8 +4,8 @@
 package common
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
 )
 
 // MatchOwners attempts to match a list of addresses up to the provided

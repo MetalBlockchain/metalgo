@@ -11,18 +11,18 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/avm"
-	"github.com/ava-labs/avalanchego/vms/nftfx"
-	"github.com/ava-labs/avalanchego/vms/platformvm"
-	"github.com/ava-labs/avalanchego/vms/propertyfx"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/avalanchego/codec/linearcodec"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/avalanchego/utils/json"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/vms/avm"
+	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
+	"github.com/MetalBlockchain/avalanchego/vms/platformvm"
+	"github.com/MetalBlockchain/avalanchego/vms/propertyfx"
+	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
 )
 
 const (
@@ -261,8 +261,8 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 	}
 	{
 		avax := avm.AssetDefinition{
-			Name:         "Avalanche",
-			Symbol:       "AVAX",
+			Name:         "Metal",
+			Symbol:       "METAL",
 			Denomination: 9,
 			InitialState: map[string][]interface{}{},
 		}
@@ -295,7 +295,7 @@ func FromConfig(config *Config) ([]byte, ids.ID, error) {
 			return nil, ids.Empty, fmt.Errorf("couldn't parse memo bytes to string: %w", err)
 		}
 		avmArgs.GenesisData = map[string]avm.AssetDefinition{
-			"AVAX": avax, // The AVM starts out with one asset: AVAX
+			"METAL": avax, // The AVM starts out with one asset: AVAX
 		}
 	}
 	avmReply := avm.BuildGenesisReply{}

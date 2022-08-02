@@ -6,8 +6,8 @@ package prefixdb
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database/memdb"
 )
 
 func TestInterface(t *testing.T) {

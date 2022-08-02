@@ -6,9 +6,9 @@ package prefixdb
 import (
 	"sync"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/nodb"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database/nodb"
+	"github.com/MetalBlockchain/avalanchego/utils/hashing"
 )
 
 const (

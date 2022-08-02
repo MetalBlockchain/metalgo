@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ava-labs/avalanchego/staking"
+	"github.com/MetalBlockchain/avalanchego/staking"
 
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/MetalBlockchain/avalanchego/utils"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -4,10 +4,10 @@
 package common
 
 import (
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/avalanchego/api/health"
+	"github.com/MetalBlockchain/avalanchego/database/manager"
+	"github.com/MetalBlockchain/avalanchego/snow"
+	"github.com/MetalBlockchain/avalanchego/snow/validators"
 )
 
 // VM describes the interface that all consensus VMs must implement

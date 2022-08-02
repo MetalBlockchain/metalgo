@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
+	"github.com/MetalBlockchain/avalanchego/utils/linkedhashmap"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/metric"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/utils/metric"
 )
 
 var (

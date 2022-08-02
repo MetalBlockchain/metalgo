@@ -6,8 +6,8 @@ package leveldb
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/utils/logging"
 )
 
 func TestInterface(t *testing.T) {

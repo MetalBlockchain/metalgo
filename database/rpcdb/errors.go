@@ -4,7 +4,7 @@
 package rpcdb
 
 import (
-	"github.com/ava-labs/avalanchego/database"
+	"github.com/MetalBlockchain/avalanchego/database"
 )
 
 var (

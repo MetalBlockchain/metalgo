@@ -11,12 +11,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
 
-	safemath "github.com/ava-labs/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
 )
 
 type LockedAmount struct {
@@ -163,7 +163,7 @@ func init() {
 	errs := wrappers.Errs{}
 	errs.Add(
 		json.Unmarshal([]byte(mainnetGenesisConfigJSON), &unparsedMainnetConfig),
-		json.Unmarshal([]byte(fujiGenesisConfigJSON), &unparsedFujiConfig),
+		json.Unmarshal([]byte(tahoeGenesisConfigJSON), &unparsedFujiConfig),
 		json.Unmarshal([]byte(localGenesisConfigJSON), &unparsedLocalConfig),
 	)
 	if errs.Errored() {
@@ -191,7 +191,7 @@ func GetConfig(networkID uint32) *Config {
 	switch networkID {
 	case constants.MainnetID:
 		return &MainnetConfig
-	case constants.FujiID:
+	case constants.TahoeID:
 		return &FujiConfig
 	case constants.LocalID:
 		return &LocalConfig

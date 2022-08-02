@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ava-labs/avalanchego/utils/filesystem"
-	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/avalanchego/utils/filesystem"
+	"github.com/MetalBlockchain/avalanchego/utils/perms"
 )
 
 var _ RotatingWriter = &fileWriter{}

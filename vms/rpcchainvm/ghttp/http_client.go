@@ -9,11 +9,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/ghttp/gresponsewriter"
-	"github.com/ava-labs/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/ghttp/gresponsewriter"
+	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/ava-labs/avalanchego/proto/pb/http"
-	responsewriterpb "github.com/ava-labs/avalanchego/proto/pb/http/responsewriter"
+	httppb "github.com/MetalBlockchain/avalanchego/proto/pb/http"
+	responsewriterpb "github.com/MetalBlockchain/avalanchego/proto/pb/http/responsewriter"
 )
 
 var _ http.Handler = &Client{}
