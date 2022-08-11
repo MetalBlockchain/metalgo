@@ -6,7 +6,7 @@ package summary
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 func Build(

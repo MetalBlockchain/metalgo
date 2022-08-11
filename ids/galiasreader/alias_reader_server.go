@@ -6,9 +6,9 @@ package galiasreader
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 
-	aliasreaderpb "github.com/MetalBlockchain/avalanchego/proto/pb/aliasreader"
+	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 )
 
 var _ aliasreaderpb.AliasReaderServer = &Server{}

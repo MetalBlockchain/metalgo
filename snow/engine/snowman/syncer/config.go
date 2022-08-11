@@ -4,10 +4,10 @@
 package syncer
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 type Config struct {

@@ -9,17 +9,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche/poll"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/events"
-	"github.com/MetalBlockchain/avalanchego/utils/sampler"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche/poll"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/events"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 var _ Engine = &Transitive{}

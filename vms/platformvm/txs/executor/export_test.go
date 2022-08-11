@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 )
 
 func TestNewExportTx(t *testing.T) {

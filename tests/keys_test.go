@@ -6,7 +6,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -7,16 +7,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/codec"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/fxs"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
-	"github.com/MetalBlockchain/avalanchego/vms/propertyfx"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/nftfx"
+	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var errNilTx = errors.New("nil tx is not valid")

@@ -6,10 +6,10 @@ package genesis
 import (
 	"math"
 
-	"github.com/MetalBlockchain/avalanchego/codec"
-	"github.com/MetalBlockchain/avalanchego/codec/linearcodec"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 var Codec codec.Manager

@@ -8,11 +8,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/message"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/message"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 func getValidTx(vm *VM, t *testing.T) *txs.Tx {

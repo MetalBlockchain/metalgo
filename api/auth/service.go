@@ -6,7 +6,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/MetalBlockchain/avalanchego/api"
+	"github.com/MetalBlockchain/metalgo/api"
 )
 
 // Service that serves the Auth API functionality.

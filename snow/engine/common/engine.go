@@ -6,10 +6,10 @@ package common
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/api/health"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/api/health"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 // Engine describes the standard interface of a consensus engine

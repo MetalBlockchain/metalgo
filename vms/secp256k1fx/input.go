@@ -6,8 +6,8 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 const (

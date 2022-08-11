@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	httppb "github.com/MetalBlockchain/avalanchego/proto/pb/http"
+	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
 )
 
 func Test_convertWriteResponse(t *testing.T) {

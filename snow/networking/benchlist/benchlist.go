@@ -14,13 +14,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/utils/timer"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/timer"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var _ heap.Interface = &benchedQueue{}

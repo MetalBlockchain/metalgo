@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/ips"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/stretchr/testify/assert"
 )
 

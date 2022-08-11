@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 )
 
 const (

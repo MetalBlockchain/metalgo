@@ -6,10 +6,10 @@ package avalanche
 import (
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 )
 
 // issuer issues [vtx] into consensus after its dependencies are met.

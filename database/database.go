@@ -10,7 +10,7 @@ package database
 import (
 	"io"
 
-	"github.com/MetalBlockchain/avalanchego/api/health"
+	"github.com/MetalBlockchain/metalgo/api/health"
 )
 
 // KeyValueReader wraps the Has and Get method of a backing data store.

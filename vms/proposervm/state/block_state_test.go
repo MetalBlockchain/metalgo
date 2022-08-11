@@ -11,12 +11,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/staking"
-	"github.com/MetalBlockchain/avalanchego/vms/proposervm/block"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 )
 
 func testBlockState(a *assert.Assertions, bs BlockState) {

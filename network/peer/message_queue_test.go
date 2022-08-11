@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 func TestBlockingMessageQueue(t *testing.T) {

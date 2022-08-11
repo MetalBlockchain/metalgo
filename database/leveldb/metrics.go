@@ -10,7 +10,7 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 var levelLabels = []string{"level"}

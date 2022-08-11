@@ -11,21 +11,21 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/json"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/components/keystore"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/json"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/nftfx"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 const (

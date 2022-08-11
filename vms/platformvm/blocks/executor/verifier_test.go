@@ -11,18 +11,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/chains/atomic"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/config"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/status"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs/executor"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 func TestVerifierVisitProposalBlock(t *testing.T) {

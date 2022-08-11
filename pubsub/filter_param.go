@@ -6,7 +6,7 @@ package pubsub
 import (
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/utils/bloom"
+	"github.com/MetalBlockchain/metalgo/utils/bloom"
 )
 
 type FilterParam struct {

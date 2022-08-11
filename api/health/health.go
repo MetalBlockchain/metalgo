@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var _ Health = &health{}

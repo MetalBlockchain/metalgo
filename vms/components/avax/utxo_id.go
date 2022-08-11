@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 var (

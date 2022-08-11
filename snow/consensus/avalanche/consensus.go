@@ -4,9 +4,9 @@
 package avalanche
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 )
 
 // TODO: Implement pruning of accepted decisions.

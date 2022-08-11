@@ -8,7 +8,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 func TestMsgLen(t *testing.T) {

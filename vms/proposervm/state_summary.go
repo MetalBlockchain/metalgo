@@ -4,8 +4,8 @@
 package proposervm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/avalanchego/vms/proposervm/summary"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/summary"
 )
 
 var _ block.StateSummary = &stateSummary{}

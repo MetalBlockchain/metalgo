@@ -6,7 +6,7 @@ package snowball
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ NnarySnowball = &nnarySnowball{}

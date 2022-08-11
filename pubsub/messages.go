@@ -4,9 +4,9 @@
 package pubsub
 
 import (
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting/address"
-	"github.com/MetalBlockchain/avalanchego/utils/json"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/json"
 )
 
 // NewBloom command for a new bloom filter

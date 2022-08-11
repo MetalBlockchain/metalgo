@@ -6,10 +6,10 @@ package executor
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/chains/atomic"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 )
 
 type standardBlockState struct {

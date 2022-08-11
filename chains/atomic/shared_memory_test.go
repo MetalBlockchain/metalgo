@@ -6,9 +6,9 @@ package atomic
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/database/prefixdb"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database/prefixdb"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func TestSharedMemory(t *testing.T) {

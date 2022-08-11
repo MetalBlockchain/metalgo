@@ -10,7 +10,7 @@ import (
 	"net"
 
 	"github.com/Microsoft/go-winio"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 // listen creates a net.Listen backed by a Windows named pipe

@@ -10,12 +10,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/api/server"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/vms"
+	"github.com/MetalBlockchain/metalgo/api/server"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/vms"
 )
 
 var _ VMRegisterer = &vmRegisterer{}

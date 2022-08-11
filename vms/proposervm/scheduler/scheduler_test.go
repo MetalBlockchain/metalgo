@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 func TestDelayFromNew(t *testing.T) {

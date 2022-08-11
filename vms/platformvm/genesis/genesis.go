@@ -4,8 +4,8 @@
 package genesis
 
 import (
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 // UTXO adds messages to UTXOs

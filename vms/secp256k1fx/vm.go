@@ -4,9 +4,9 @@
 package secp256k1fx
 
 import (
-	"github.com/MetalBlockchain/avalanchego/codec"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 // VM that this Fx must be run by

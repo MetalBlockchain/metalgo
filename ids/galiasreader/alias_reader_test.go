@@ -13,10 +13,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	aliasreaderpb "github.com/MetalBlockchain/avalanchego/proto/pb/aliasreader"
+	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 )
 
 const (

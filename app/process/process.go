@@ -9,13 +9,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/app"
-	"github.com/MetalBlockchain/avalanchego/nat"
-	"github.com/MetalBlockchain/avalanchego/node"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/utils/perms"
-	"github.com/MetalBlockchain/avalanchego/utils/ulimit"
+	"github.com/MetalBlockchain/metalgo/app"
+	"github.com/MetalBlockchain/metalgo/nat"
+	"github.com/MetalBlockchain/metalgo/node"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/ulimit"
 )
 
 const (

@@ -11,10 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/cb58"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/cb58"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 const nullStr = "null"

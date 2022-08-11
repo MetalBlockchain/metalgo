@@ -13,12 +13,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/corruptabledb"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/corruptabledb"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	rpcdbpb "github.com/MetalBlockchain/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 const (

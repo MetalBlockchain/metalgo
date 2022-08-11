@@ -4,8 +4,8 @@
 package snowman
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 )
 
 // Engine describes the events that can occur to a Snowman instance.

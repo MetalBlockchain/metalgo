@@ -6,11 +6,11 @@ package txs
 import (
 	"reflect"
 
-	"github.com/MetalBlockchain/avalanchego/codec"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var (

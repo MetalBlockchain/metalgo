@@ -4,7 +4,7 @@
 package common
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // SubnetTracker describes the interface for checking if a node is tracking a

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/MetalBlockchain/avalanchego/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
 )
 
 var (

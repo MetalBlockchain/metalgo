@@ -11,7 +11,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 const (

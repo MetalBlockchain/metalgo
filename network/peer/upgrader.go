@@ -9,7 +9,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var (

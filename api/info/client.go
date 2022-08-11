@@ -6,8 +6,8 @@ package info
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 )
 
 var _ Client = &client{}

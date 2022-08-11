@@ -14,7 +14,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/utils/bloom"
+	"github.com/MetalBlockchain/metalgo/utils/bloom"
 )
 
 var (

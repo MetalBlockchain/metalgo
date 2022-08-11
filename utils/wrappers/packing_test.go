@@ -11,8 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/staking"
-	"github.com/MetalBlockchain/avalanchego/utils/ips"
+	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
 )
 
 const (

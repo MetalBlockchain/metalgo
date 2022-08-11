@@ -3,7 +3,7 @@
 
 package constants
 
-import "github.com/MetalBlockchain/avalanchego/ids"
+import "github.com/MetalBlockchain/metalgo/ids"
 
 var (
 	PlatformVMID = ids.ID{'p', 'l', 'a', 't', 'f', 'o', 'r', 'm', 'v', 'm'}

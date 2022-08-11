@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/chains/atomic"
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/utxo"
+	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 )
 
 var (

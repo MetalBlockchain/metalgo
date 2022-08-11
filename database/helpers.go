@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 const (

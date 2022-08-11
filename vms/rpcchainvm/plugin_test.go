@@ -13,7 +13,7 @@ import (
 
 	plugin "github.com/hashicorp/go-plugin"
 
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 )
 
 // plugin_test collects objects and helpers generally helpful for various rpc tests

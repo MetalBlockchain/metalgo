@@ -6,8 +6,8 @@ package metercacher
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/cache"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 var _ cache.Cacher = &Cache{}

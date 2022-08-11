@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/stretchr/testify/assert"
 )
 

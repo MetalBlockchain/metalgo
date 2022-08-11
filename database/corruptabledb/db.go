@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/database"
 )
 
 var (

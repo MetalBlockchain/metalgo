@@ -6,8 +6,8 @@ package state
 import (
 	"github.com/google/btree"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 type Stakers interface {

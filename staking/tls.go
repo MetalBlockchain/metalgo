@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
 )
 
 var errDuplicateExtension = errors.New("duplicate certificate extension")

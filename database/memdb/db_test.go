@@ -6,7 +6,7 @@ package memdb
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/database"
 )
 
 func TestInterface(t *testing.T) {

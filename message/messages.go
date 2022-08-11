@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var (

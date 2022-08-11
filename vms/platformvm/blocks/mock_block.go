@@ -7,8 +7,8 @@ package blocks
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/avalanchego/ids"
-	txs "github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	gomock "github.com/golang/mock/gomock"
 )
 

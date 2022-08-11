@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
 )
 
 // strongPassword defines a password used for the following tests that

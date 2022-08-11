@@ -12,12 +12,12 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/MetalBlockchain/avalanchego/app"
-	"github.com/MetalBlockchain/avalanchego/app/process"
-	"github.com/MetalBlockchain/avalanchego/node"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/app"
+	"github.com/MetalBlockchain/metalgo/app/process"
+	"github.com/MetalBlockchain/metalgo/node"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	appplugin "github.com/MetalBlockchain/avalanchego/app/plugin"
+	appplugin "github.com/MetalBlockchain/metalgo/app/plugin"
 )
 
 // Run an AvalancheGo node.

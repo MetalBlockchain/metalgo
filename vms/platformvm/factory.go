@@ -4,9 +4,9 @@
 package platformvm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/vms"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/config"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 )
 
 var _ vms.Factory = &Factory{}

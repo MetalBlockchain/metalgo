@@ -6,14 +6,14 @@ package config
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/chains"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/uptime"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/chains"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/uptime"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 // Struct collecting all foundational parameters of PlatformVM

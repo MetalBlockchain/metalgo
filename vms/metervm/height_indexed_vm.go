@@ -4,8 +4,8 @@
 package metervm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 )
 
 func (vm *blockVM) VerifyHeightIndex() error {

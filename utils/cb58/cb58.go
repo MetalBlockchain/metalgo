@@ -10,7 +10,7 @@ import (
 
 	"github.com/mr-tron/base58/base58"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 const (

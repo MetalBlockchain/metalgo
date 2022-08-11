@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/utils/cb58"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/cb58"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 // ShortEmpty is a useful all zero value

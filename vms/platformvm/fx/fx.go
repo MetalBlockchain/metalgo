@@ -4,9 +4,9 @@
 package fx
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var _ Fx = &secp256k1fx.Fx{}

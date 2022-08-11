@@ -4,7 +4,7 @@
 package address
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func ParseToID(addrStr string) (ids.ShortID, error) {

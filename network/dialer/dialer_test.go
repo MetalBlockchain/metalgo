@@ -14,8 +14,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/utils/ips"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 // Test that canceling a context passed into Dial results

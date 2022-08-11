@@ -12,14 +12,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/tracker"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
-	"github.com/MetalBlockchain/avalanchego/utils/math/meter"
-	"github.com/MetalBlockchain/avalanchego/utils/resource"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/math/meter"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
 )
 
 func TestHandlerDropsTimedOutMessages(t *testing.T) {

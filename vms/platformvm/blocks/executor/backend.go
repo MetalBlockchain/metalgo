@@ -4,12 +4,12 @@
 package executor
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 // Shared fields used by visitors.

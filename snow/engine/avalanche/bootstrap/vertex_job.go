@@ -11,12 +11,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/queue"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var errMissingVtxDependenciesOnAccept = errors.New("attempting to execute blocked vertex")

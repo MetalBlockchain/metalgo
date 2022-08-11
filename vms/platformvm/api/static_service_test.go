@@ -6,12 +6,12 @@ package api
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting/address"
-	"github.com/MetalBlockchain/avalanchego/utils/json"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/genesis"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/json"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis"
 )
 
 const testNetworkID = 10 // To be used in tests

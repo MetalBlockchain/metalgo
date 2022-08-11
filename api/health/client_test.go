@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 	"github.com/stretchr/testify/assert"
 )
 

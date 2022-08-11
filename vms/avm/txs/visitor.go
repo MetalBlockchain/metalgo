@@ -3,7 +3,7 @@
 
 package txs
 
-import "github.com/MetalBlockchain/avalanchego/vms/components/avax"
+import "github.com/MetalBlockchain/metalgo/vms/components/avax"
 
 var _ Visitor = &utxoGetter{}
 

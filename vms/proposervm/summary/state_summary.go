@@ -4,7 +4,7 @@
 package summary
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ StateSummary = &stateSummary{}

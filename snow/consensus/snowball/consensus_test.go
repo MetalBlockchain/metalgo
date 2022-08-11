@@ -6,7 +6,7 @@ package snowball
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ Consensus = &Byzantine{}

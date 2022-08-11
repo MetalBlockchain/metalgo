@@ -4,7 +4,7 @@
 package chains
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 )
 
 // Registrant can register the existence of a chain

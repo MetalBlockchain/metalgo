@@ -4,14 +4,14 @@
 package executor
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/uptime"
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/config"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/fx"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/utxo"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/uptime"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 )
 
 type Backend struct {

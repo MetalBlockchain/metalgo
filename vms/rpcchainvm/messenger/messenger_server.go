@@ -7,9 +7,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 
-	messengerpb "github.com/MetalBlockchain/avalanchego/proto/pb/messenger"
+	messengerpb "github.com/MetalBlockchain/metalgo/proto/pb/messenger"
 )
 
 var (

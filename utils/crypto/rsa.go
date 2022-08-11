@@ -10,8 +10,8 @@ import (
 	"crypto/x509"
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 var (

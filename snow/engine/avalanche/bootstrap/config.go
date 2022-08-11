@@ -4,9 +4,9 @@
 package bootstrap
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/queue"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
 )
 
 type Config struct {

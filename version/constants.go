@@ -6,7 +6,7 @@ package version
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 // These are globals that describe network upgrades and node versions

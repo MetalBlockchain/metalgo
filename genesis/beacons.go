@@ -4,8 +4,8 @@
 package genesis
 
 import (
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
 )
 
 // getIPs returns the beacon IPs for each network

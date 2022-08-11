@@ -6,9 +6,9 @@ package ipcs
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 )
 
 var _ Client = &client{}

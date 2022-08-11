@@ -10,17 +10,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowman"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/utils/timer"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
-	"github.com/MetalBlockchain/avalanchego/utils/units"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/state"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs/executor"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils/timer"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 // TargetBlockSize is maximum number of transaction bytes to place into a

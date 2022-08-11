@@ -6,7 +6,7 @@ package chains
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/stretchr/testify/assert"
 )
 

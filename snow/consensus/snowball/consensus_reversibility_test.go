@@ -6,7 +6,7 @@ package snowball
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
 )
 
 func TestSnowballGovernance(t *testing.T) {

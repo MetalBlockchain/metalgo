@@ -4,7 +4,7 @@
 package block
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // StateSummary represents all the information needed to download, verify, and

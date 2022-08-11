@@ -13,11 +13,11 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils/resource"
-	"github.com/MetalBlockchain/avalanchego/utils/subprocess"
-	"github.com/MetalBlockchain/avalanchego/vms"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
+	"github.com/MetalBlockchain/metalgo/utils/subprocess"
+	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 )
 
 var (

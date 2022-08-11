@@ -7,11 +7,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/chains/atomic"
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
 
-	sharedmemorypb "github.com/MetalBlockchain/avalanchego/proto/pb/sharedmemory"
+	sharedmemorypb "github.com/MetalBlockchain/metalgo/proto/pb/sharedmemory"
 )
 
 var _ sharedmemorypb.SharedMemoryServer = &Server{}

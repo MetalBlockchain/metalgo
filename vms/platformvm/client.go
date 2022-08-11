@@ -7,17 +7,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting/address"
-	"github.com/MetalBlockchain/avalanchego/utils/json"
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/status"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/json"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 
-	platformapi "github.com/MetalBlockchain/avalanchego/vms/platformvm/api"
+	platformapi "github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 )
 
 var _ Client = &client{}

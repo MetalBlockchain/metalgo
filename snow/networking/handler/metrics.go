@@ -8,9 +8,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/utils/metric"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 type metrics struct {

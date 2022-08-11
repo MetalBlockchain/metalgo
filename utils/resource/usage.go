@@ -10,7 +10,7 @@ import (
 
 	"github.com/shirou/gopsutil/process"
 
-	"github.com/MetalBlockchain/avalanchego/utils/storage"
+	"github.com/MetalBlockchain/metalgo/utils/storage"
 )
 
 var (

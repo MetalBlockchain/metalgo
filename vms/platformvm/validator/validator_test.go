@@ -7,8 +7,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
 )
 
 const defaultWeight = 10000

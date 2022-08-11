@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond

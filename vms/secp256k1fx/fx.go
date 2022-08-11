@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/cache"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 const (

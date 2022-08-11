@@ -1,4 +1,4 @@
-module github.com/MetalBlockchain/avalanchego
+module github.com/MetalBlockchain/metalgo
 
 // Changes to the minimum golang version must also be replicated in
 // scripts/ansible/roles/golang_base/defaults/main.yml

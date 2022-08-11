@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func TestTimeoutManager(t *testing.T) {

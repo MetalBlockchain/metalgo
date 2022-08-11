@@ -4,8 +4,8 @@
 package blocks
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 // CommonBlock contains fields and methods common to all blocks in this VM.

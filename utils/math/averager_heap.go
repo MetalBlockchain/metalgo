@@ -6,7 +6,7 @@ package math
 import (
 	"container/heap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var (

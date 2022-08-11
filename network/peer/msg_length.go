@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 var (

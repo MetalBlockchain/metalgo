@@ -6,8 +6,8 @@ package linkeddb
 import (
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/cache"
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/database"
 )
 
 const (

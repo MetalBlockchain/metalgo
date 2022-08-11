@@ -8,13 +8,13 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/network/dialer"
-	"github.com/MetalBlockchain/avalanchego/network/throttling"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/tracker"
-	"github.com/MetalBlockchain/avalanchego/snow/uptime"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
-	"github.com/MetalBlockchain/avalanchego/utils/ips"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/network/dialer"
+	"github.com/MetalBlockchain/metalgo/network/throttling"
+	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/uptime"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
 )
 
 // HealthConfig describes parameters for network layer health checks.

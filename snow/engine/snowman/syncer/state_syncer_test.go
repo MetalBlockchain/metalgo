@@ -11,16 +11,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/getter"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/getter"
+	"github.com/MetalBlockchain/metalgo/version"
 
-	safeMath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safeMath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {

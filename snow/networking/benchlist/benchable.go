@@ -4,7 +4,7 @@
 package benchlist
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Benchable is notified when a validator is benched or unbenched from a given chain

@@ -4,7 +4,7 @@
 package common
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 type BootstrapableEngine interface {

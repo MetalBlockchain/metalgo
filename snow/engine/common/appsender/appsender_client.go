@@ -6,10 +6,10 @@ package appsender
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 
-	appsenderpb "github.com/MetalBlockchain/avalanchego/proto/pb/appsender"
+	appsenderpb "github.com/MetalBlockchain/metalgo/proto/pb/appsender"
 )
 
 var _ common.AppSender = &Client{}

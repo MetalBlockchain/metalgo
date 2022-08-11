@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 // MinConnectedStake is the minimum percentage of the Primary Network's that

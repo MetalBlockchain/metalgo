@@ -4,8 +4,8 @@
 package rpcchainvm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 )
 
 var (

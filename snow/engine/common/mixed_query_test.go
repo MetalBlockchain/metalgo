@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/golang/mock/gomock"
 )
 

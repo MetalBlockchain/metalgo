@@ -7,11 +7,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/wallet/chain/p"
-	"github.com/MetalBlockchain/avalanchego/wallet/chain/x"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
 )
 
 var (

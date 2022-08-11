@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/MetalBlockchain/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
 )
 
 const (

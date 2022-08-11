@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowman"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
-	"github.com/MetalBlockchain/avalanchego/vms/proposervm/block"
-	"github.com/MetalBlockchain/avalanchego/vms/proposervm/proposer"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
 )
 
 func TestOracle_PreForkBlkImplementsInterface(t *testing.T) {

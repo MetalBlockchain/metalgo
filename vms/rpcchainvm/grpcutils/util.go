@@ -23,7 +23,7 @@ import (
 
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
-	httppb "github.com/MetalBlockchain/avalanchego/proto/pb/http"
+	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
 )
 
 const (

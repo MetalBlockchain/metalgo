@@ -6,13 +6,13 @@ package genesis
 import (
 	"path"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/genesis"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/propertyfx"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/nftfx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 // Aliases returns the default aliases based on the network ID

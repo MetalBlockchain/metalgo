@@ -4,9 +4,9 @@
 package network
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/router"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/networking/router"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 var _ router.ExternalHandler = &testHandler{}

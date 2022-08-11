@@ -3,7 +3,7 @@
 
 package indexer
 
-import "github.com/MetalBlockchain/avalanchego/ids"
+import "github.com/MetalBlockchain/metalgo/ids"
 
 // Container is something that gets accepted
 // (a block, transaction or vertex)

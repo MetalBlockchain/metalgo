@@ -5,10 +5,10 @@ package mocks
 import (
 	context "context"
 
-	health "github.com/MetalBlockchain/avalanchego/api/health"
+	health "github.com/MetalBlockchain/metalgo/api/health"
 	mock "github.com/stretchr/testify/mock"
 
-	rpc "github.com/MetalBlockchain/avalanchego/utils/rpc"
+	rpc "github.com/MetalBlockchain/metalgo/utils/rpc"
 
 	time "time"
 )

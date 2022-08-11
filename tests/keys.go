@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
 )
 
 // Loads a list of secp256k1 hex-encoded private keys from the file, new-line separated.

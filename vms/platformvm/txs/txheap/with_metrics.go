@@ -6,8 +6,8 @@ package txheap
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 var _ Heap = &withMetrics{}

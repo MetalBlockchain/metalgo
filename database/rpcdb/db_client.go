@@ -10,13 +10,13 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/nodb"
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/units"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/nodb"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 
-	rpcdbpb "github.com/MetalBlockchain/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 const (

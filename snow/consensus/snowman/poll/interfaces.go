@@ -6,8 +6,8 @@ package poll
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
 )
 
 // Set is a collection of polls

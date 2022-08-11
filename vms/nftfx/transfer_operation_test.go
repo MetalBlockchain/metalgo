@@ -6,8 +6,8 @@ package nftfx
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 func TestTransferOperationVerifyNil(t *testing.T) {

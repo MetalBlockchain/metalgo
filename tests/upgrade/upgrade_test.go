@@ -15,7 +15,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	"github.com/MetalBlockchain/avalanchego/tests"
+	"github.com/MetalBlockchain/metalgo/tests"
 	runner_sdk "github.com/ava-labs/avalanche-network-runner-sdk"
 )
 

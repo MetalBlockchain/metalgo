@@ -10,17 +10,17 @@ import (
 
 	stdjson "encoding/json"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting/address"
-	"github.com/MetalBlockchain/avalanchego/utils/json"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/fxs"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/nftfx"
-	"github.com/MetalBlockchain/avalanchego/vms/propertyfx"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/json"
+	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/nftfx"
+	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var (

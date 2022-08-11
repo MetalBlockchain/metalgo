@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/blocks/executor"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks/executor"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 // shows that a locally generated CreateChainTx can be added to mempool and then

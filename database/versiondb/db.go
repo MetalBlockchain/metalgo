@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/database/nodb"
-	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database/nodb"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 const (

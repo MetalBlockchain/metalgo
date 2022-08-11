@@ -4,11 +4,11 @@
 package avm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/chains/atomic"
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/txs"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 )
 
 var _ txs.Visitor = &executeTx{}

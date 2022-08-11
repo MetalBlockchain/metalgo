@@ -3,7 +3,7 @@
 
 package codec
 
-import "github.com/MetalBlockchain/avalanchego/utils/wrappers"
+import "github.com/MetalBlockchain/metalgo/utils/wrappers"
 
 // Codec marshals and unmarshals
 type Codec interface {

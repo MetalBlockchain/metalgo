@@ -4,7 +4,7 @@
 package blocks
 
 import (
-	"github.com/MetalBlockchain/avalanchego/codec"
+	"github.com/MetalBlockchain/metalgo/codec"
 )
 
 func Parse(c codec.Manager, b []byte) (Block, error) {

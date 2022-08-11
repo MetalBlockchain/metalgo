@@ -4,7 +4,7 @@
 package state
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ StakerIterator = &maskedIterator{}

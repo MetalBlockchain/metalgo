@@ -6,8 +6,8 @@ package avm
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/vms"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms"
 )
 
 var _ vms.Factory = &Factory{}

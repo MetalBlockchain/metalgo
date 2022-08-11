@@ -6,17 +6,17 @@ package primary
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/api/info"
-	"github.com/MetalBlockchain/avalanchego/codec"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
-	"github.com/MetalBlockchain/avalanchego/vms/avm"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
-	"github.com/MetalBlockchain/avalanchego/wallet/chain/p"
-	"github.com/MetalBlockchain/avalanchego/wallet/chain/x"
+	"github.com/MetalBlockchain/metalgo/api/info"
+	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/vms/avm"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
 )
 
 const (

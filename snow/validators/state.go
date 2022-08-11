@@ -6,7 +6,7 @@ package validators
 import (
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ State = &lockedState{}

@@ -8,8 +8,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/utils/metric"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 func newAveragerMetric(namespace, name string, reg prometheus.Registerer, errs *wrappers.Errs) metric.Averager {

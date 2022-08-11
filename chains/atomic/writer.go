@@ -4,7 +4,7 @@
 package atomic
 
 import (
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/database"
 )
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.

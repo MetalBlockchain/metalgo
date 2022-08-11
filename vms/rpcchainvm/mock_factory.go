@@ -7,7 +7,7 @@ package rpcchainvm
 import (
 	reflect "reflect"
 
-	snow "github.com/MetalBlockchain/avalanchego/snow"
+	snow "github.com/MetalBlockchain/metalgo/snow"
 	gomock "github.com/golang/mock/gomock"
 )
 

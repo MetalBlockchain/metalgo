@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
 )
 
 var (

@@ -4,7 +4,7 @@
 package choices
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Decidable represents element that can be decided.

@@ -7,7 +7,7 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Hashmap provides an O(1) mapping from a comparable key to any value.

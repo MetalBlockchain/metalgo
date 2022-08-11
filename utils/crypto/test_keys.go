@@ -4,7 +4,7 @@
 package crypto
 
 import (
-	"github.com/MetalBlockchain/avalanchego/utils/cb58"
+	"github.com/MetalBlockchain/metalgo/utils/cb58"
 )
 
 func BuildTestKeys() []*PrivateKeySECP256K1R {

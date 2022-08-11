@@ -6,7 +6,7 @@ package message
 import (
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var (

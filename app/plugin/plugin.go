@@ -10,9 +10,9 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
-	"github.com/MetalBlockchain/avalanchego/app"
+	"github.com/MetalBlockchain/metalgo/app"
 
-	pluginpb "github.com/MetalBlockchain/avalanchego/proto/pb/plugin"
+	pluginpb "github.com/MetalBlockchain/metalgo/proto/pb/plugin"
 )
 
 const Name = "nodeProcess"

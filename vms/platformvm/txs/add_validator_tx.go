@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils/math"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/fx"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/validator"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validator"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var (

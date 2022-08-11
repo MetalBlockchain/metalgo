@@ -4,10 +4,10 @@
 package vertex
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 // Builder builds a vertex given a set of parentIDs and transactions.

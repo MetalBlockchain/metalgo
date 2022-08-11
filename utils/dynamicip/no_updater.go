@@ -3,7 +3,7 @@
 
 package dynamicip
 
-import "github.com/MetalBlockchain/avalanchego/utils/logging"
+import "github.com/MetalBlockchain/metalgo/utils/logging"
 
 var _ Updater = noUpdater{}
 

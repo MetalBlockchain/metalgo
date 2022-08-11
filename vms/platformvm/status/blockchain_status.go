@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 // List of possible blockchain status values:

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/utils/units"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 const (

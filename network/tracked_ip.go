@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/network/peer"
+	"github.com/MetalBlockchain/metalgo/network/peer"
 )
 
 func init() { rand.Seed(time.Now().UnixNano()) }

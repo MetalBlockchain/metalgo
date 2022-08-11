@@ -6,7 +6,7 @@ package throttling
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ InboundMsgThrottler = &noInboundMsgThrottler{}

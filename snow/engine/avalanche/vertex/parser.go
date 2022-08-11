@@ -4,8 +4,8 @@
 package vertex
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 // Parser parses bytes into a vertex.

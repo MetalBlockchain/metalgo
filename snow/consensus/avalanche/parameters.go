@@ -6,7 +6,7 @@ package avalanche
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowball"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 )
 
 // Parameters the avalanche parameters include the snowball parameters and the

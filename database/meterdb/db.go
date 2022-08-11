@@ -6,8 +6,8 @@ package meterdb
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 var (

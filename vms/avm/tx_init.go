@@ -6,9 +6,9 @@ package avm
 import (
 	"reflect"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/fxs"
-	"github.com/MetalBlockchain/avalanchego/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 )
 
 var _ txs.Visitor = &txInit{}

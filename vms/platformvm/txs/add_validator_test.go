@@ -9,15 +9,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/stakeable"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/validator"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validator"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 func TestAddValidatorTxSyntacticVerify(t *testing.T) {

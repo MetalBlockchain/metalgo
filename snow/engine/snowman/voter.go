@@ -6,7 +6,7 @@ package snowman
 import (
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Voter records chits received from [vdr] once its dependencies are met.

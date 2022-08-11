@@ -6,7 +6,7 @@ package txheap
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 var _ TimedHeap = &byStartTime{}

@@ -4,10 +4,10 @@
 package common
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 // DefaultConfigTest returns a test configuration

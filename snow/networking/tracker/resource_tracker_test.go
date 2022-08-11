@@ -13,9 +13,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/math/meter"
-	"github.com/MetalBlockchain/avalanchego/utils/resource"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/math/meter"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
 )
 
 func TestNewCPUTracker(t *testing.T) {
