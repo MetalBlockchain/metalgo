@@ -11,17 +11,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"gotest.tools/assert"
 
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowman"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/queue"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
-	snowgetter "github.com/MetalBlockchain/avalanchego/snow/engine/snowman/getter"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	snowgetter "github.com/MetalBlockchain/metalgo/snow/engine/snowman/getter"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 var errUnknownBlock = errors.New("unknown block")

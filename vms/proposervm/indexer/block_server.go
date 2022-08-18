@@ -4,9 +4,9 @@
 package indexer
 
 import (
-	"github.com/MetalBlockchain/avalanchego/database/versiondb"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/database/versiondb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 )
 
 // BlockServer represents all requests heightIndexer can issue

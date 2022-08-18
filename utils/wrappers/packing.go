@@ -9,8 +9,8 @@ import (
 	"errors"
 	"math"
 
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/MetalBlockchain/avalanchego/network/dialer"
-	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/network/dialer"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 var (

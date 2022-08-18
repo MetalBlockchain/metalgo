@@ -8,9 +8,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/avalanchego/app"
+	"github.com/MetalBlockchain/metalgo/app"
 
-	pluginpb "github.com/MetalBlockchain/avalanchego/proto/pb/plugin"
+	pluginpb "github.com/MetalBlockchain/metalgo/proto/pb/plugin"
 )
 
 // Server wraps a node so it can be served with the hashicorp plugin harness

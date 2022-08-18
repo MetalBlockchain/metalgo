@@ -6,8 +6,8 @@ package platformvm
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
 )
 
 func TestTxHeapByStartTime(t *testing.T) {

@@ -27,13 +27,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/ghttp"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/ghttp"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	httppb "github.com/MetalBlockchain/avalanchego/proto/pb/http"
-	vmpb "github.com/MetalBlockchain/avalanchego/proto/pb/vm"
-	cjson "github.com/MetalBlockchain/avalanchego/utils/json"
+	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
+	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
+	cjson "github.com/MetalBlockchain/metalgo/utils/json"
 )
 
 // Test_VMCreateHandlers tests the Handle and HandleSimple RPCs by creating a plugin and

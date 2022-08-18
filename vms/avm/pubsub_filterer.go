@@ -4,9 +4,9 @@
 package avm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/api"
-	"github.com/MetalBlockchain/avalanchego/pubsub"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/pubsub"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 )
 
 var _ pubsub.Filterer = &filterer{}

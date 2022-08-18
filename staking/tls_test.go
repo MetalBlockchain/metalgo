@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/stretchr/testify/assert"
 )
 

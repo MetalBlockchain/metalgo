@@ -6,7 +6,7 @@ package consistent
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 
 	"github.com/stretchr/testify/assert"
 

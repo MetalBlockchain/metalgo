@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 const (

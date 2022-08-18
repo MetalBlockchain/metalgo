@@ -4,7 +4,7 @@
 package events
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Blockable defines what an object must implement to be able to block on events

@@ -13,13 +13,13 @@ import (
 
 	"github.com/kardianos/osext"
 
-	"github.com/MetalBlockchain/avalanchego/database/leveldb"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
-	"github.com/MetalBlockchain/avalanchego/database/rocksdb"
-	"github.com/MetalBlockchain/avalanchego/genesis"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/ulimit"
-	"github.com/MetalBlockchain/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/database/leveldb"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database/rocksdb"
+	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/ulimit"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 )
 
 // Results of parsing the CLI

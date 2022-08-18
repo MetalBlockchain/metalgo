@@ -6,7 +6,7 @@ package common
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // SubnetTest is a test subnet

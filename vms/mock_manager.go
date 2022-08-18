@@ -7,8 +7,8 @@ package vms
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/avalanchego/ids"
-	snow "github.com/MetalBlockchain/avalanchego/snow"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	snow "github.com/MetalBlockchain/metalgo/snow"
 	gomock "github.com/golang/mock/gomock"
 )
 

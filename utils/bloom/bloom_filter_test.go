@@ -6,7 +6,7 @@ package bloom
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/stretchr/testify/assert"
 )
 

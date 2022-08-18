@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/MetalBlockchain/avalanchego/app/runner"
-	"github.com/MetalBlockchain/avalanchego/config"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/app/runner"
+	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/spf13/pflag"
 )
 

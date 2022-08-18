@@ -8,9 +8,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var (

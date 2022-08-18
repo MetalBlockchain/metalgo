@@ -4,7 +4,7 @@
 package chain
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 )
 
 // BlockWrapper wraps a snowman Block while adding a smart caching layer to improve

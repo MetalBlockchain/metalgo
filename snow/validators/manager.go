@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ Manager = &manager{}

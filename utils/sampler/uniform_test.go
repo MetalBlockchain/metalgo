@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 var (

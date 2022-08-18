@@ -6,9 +6,9 @@ package proposervm
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 )
 
 // shouldHeightIndexBeRepaired checks if index needs repairing and stores a

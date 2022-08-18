@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
 )
 
 // InitNodeStakingKeyPair generates a self-signed TLS key/cert pair to use in

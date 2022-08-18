@@ -6,8 +6,8 @@ package genesis
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/units"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 )
 
 var (
@@ -22,17 +22,7 @@ var (
 			{
 				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
 				"avaxAddr": "X-metal1wulualvtpydn9ur64zwm6v69vut8f89mpf5ag6",
-				"initialAmount": 144333333000000000
-			},
-			{
-				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
-				"avaxAddr": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"initialAmount": 0,
-				"unlockSchedule": [
-					{
-						"amount": 10000000000000000
-					}
-				]
+				"initialAmount": 124333333000000000
 			},
 			{
 				"ethAddr": "0xb3d82b1367d362de99ab59a658165aff520cbd4d",
@@ -205,51 +195,51 @@ var (
 				"initialAmount": 0,
 				"unlockSchedule": [
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1658987891
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1661666291
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1664344691
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1667023091
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1669701491
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1672379891
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1675058291
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1677736691
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1680415091
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1683093491
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1685771891
 					},
 					{
-						"amount": 1000000000000000,
+						"amount": 1083333330000000,
 						"locktime": 1688450291
 					}
 				]
@@ -308,139 +298,413 @@ var (
 						"locktime": 1688450291
 					}
 				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1etxv83ldul4yv40tqc7q6zx2r5y2mkxxrkth03",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1v5fkluht6u5zx2lxxe2qasexnzqjkh6ptq6nx7",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal16jhlm94q9jl0cxw4r39zujvmzkx8wtcku076v3",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1qe9cylmmlgslc5trvhk40atz4p7yuqjazx0kft",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1t22t4gd9yecxxkjj9u4688khuqws5rzeq0zkrx",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1qqsfr38x9t7sk96h6zyunlktnwxhux6yrf2v4p",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal165gnthypjv4sgpgg9ula6p93rkjtsh73yfq5p5",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1z3vgdheumfxjaqf5m6lcsef047ehmkccvrmud4",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1s7muznsww2wlkw660rp0tg9hr8dt2qhdydywfh",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1ql9tmgp0g3kt7rf6uxd7mu6umjnw3hlyk2mnva",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1nuvk2f68nt6lpx6cney9vv7ux4r7ytf6qmdjk0",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal17ktfz4lcrn8jrykwpngj34t3qf4zyhju70xams",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1rf5wq7whtfh4c2z4x8x0alvyptzgqv7nx3r6dy",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1gmzv5p5r8hepzs9rrc8juxfmqc4stppf7tspna",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1p0s7dt33lj8r890mhynr64hm3pqzn5dsq4pvxc",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal13d7ppvjkc2z6w37myhywzdcv9m9pp925e9qnve",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal12cndmdfvhr36f0ryt3c2z0xqcuxrh5nwwkn7da",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1e49zd6crx3kl2g5ql50zzur5hglj3knpjwcj25",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1p58g5rr4u937594cwfwtg0yp4zl34xm9sfs7uf",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1tm6ysqmem86e0hnp355skqn0c7k5fng0gd9fqx",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1nlx59fc6yeeekfph8uzxuyz7ux2p0ur2uky88j",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1pnq2tp24aduvxk2fzk4c9zhapfdfun9frqckdm",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal17ufz7qrgcvz80aqwnh00f8xvdvq3jutsd73y4v",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1lggmp02xgcvjwyj4e4mk2tw3tm3yvar7usuy57",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
+			},
+			{
+				"ethAddr": "0x15884b0f70b7c0db084e5aa738605f7a681a5d6e",
+				"avaxAddr": "X-metal1xhkcv0dc20d7y3shh2jak6k9cm67zz7y7j6uyd",
+				"initialAmount": 0,
+				"unlockSchedule": [
+					{
+						"amount": 800000000000000
+					}
+				]
 			}
 		],
 		"startTime": 1658987891,
 		"initialStakeDuration": 31536000,
 		"initialStakeDurationOffset": 54000,
 		"initialStakedFunds": [
-			"X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd"
+			"X-metal1etxv83ldul4yv40tqc7q6zx2r5y2mkxxrkth03",
+			"X-metal1v5fkluht6u5zx2lxxe2qasexnzqjkh6ptq6nx7",
+			"X-metal16jhlm94q9jl0cxw4r39zujvmzkx8wtcku076v3",
+			"X-metal1qe9cylmmlgslc5trvhk40atz4p7yuqjazx0kft",
+			"X-metal1t22t4gd9yecxxkjj9u4688khuqws5rzeq0zkrx",
+			"X-metal1qqsfr38x9t7sk96h6zyunlktnwxhux6yrf2v4p",
+			"X-metal165gnthypjv4sgpgg9ula6p93rkjtsh73yfq5p5",
+			"X-metal1z3vgdheumfxjaqf5m6lcsef047ehmkccvrmud4",
+			"X-metal1s7muznsww2wlkw660rp0tg9hr8dt2qhdydywfh",
+			"X-metal1ql9tmgp0g3kt7rf6uxd7mu6umjnw3hlyk2mnva",
+			"X-metal1nuvk2f68nt6lpx6cney9vv7ux4r7ytf6qmdjk0",
+			"X-metal17ktfz4lcrn8jrykwpngj34t3qf4zyhju70xams",
+			"X-metal1rf5wq7whtfh4c2z4x8x0alvyptzgqv7nx3r6dy",
+			"X-metal1gmzv5p5r8hepzs9rrc8juxfmqc4stppf7tspna",
+			"X-metal1p0s7dt33lj8r890mhynr64hm3pqzn5dsq4pvxc",
+			"X-metal13d7ppvjkc2z6w37myhywzdcv9m9pp925e9qnve",
+			"X-metal12cndmdfvhr36f0ryt3c2z0xqcuxrh5nwwkn7da",
+			"X-metal1e49zd6crx3kl2g5ql50zzur5hglj3knpjwcj25",
+			"X-metal1p58g5rr4u937594cwfwtg0yp4zl34xm9sfs7uf",
+			"X-metal1tm6ysqmem86e0hnp355skqn0c7k5fng0gd9fqx",
+			"X-metal1nlx59fc6yeeekfph8uzxuyz7ux2p0ur2uky88j",
+			"X-metal1pnq2tp24aduvxk2fzk4c9zhapfdfun9frqckdm",
+			"X-metal17ufz7qrgcvz80aqwnh00f8xvdvq3jutsd73y4v",
+			"X-metal1lggmp02xgcvjwyj4e4mk2tw3tm3yvar7usuy57",
+			"X-metal1xhkcv0dc20d7y3shh2jak6k9cm67zz7y7j6uyd"
 		],
 		"initialStakers": [
 			{
 				"nodeID": "NodeID-21XvgoKWToLv8m2awpP6pjmABYDXWvvu1",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 1000000
+				"rewardAddress": "X-metal1etxv83ldul4yv40tqc7q6zx2r5y2mkxxrkth03",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-2DaDg8ySpZh4G3pYQDoQL6fBpr6kvAEn7",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 500000
+				"rewardAddress": "X-metal1v5fkluht6u5zx2lxxe2qasexnzqjkh6ptq6nx7",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-2cGXDwRBQasgadR7Q1cNLPrTu1CcBbbPg",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 250000
+				"rewardAddress": "X-metal16jhlm94q9jl0cxw4r39zujvmzkx8wtcku076v3",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-3cR7XPe9cPjXyxe8xSGeHKtZUBW3EY5E9",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 125000
+				"rewardAddress": "X-metal1qe9cylmmlgslc5trvhk40atz4p7yuqjazx0kft",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-4qGU3jCCskkgD23M5Phs58idoss88gACr",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 62500
+				"rewardAddress": "X-metal1t22t4gd9yecxxkjj9u4688khuqws5rzeq0zkrx",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-51tYGGYJQhkXj7korVVmF6dFjapPUkpx2",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 31250
+				"rewardAddress": "X-metal1qqsfr38x9t7sk96h6zyunlktnwxhux6yrf2v4p",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-6i7bjwpMLjqAh493mVgjSGeWePD5psUmZ",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal165gnthypjv4sgpgg9ula6p93rkjtsh73yfq5p5",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-6mYSHMtaKhapYefeS33oJtwJRKXqPM1dr",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1z3vgdheumfxjaqf5m6lcsef047ehmkccvrmud4",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-BiG4fTni2A6erA9TD4L867dCzL1ajH9Pz",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1s7muznsww2wlkw660rp0tg9hr8dt2qhdydywfh",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-CV7P79ttAXb8vqyc5QoUVxcMrVX4J21Y1",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1ql9tmgp0g3kt7rf6uxd7mu6umjnw3hlyk2mnva",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-FG5jysE61HB8fVg3NucEmX5sXgs5sTpKn",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1nuvk2f68nt6lpx6cney9vv7ux4r7ytf6qmdjk0",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-GPtuetLJGjtpwoGcvzebj9KXgemhEcAuY",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal17ktfz4lcrn8jrykwpngj34t3qf4zyhju70xams",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-HSPLkj13MprfgpEZGYR7Dpm9ptS5m6miV",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1rf5wq7whtfh4c2z4x8x0alvyptzgqv7nx3r6dy",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-K5yDuQpynevLJWK1iu64ukA9UX566d1Ns",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1gmzv5p5r8hepzs9rrc8juxfmqc4stppf7tspna",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-PMRrRcuXfSjBYcs1EBUayvgcWzfaQUt3p",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1p0s7dt33lj8r890mhynr64hm3pqzn5dsq4pvxc",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-PkUiWb8rf9Yh6twJr5RQbMhp1JZpj4W25",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal13d7ppvjkc2z6w37myhywzdcv9m9pp925e9qnve",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-Q8RhVnz4JeRg3s5dQRqnQuc5H4v6Zwrk8",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal12cndmdfvhr36f0ryt3c2z0xqcuxrh5nwwkn7da",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-QGrgixzuznapYA5LeJB7RvsNWvVMwmofm",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1e49zd6crx3kl2g5ql50zzur5hglj3knpjwcj25",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-cRLt953CsEA8Hs6mhSzeawsbb335zziH",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1p58g5rr4u937594cwfwtg0yp4zl34xm9sfs7uf",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-uhXjVs6ugtw4cStoe4tJa523Bb5kjMQg",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1tm6ysqmem86e0hnp355skqn0c7k5fng0gd9fqx",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-8fWznLr2SqE2BQoBWKmeGRjX5yNqUhy8T",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1nlx59fc6yeeekfph8uzxuyz7ux2p0ur2uky88j",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-KTmn81w4WWwHxV1s19GmL1i2ygYqXjhtR",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1pnq2tp24aduvxk2fzk4c9zhapfdfun9frqckdm",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-5cTEiXM4igt3xL9nnX1L3QvEdCAPafTUy",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal17ufz7qrgcvz80aqwnh00f8xvdvq3jutsd73y4v",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-3YaV4kst8K3VXwyZpr1XtdLyKZbFQBnRs",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1lggmp02xgcvjwyj4e4mk2tw3tm3yvar7usuy57",
+				"delegationFee": 200000
 			},
 			{
 				"nodeID": "NodeID-4mXA7qhwuAsSnco38ZboLc5q6UFM1x8Pf",
-				"rewardAddress": "X-metal1432ng5f83lf99c8jqykfksqccq6nrwwnqdrdzd",
-				"delegationFee": 20000
+				"rewardAddress": "X-metal1xhkcv0dc20d7y3shh2jak6k9cm67zz7y7j6uyd",
+				"delegationFee": 200000
 			}
 		],
 		"cChainGenesis": "{\"config\":{\"chainId\":381931,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"apricotPhase1BlockTimestamp\":0,\"apricotPhase2BlockTimestamp\":0,\"apricotPhase3BlockTimestamp\":0,\"apricotPhase4BlockTimestamp\":0,\"apricotPhase5BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}",

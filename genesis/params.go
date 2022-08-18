@@ -6,8 +6,8 @@ package genesis
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 )
 
 type StakingConfig struct {

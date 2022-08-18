@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 var _ Meter = &TimedMeter{}

@@ -6,7 +6,7 @@ package cache
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func TestLRU(t *testing.T) {

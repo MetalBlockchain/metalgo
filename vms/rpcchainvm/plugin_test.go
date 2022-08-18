@@ -15,9 +15,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	vmpb "github.com/MetalBlockchain/avalanchego/proto/pb/vm"
+	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 )
 
 var (

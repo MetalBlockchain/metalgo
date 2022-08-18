@@ -4,7 +4,7 @@
 package snow
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Acceptor is implemented when a struct is monitoring if a message is accepted

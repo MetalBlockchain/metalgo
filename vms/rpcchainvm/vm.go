@@ -10,10 +10,10 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
-	"github.com/MetalBlockchain/avalanchego/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	vmpb "github.com/MetalBlockchain/avalanchego/proto/pb/vm"
+	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 )
 
 // protocolVersion should be bumped anytime changes are made which require

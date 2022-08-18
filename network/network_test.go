@@ -14,19 +14,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/network/dialer"
-	"github.com/MetalBlockchain/avalanchego/network/throttling"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/benchlist"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/router"
-	"github.com/MetalBlockchain/avalanchego/snow/uptime"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
-	"github.com/MetalBlockchain/avalanchego/utils"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
-	"github.com/MetalBlockchain/avalanchego/utils/units"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/network/dialer"
+	"github.com/MetalBlockchain/metalgo/network/throttling"
+	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
+	"github.com/MetalBlockchain/metalgo/snow/networking/router"
+	"github.com/MetalBlockchain/metalgo/snow/uptime"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 var (

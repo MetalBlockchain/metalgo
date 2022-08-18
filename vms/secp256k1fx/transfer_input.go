@@ -6,7 +6,7 @@ package secp256k1fx
 import (
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
+	"github.com/MetalBlockchain/metalgo/snow"
 )
 
 var errNoValueInput = errors.New("input has no value")

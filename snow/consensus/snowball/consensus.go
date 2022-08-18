@@ -6,7 +6,7 @@ package snowball
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Consensus represents a general snow instance that can be used directly to

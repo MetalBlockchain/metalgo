@@ -6,12 +6,12 @@ package p
 import (
 	"errors"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm/status"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
-	"github.com/MetalBlockchain/avalanchego/wallet/subnet/primary/common"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 var (

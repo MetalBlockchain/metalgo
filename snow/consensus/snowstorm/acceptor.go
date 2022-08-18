@@ -4,9 +4,9 @@
 package snowstorm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/events"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/events"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 var _ events.Blockable = &acceptor{}

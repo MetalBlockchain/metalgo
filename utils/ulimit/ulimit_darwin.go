@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 const DefaultFDLimit = 10 * 1024

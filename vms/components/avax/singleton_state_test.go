@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 )
 
 func TestSingletonState(t *testing.T) {

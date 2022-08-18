@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/metric"
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

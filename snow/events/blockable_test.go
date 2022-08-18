@@ -4,7 +4,7 @@
 package events
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var offset = uint64(0)

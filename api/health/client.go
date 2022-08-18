@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 )
 
 // Interface compliance

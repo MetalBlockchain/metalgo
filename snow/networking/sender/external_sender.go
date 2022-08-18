@@ -4,8 +4,8 @@
 package sender
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/message"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/message"
 )
 
 // ExternalSender sends consensus messages to other validators

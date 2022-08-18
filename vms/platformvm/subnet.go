@@ -4,8 +4,8 @@
 package platformvm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 // A Subnet is a set of validators that are validating a set of blockchains

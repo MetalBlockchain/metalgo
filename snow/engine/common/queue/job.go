@@ -4,7 +4,7 @@
 package queue
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Job defines the interface required to be placed on the job queue.

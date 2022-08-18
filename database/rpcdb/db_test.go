@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 
-	rpcdbpb "github.com/MetalBlockchain/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 const (

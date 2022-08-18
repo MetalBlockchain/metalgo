@@ -10,9 +10,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	connpb "github.com/MetalBlockchain/avalanchego/proto/pb/net/conn"
+	connpb "github.com/MetalBlockchain/metalgo/proto/pb/net/conn"
 )
 
 var _ connpb.ConnServer = &Server{}

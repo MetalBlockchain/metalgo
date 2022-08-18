@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 )
 
 // Interface compliance

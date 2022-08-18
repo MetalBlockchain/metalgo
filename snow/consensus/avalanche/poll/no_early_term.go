@@ -6,7 +6,7 @@ package poll
 import (
 	"fmt"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var (

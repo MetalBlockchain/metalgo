@@ -6,7 +6,7 @@ package platformvm
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/utils/rpc"
 )
 
 var _ StaticClient = &staticClient{}

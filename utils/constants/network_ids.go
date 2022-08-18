@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Const variables to be exported

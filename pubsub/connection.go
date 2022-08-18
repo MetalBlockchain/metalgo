@@ -12,7 +12,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/MetalBlockchain/avalanchego/utils/bloom"
+	"github.com/MetalBlockchain/metalgo/utils/bloom"
 )
 
 var (

@@ -4,7 +4,7 @@
 package snowman
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 // Voter records chits received from [vdr] once its dependencies are met.

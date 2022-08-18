@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/uptime/mocks"
-	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/uptime/mocks"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -9,8 +9,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var _ pendingStakerChainState = &pendingStakerChainStateImpl{}

@@ -4,7 +4,7 @@
 package avm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow"
+	"github.com/MetalBlockchain/metalgo/snow"
 )
 
 type Factory struct {

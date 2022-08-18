@@ -6,8 +6,8 @@ package encdb
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/memdb"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 )
 
 func TestInterface(t *testing.T) {

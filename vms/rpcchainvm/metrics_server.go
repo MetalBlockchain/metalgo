@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	vmpb "github.com/MetalBlockchain/avalanchego/proto/pb/vm"
+	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 )
 
 func (vm *VMServer) Gather(context.Context, *emptypb.Empty) (*vmpb.GatherResponse, error) {

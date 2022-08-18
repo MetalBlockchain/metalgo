@@ -10,7 +10,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 var _ Compressor = &gzipCompressor{}

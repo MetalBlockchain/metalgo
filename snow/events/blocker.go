@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 const (

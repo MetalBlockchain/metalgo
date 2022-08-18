@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/google/btree"
 )
 

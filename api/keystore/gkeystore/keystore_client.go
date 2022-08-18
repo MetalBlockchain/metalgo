@@ -6,14 +6,14 @@ package gkeystore
 import (
 	"context"
 
-	"github.com/MetalBlockchain/avalanchego/api/keystore"
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/database/encdb"
-	"github.com/MetalBlockchain/avalanchego/database/rpcdb"
-	"github.com/MetalBlockchain/avalanchego/vms/rpcchainvm/grpcutils"
+	"github.com/MetalBlockchain/metalgo/api/keystore"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/encdb"
+	"github.com/MetalBlockchain/metalgo/database/rpcdb"
+	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
-	keystorepb "github.com/MetalBlockchain/avalanchego/proto/pb/keystore"
-	rpcdbpb "github.com/MetalBlockchain/avalanchego/proto/pb/rpcdb"
+	keystorepb "github.com/MetalBlockchain/metalgo/proto/pb/keystore"
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 var _ keystore.BlockchainKeystore = &Client{}

@@ -7,8 +7,8 @@ package rpcchainvm
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/avalanchego/ids"
-	vms "github.com/MetalBlockchain/avalanchego/vms"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	vms "github.com/MetalBlockchain/metalgo/vms"
 	gomock "github.com/golang/mock/gomock"
 )
 

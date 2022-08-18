@@ -3,7 +3,7 @@
 
 package verify
 
-import "github.com/MetalBlockchain/avalanchego/snow"
+import "github.com/MetalBlockchain/metalgo/snow"
 
 // Verifiable can be verified
 type Verifiable interface {

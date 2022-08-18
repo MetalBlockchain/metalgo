@@ -3,7 +3,7 @@
 
 package throttling
 
-import "github.com/MetalBlockchain/avalanchego/ids"
+import "github.com/MetalBlockchain/metalgo/ids"
 
 var _ InboundMsgThrottler = &noInboundMsgThrottler{}
 

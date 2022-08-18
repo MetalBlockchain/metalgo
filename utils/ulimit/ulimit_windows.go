@@ -6,7 +6,7 @@
 
 package ulimit
 
-import "github.com/MetalBlockchain/avalanchego/utils/logging"
+import "github.com/MetalBlockchain/metalgo/utils/logging"
 
 const DefaultFDLimit = 16384
 

@@ -6,8 +6,8 @@ package common
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 // Config wraps the common configurations that are needed by a Snow consensus

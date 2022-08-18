@@ -19,7 +19,7 @@ import (
 
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 
-	httppb "github.com/MetalBlockchain/avalanchego/proto/pb/http"
+	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
 )
 
 const (

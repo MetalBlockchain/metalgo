@@ -4,7 +4,7 @@
 package rpcdb
 
 import (
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/database"
 )
 
 var (

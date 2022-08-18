@@ -6,9 +6,9 @@ package snowstorm
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
 
-	sbcon "github.com/MetalBlockchain/avalanchego/snow/consensus/snowball"
+	sbcon "github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 )
 
 func Simulate(

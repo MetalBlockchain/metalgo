@@ -9,7 +9,7 @@ import (
 	"math"
 	"testing"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 // BenchmarkAllWeightedSampling

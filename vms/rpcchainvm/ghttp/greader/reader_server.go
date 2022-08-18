@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 
-	readerpb "github.com/MetalBlockchain/avalanchego/proto/pb/io/reader"
+	readerpb "github.com/MetalBlockchain/metalgo/proto/pb/io/reader"
 )
 
 var _ readerpb.ReaderServer = &Server{}

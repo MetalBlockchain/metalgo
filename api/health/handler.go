@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/rpc/v2"
 
-	"github.com/MetalBlockchain/avalanchego/utils/json"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/json"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 // NewGetAndPostHandler returns a health handler that supports GET and jsonrpc

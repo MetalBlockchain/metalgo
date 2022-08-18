@@ -14,9 +14,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 
-	aliasreaderpb "github.com/MetalBlockchain/avalanchego/proto/pb/aliasreader"
+	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 )
 
 const (

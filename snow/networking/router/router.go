@@ -8,13 +8,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/avalanchego/api/health"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/benchlist"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/handler"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/timeout"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/api/health"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
+	"github.com/MetalBlockchain/metalgo/snow/networking/handler"
+	"github.com/MetalBlockchain/metalgo/snow/networking/timeout"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 // Router routes consensus messages to the Handler of the consensus

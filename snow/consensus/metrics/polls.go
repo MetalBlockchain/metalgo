@@ -4,7 +4,7 @@
 package metrics
 
 import (
-	"github.com/MetalBlockchain/avalanchego/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

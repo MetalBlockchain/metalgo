@@ -4,8 +4,8 @@
 package chains
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/router"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/networking/router"
 )
 
 var _ Manager = MockManager{}

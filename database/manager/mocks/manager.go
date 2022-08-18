@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	manager "github.com/MetalBlockchain/avalanchego/database/manager"
+	manager "github.com/MetalBlockchain/metalgo/database/manager"
 	mock "github.com/stretchr/testify/mock"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"

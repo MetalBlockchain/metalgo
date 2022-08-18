@@ -4,8 +4,8 @@
 package snowstorm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
 )
 
 // Whitelister defines the interface for specifying whitelisted operations.

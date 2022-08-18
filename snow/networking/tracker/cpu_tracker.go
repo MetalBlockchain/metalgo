@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/linkedhashmap"
-	"github.com/MetalBlockchain/avalanchego/utils/uptime"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/uptime"
 )
 
 const epsilon = 1e-9

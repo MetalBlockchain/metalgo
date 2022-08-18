@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/message"
-	"github.com/MetalBlockchain/avalanchego/snow/networking/benchlist"
-	"github.com/MetalBlockchain/avalanchego/utils/timer"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
+	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

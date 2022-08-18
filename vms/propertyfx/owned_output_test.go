@@ -6,7 +6,7 @@ package propertyfx
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 func TestOwnedOutputState(t *testing.T) {

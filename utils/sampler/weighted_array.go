@@ -6,7 +6,7 @@ package sampler
 import (
 	"sort"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var _ Weighted = &weightedArray{}

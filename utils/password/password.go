@@ -40,7 +40,7 @@ const (
 	// maxCheckedPassLen limits the length of the password that should be
 	// strength checked.
 	//
-	// As per issue https://github.com/MetalBlockchain/avalanchego/issues/195 it was found
+	// As per issue https://github.com/MetalBlockchain/metalgo/issues/195 it was found
 	// the longer the length of password the slower zxcvbn.PasswordStrength()
 	// performs. To avoid performance issues, and a DoS vector, we only strength
 	// check the first 50 characters of the password.

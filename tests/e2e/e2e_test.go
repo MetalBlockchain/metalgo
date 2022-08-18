@@ -17,14 +17,14 @@ import (
 
 	runner_client "github.com/ava-labs/avalanche-network-runner/client"
 
-	"github.com/MetalBlockchain/avalanchego/tests"
-	"github.com/MetalBlockchain/avalanchego/tests/e2e"
+	"github.com/MetalBlockchain/metalgo/tests"
+	"github.com/MetalBlockchain/metalgo/tests/e2e"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/MetalBlockchain/avalanchego/tests/e2e/ping"
-	_ "github.com/MetalBlockchain/avalanchego/tests/e2e/static-handlers"
-	_ "github.com/MetalBlockchain/avalanchego/tests/e2e/whitelist-vtx"
-	_ "github.com/MetalBlockchain/avalanchego/tests/e2e/x/transfer"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/ping"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/static-handlers"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/whitelist-vtx"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/x/transfer"
 )
 
 func TestE2E(t *testing.T) {

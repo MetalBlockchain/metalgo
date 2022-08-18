@@ -17,8 +17,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/chains"
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/chains"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func TestGetChainConfigsFromFiles(t *testing.T) {

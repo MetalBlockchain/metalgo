@@ -17,7 +17,7 @@ import (
 
 	runner_client "github.com/ava-labs/avalanche-network-runner/client"
 
-	"github.com/MetalBlockchain/avalanchego/tests"
+	"github.com/MetalBlockchain/metalgo/tests"
 )
 
 func TestUpgrade(t *testing.T) {

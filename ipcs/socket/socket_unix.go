@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 var staleSocketTimeout = 100 * time.Millisecond

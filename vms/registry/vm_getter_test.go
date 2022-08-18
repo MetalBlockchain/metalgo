@@ -12,9 +12,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/filesystem"
-	"github.com/MetalBlockchain/avalanchego/vms"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/filesystem"
+	"github.com/MetalBlockchain/metalgo/vms"
 )
 
 var (

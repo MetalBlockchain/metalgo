@@ -4,7 +4,7 @@
 package crypto
 
 import (
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 type Factory interface {

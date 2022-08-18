@@ -6,7 +6,7 @@ package types
 import (
 	"encoding/json"
 
-	"github.com/MetalBlockchain/avalanchego/utils/formatting"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
 )
 
 // JSONByteSlice represents [[]byte] that is json marshalled to hex

@@ -6,7 +6,7 @@ package platformvm
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 type ValidatorState interface {

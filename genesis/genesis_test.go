@@ -12,11 +12,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
-	"github.com/MetalBlockchain/avalanchego/utils/hashing"
-	"github.com/MetalBlockchain/avalanchego/utils/perms"
-	"github.com/MetalBlockchain/avalanchego/vms/platformvm"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 )
 
 func TestValidateConfig(t *testing.T) {
@@ -422,7 +422,7 @@ func TestVMGenesis(t *testing.T) {
 			vmTest: []vmTest{
 				{
 					vmID:       constants.AVMID,
-					expectedID: "35N6YCBV33rHJWAtMELT4EZkFfzU7eusLUnhWcDXjHoxh1AiN",
+					expectedID: "UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE",
 				},
 				{
 					vmID:       constants.EVMID,
@@ -493,7 +493,7 @@ func TestAVAXAssetID(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "YE6TDrJaTWF79KfqtL5KLiYgyTYnTp7jZzHEwWhQ4sDvLmraX",
+			expectedID: "2pjq58dnYTfrUJvvnC1uHDBP87DyP2oJj9uTmt3vdJg9Nhr9d4",
 		},
 		{
 			networkID:  constants.TahoeID,

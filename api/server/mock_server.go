@@ -13,10 +13,10 @@ import (
 	sync "sync"
 	time "time"
 
-	ids "github.com/MetalBlockchain/avalanchego/ids"
-	snow "github.com/MetalBlockchain/avalanchego/snow"
-	common "github.com/MetalBlockchain/avalanchego/snow/engine/common"
-	logging "github.com/MetalBlockchain/avalanchego/utils/logging"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	snow "github.com/MetalBlockchain/metalgo/snow"
+	common "github.com/MetalBlockchain/metalgo/snow/engine/common"
+	logging "github.com/MetalBlockchain/metalgo/utils/logging"
 	gomock "github.com/golang/mock/gomock"
 )
 

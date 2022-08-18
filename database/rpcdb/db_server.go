@@ -9,9 +9,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/MetalBlockchain/avalanchego/database"
+	"github.com/MetalBlockchain/metalgo/database"
 
-	rpcdbpb "github.com/MetalBlockchain/avalanchego/proto/pb/rpcdb"
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 var errUnknownIterator = errors.New("unknown iterator")

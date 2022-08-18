@@ -4,8 +4,8 @@
 package platformvm
 
 import (
-	"github.com/MetalBlockchain/avalanchego/snow"
-	"github.com/MetalBlockchain/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 // Fx is the interface a feature extension must implement to support the

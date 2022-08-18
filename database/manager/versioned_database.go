@@ -6,8 +6,8 @@ package manager
 import (
 	"sort"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 type VersionedDatabase struct {

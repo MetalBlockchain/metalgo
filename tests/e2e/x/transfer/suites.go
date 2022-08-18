@@ -11,17 +11,17 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	"github.com/MetalBlockchain/avalanchego/genesis"
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/snow/choices"
-	"github.com/MetalBlockchain/avalanchego/tests"
-	"github.com/MetalBlockchain/avalanchego/tests/e2e"
-	"github.com/MetalBlockchain/avalanchego/utils/crypto"
-	"github.com/MetalBlockchain/avalanchego/vms/avm"
-	"github.com/MetalBlockchain/avalanchego/vms/components/avax"
-	"github.com/MetalBlockchain/avalanchego/vms/secp256k1fx"
-	"github.com/MetalBlockchain/avalanchego/wallet/subnet/primary"
-	"github.com/MetalBlockchain/avalanchego/wallet/subnet/primary/common"
+	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/tests"
+	"github.com/MetalBlockchain/metalgo/tests/e2e"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/vms/avm"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 var keyFactory crypto.FactorySECP256K1R

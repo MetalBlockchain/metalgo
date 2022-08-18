@@ -9,8 +9,8 @@ package rocksdb
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/database"
-	"github.com/MetalBlockchain/avalanchego/utils/logging"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 func TestInterface(t *testing.T) {

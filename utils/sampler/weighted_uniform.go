@@ -7,7 +7,7 @@ import (
 	"errors"
 	"math"
 
-	safemath "github.com/MetalBlockchain/avalanchego/utils/math"
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var (

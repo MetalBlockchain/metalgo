@@ -7,8 +7,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 var errBadSubnetID = errors.New("subnet ID can't be primary network ID")

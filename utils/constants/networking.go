@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 )
 
 // Const variables to be exported

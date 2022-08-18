@@ -6,7 +6,7 @@ package uptime
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 type State interface {

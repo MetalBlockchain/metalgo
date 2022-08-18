@@ -6,8 +6,8 @@ package message
 import (
 	"time"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
-	"github.com/MetalBlockchain/avalanchego/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
 var _ InboundMsgBuilder = &inMsgBuilder{}

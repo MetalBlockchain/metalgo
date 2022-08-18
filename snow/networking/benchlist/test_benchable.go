@@ -6,7 +6,7 @@ package benchlist
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 type TestBenchable struct {

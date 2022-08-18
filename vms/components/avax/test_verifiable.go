@@ -3,7 +3,7 @@
 
 package avax
 
-import "github.com/MetalBlockchain/avalanchego/snow"
+import "github.com/MetalBlockchain/metalgo/snow"
 
 type TestVerifiable struct{ Err error }
 
