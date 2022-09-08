@@ -9,11 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
 func buildApricotBlock(

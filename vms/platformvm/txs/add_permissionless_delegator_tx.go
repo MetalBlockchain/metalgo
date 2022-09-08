@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
-	"github.com/ava-labs/avalanchego/vms/platformvm/validator"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validator"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var _ DelegatorTx = &AddPermissionlessDelegatorTx{}

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 )
 
 // [timestamp] is min(max(now, parent timestamp), next staker change time)

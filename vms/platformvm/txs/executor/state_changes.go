@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 var (

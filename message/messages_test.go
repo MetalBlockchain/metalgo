@@ -18,12 +18,12 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/compression"
-	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/compression"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 
-	p2ppb "github.com/ava-labs/avalanchego/proto/pb/p2p"
+	p2ppb "github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 )
 
 // Ensures the message size with proto not blow up compared to packer.

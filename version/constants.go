@@ -70,8 +70,8 @@ var (
 	ApricotPhase5DefaultTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC)
 
 	ApricotPhase6Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC),
-		constants.FujiID:    time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Date(2022, time.September, 8, 20, 0, 0, 0, time.UTC),
+		constants.TahoeID:    time.Date(2022, time.September, 8, 20, 0, 0, 0, time.UTC),
 	}
 	ApricotPhase6DefaultTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC)
 

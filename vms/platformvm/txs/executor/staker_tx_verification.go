@@ -10,13 +10,13 @@ import (
 
 	stdmath "math"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
 var (

@@ -6,10 +6,10 @@ package txs
 import (
 	"errors"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 var (

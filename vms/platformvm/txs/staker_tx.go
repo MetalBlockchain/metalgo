@@ -6,9 +6,9 @@ package txs
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 )
 
 // ValidatorTx defines the interface for a validator transaction that supports

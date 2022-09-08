@@ -12,18 +12,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	"github.com/ava-labs/avalanchego/vms/platformvm/state"
-	"github.com/ava-labs/avalanchego/vms/platformvm/status"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	txexecutor "github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
+	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
 func TestApricotStandardBlockTimeVerification(t *testing.T) {
@@ -577,7 +577,7 @@ func TestBlueberryStandardBlockUpdateStakers(t *testing.T) {
 	}
 }
 
-// Regression test for https://github.com/ava-labs/avalanchego/pull/584
+// Regression test for https://github.com/MetalBlockchain/metalgo/pull/584
 // that ensures it fixes a bug where subnet validators are not removed
 // when timestamp is advanced and there is a pending staker whose start time
 // is after the new timestamp
