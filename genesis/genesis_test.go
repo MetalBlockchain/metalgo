@@ -341,15 +341,15 @@ func TestGenesis(t *testing.T) {
 	}{
 		{
 			networkID:  constants.MainnetID,
-			expectedID: "UUvXi6j7QhVvgpbKM89MP5HdrxKm9CaJeHc187TsDNf8nZdLk",
+			expectedID: "2QWBywoaRDBk7Z1YmnGm4W2Mid5CUqBHGWdiHg45uRTJTQ8TDD",
 		},
 		{
-			networkID:  constants.FujiID,
-			expectedID: "MSj6o9TpezwsQx4Tv7SHqpVvCbJ8of1ikjsqPZ1bKRjc9zBy3",
+			networkID:  constants.TahoeID,
+			expectedID: "3pKmdq85ygWiRPvj6jjJhzrLrhygjdvefrP7awMUxcEGUH29s",
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "hBbtNFKLpjuKti32L5bnfZ2vspABkN268t8FincYhQWnWLHxw",
+			expectedID: "deQGVULPLfdDLxv7vun35xuPFUZNF6Cz4GSnngGKdGfqxPfEm",
 		},
 	}
 	for _, test := range tests {
