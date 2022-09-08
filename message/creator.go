@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 var _ Creator = &creator{}

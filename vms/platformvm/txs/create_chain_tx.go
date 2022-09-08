@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -12,7 +12,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 const (
@@ -21,8 +20,7 @@ const (
 )
 
 var (
-	_ UnsignedTx             = &CreateChainTx{}
-	_ secp256k1fx.UnsignedTx = &CreateChainTx{}
+	_ UnsignedTx = &CreateChainTx{}
 
 	ErrCantValidatePrimaryNetwork = errors.New("new blockchain can't be validated by primary network")
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package manager
@@ -18,7 +18,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/meterdb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/database/rocksdb"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
@@ -72,29 +71,6 @@ type manager struct {
 	// descending order
 	// invariant: len(databases) > 0
 	databases []*VersionedDatabase
-}
-
-// NewRocksDB creates a database manager of rocksDBs at [filePath] by creating a
-// database instance from each directory with a version <= [currentVersion]. If
-// [includePreviousVersions], opens previous database versions and includes them
-// in the returned Manager.
-func NewRocksDB(
-	dbDirPath string,
-	dbConfig []byte,
-	log logging.Logger,
-	currentVersion *version.Semantic,
-	namespace string,
-	reg prometheus.Registerer,
-) (Manager, error) {
-	return new(
-		rocksdb.New,
-		dbDirPath,
-		dbConfig,
-		log,
-		currentVersion,
-		namespace,
-		reg,
-	)
 }
 
 // NewLevelDB creates a database manager of levelDBs at [filePath] by creating a

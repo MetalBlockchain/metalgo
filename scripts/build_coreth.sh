@@ -33,4 +33,4 @@ go build -ldflags "-X github.com/MetalBlockchain/coreth/plugin/evm.Version=$core
 cd "$AVALANCHE_PATH"
 
 # Building coreth + using go get can mess with the go.mod file.
-go mod tidy -compat=1.17
+go mod tidy -compat=1.18

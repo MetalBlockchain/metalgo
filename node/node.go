@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2022, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -7,6 +7,7 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -37,7 +38,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/manager"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/database/rocksdb"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/indexer"
@@ -63,6 +63,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
 	"github.com/MetalBlockchain/metalgo/utils/timer"
@@ -135,6 +136,10 @@ type Node struct {
 	// Net runs the networking stack
 	networkNamespace string
 	Net              network.Network
+
+	// tlsKeyLogWriterCloser is a debug file handle that writes all the TLS
+	// session keys. This value should only be non-nil during debugging.
+	tlsKeyLogWriterCloser io.WriteCloser
 
 	// this node's initial connections to the network
 	beacons validators.Set
@@ -220,7 +225,17 @@ func (n *Node) initNetworking(primaryNetVdrs validators.Set) error {
 		return errInvalidTLSKey
 	}
 
-	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert)
+	if n.Config.NetworkConfig.TLSKeyLogFile != "" {
+		n.tlsKeyLogWriterCloser, err = perms.Create(n.Config.NetworkConfig.TLSKeyLogFile, perms.ReadWrite)
+		if err != nil {
+			return err
+		}
+		n.Log.Warn("TLS key logging is enabled",
+			zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
+		)
+	}
+
+	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert, n.tlsKeyLogWriterCloser)
 
 	// Configure benchlist
 	n.Config.BenchlistConfig.Validators = n.vdrs
@@ -252,11 +267,10 @@ func (n *Node) initNetworking(primaryNetVdrs validators.Set) error {
 		timer := timer.NewTimer(func() {
 			// If the timeout fires and we're already shutting down, nothing to do.
 			if !n.shuttingDown.GetValue() {
-				n.Log.Debug("failed to connect to bootstrap nodes in time",
+				n.Log.Warn("failed to connect to bootstrap nodes",
 					zap.Stringer("beacons", n.beacons),
+					zap.Duration("duration", n.Config.BootstrapBeaconConnectionTimeout),
 				)
-				n.Log.Fatal("failed to connect to bootstrap nodes. Node shutting down...")
-				go n.Shutdown(1)
 			}
 		})
 
@@ -406,6 +420,16 @@ func (n *Node) Dispatch() error {
 	// If node is already shutting down, this does nothing.
 	n.Shutdown(1)
 
+	if n.tlsKeyLogWriterCloser != nil {
+		err := n.tlsKeyLogWriterCloser.Close()
+		if err != nil {
+			n.Log.Error("closing TLS key log file failed",
+				zap.String("filename", n.Config.NetworkConfig.TLSKeyLogFile),
+				zap.Error(err),
+			)
+		}
+	}
+
 	// Wait until the node is done shutting down before returning
 	n.DoneShuttingDown.Wait()
 	return err
@@ -424,19 +448,15 @@ func (n *Node) initDatabase() error {
 		err       error
 	)
 	switch n.Config.DatabaseConfig.Name {
-	case rocksdb.Name:
-		path := filepath.Join(n.Config.DatabaseConfig.Path, rocksdb.Name)
-		dbManager, err = manager.NewRocksDB(path, n.Config.DatabaseConfig.Config, n.Log, version.CurrentDatabase, "db_internal", n.MetricsRegisterer)
 	case leveldb.Name:
 		dbManager, err = manager.NewLevelDB(n.Config.DatabaseConfig.Path, n.Config.DatabaseConfig.Config, n.Log, version.CurrentDatabase, "db_internal", n.MetricsRegisterer)
 	case memdb.Name:
 		dbManager = manager.NewMemDB(version.CurrentDatabase)
 	default:
 		err = fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s, %s}",
+			"db-type was %q but should have been one of {%s, %s}",
 			n.Config.DatabaseConfig.Name,
 			leveldb.Name,
-			rocksdb.Name,
 			memdb.Name,
 		)
 	}
@@ -553,7 +573,7 @@ func (n *Node) initChains(genesisBytes []byte) {
 		ID:            constants.PlatformChainID,
 		SubnetID:      constants.PrimaryNetworkID,
 		GenesisData:   genesisBytes, // Specifies other chains to create
-		VMAlias:       constants.PlatformVMID.String(),
+		VMID:          constants.PlatformVMID,
 		CustomBeacons: n.beacons,
 	})
 }
@@ -713,6 +733,7 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 		BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
 		ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
 		ApricotPhase4MinPChainHeight:            version.GetApricotPhase4MinPChainHeight(n.Config.NetworkID),
+		BlueberryTime:                           version.GetBlueberryTime(n.Config.NetworkID),
 		ResourceTracker:                         n.resourceTracker,
 		StateSyncBeacons:                        n.Config.StateSyncIDs,
 	})
@@ -746,27 +767,32 @@ func (n *Node) initVMs() error {
 	errs.Add(
 		vmRegisterer.Register(constants.PlatformVMID, &platformvm.Factory{
 			Config: config.Config{
-				Chains:                 n.chainManager,
-				Validators:             vdrs,
-				SubnetTracker:          n.Net,
-				UptimeLockedCalculator: n.uptimeCalculator,
-				StakingEnabled:         n.Config.EnableStaking,
-				WhitelistedSubnets:     n.Config.WhitelistedSubnets,
-				TxFee:                  n.Config.TxFee,
-				CreateAssetTxFee:       n.Config.CreateAssetTxFee,
-				CreateSubnetTxFee:      n.Config.CreateSubnetTxFee,
-				CreateBlockchainTxFee:  n.Config.CreateBlockchainTxFee,
-				UptimePercentage:       n.Config.UptimeRequirement,
-				MinValidatorStake:      n.Config.MinValidatorStake,
-				MaxValidatorStake:      n.Config.MaxValidatorStake,
-				MinDelegatorStake:      n.Config.MinDelegatorStake,
-				MinDelegationFee:       n.Config.MinDelegationFee,
-				MinStakeDuration:       n.Config.MinStakeDuration,
-				MaxStakeDuration:       n.Config.MaxStakeDuration,
-				RewardConfig:           n.Config.RewardConfig,
-				ApricotPhase3Time:      version.GetApricotPhase3Time(n.Config.NetworkID),
-				ApricotPhase5Time:      version.GetApricotPhase5Time(n.Config.NetworkID),
-				BlueberryTime:          version.GetBlueberryTime(n.Config.NetworkID),
+				Chains:                        n.chainManager,
+				Validators:                    vdrs,
+				SubnetTracker:                 n.Net,
+				UptimeLockedCalculator:        n.uptimeCalculator,
+				StakingEnabled:                n.Config.EnableStaking,
+				WhitelistedSubnets:            n.Config.WhitelistedSubnets,
+				TxFee:                         n.Config.TxFee,
+				CreateAssetTxFee:              n.Config.CreateAssetTxFee,
+				CreateSubnetTxFee:             n.Config.CreateSubnetTxFee,
+				TransformSubnetTxFee:          n.Config.TransformSubnetTxFee,
+				CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
+				AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
+				AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
+				AddSubnetValidatorFee:         n.Config.AddSubnetValidatorFee,
+				AddSubnetDelegatorFee:         n.Config.AddSubnetDelegatorFee,
+				UptimePercentage:              n.Config.UptimeRequirement,
+				MinValidatorStake:             n.Config.MinValidatorStake,
+				MaxValidatorStake:             n.Config.MaxValidatorStake,
+				MinDelegatorStake:             n.Config.MinDelegatorStake,
+				MinDelegationFee:              n.Config.MinDelegationFee,
+				MinStakeDuration:              n.Config.MinStakeDuration,
+				MaxStakeDuration:              n.Config.MaxStakeDuration,
+				RewardConfig:                  n.Config.RewardConfig,
+				ApricotPhase3Time:             version.GetApricotPhase3Time(n.Config.NetworkID),
+				ApricotPhase5Time:             version.GetApricotPhase5Time(n.Config.NetworkID),
+				BlueberryTime:                 version.GetBlueberryTime(n.Config.NetworkID),
 			},
 		}),
 		vmRegisterer.Register(constants.AVMID, &avm.Factory{
@@ -938,14 +964,19 @@ func (n *Node) initInfoAPI() error {
 	primaryValidators, _ := n.vdrs.GetValidators(constants.PrimaryNetworkID)
 	service, err := info.NewService(
 		info.Parameters{
-			Version:               version.CurrentApp,
-			NodeID:                n.ID,
-			NetworkID:             n.Config.NetworkID,
-			TxFee:                 n.Config.TxFee,
-			CreateAssetTxFee:      n.Config.CreateAssetTxFee,
-			CreateSubnetTxFee:     n.Config.CreateSubnetTxFee,
-			CreateBlockchainTxFee: n.Config.CreateBlockchainTxFee,
-			VMManager:             n.Config.VMManager,
+			Version:                       version.CurrentApp,
+			NodeID:                        n.ID,
+			NetworkID:                     n.Config.NetworkID,
+			TxFee:                         n.Config.TxFee,
+			CreateAssetTxFee:              n.Config.CreateAssetTxFee,
+			CreateSubnetTxFee:             n.Config.CreateSubnetTxFee,
+			TransformSubnetTxFee:          n.Config.TransformSubnetTxFee,
+			CreateBlockchainTxFee:         n.Config.CreateBlockchainTxFee,
+			AddPrimaryNetworkValidatorFee: n.Config.AddPrimaryNetworkValidatorFee,
+			AddPrimaryNetworkDelegatorFee: n.Config.AddPrimaryNetworkDelegatorFee,
+			AddSubnetValidatorFee:         n.Config.AddSubnetValidatorFee,
+			AddSubnetDelegatorFee:         n.Config.AddSubnetDelegatorFee,
+			VMManager:                     n.Config.VMManager,
 		},
 		n.Log,
 		n.chainManager,
