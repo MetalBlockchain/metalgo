@@ -9,7 +9,7 @@ module github.com/MetalBlockchain/metalgo
 go 1.18
 
 require (
-	github.com/MetalBlockchain/coreth v0.9.0-rc.3
+	github.com/MetalBlockchain/coreth v0.9.0-js-tracer.rc2
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/ava-labs/avalanche-network-runner-sdk v0.2.0
@@ -123,6 +123,7 @@ require (
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
+	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20210326210528-650f7c854440 // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
