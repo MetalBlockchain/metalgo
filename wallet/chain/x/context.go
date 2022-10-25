@@ -50,7 +50,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "AVAX")
+	asset, err := xChainClient.GetAssetDescription(ctx, "METAL")
 	if err != nil {
 		return nil, err
 	}
