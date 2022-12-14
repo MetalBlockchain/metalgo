@@ -53,7 +53,7 @@ require (
 	gonum.org/v1/gonum v0.11.0
 	google.golang.org/genproto v0.0.0-20220712132514-bdd2acd4974d
 	google.golang.org/grpc v1.49.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.28.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
