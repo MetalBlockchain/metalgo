@@ -8,10 +8,6 @@ OK=`cp ./build/metalgo $METAL_ROOT`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi
-OK=`cp -r ./build/plugins $METAL_ROOT`
-if [[ $OK -ne 0 ]]; then
-  exit $OK;
-fi
 
 
 echo "Build tgz package..."

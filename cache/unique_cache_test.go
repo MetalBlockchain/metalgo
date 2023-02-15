@@ -9,35 +9,35 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 )
 
-type evictable struct {
-	id      ids.ID
+type evictable[T comparable] struct {
+	id      T
 	evicted int
 }
 
-func (e *evictable) Key() interface{} {
+func (e *evictable[T]) Key() T {
 	return e.id
 }
 
-func (e *evictable) Evict() {
+func (e *evictable[_]) Evict() {
 	e.evicted++
 }
 
 func TestEvictableLRU(t *testing.T) {
-	cache := EvictableLRU{}
+	cache := EvictableLRU[ids.ID, *evictable[ids.ID]]{}
 
-	expectedValue1 := &evictable{id: ids.ID{1}}
-	if returnedValue := cache.Deduplicate(expectedValue1).(*evictable); returnedValue != expectedValue1 {
+	expectedValue1 := &evictable[ids.ID]{id: ids.ID{1}}
+	if returnedValue := cache.Deduplicate(expectedValue1).(*evictable[ids.ID]); returnedValue != expectedValue1 {
 		t.Fatalf("Returned unknown value")
 	} else if expectedValue1.evicted != 0 {
 		t.Fatalf("Value was evicted unexpectedly")
-	} else if returnedValue := cache.Deduplicate(expectedValue1).(*evictable); returnedValue != expectedValue1 {
+	} else if returnedValue := cache.Deduplicate(expectedValue1).(*evictable[ids.ID]); returnedValue != expectedValue1 {
 		t.Fatalf("Returned unknown value")
 	} else if expectedValue1.evicted != 0 {
 		t.Fatalf("Value was evicted unexpectedly")
 	}
 
-	expectedValue2 := &evictable{id: ids.ID{2}}
-	returnedValue := cache.Deduplicate(expectedValue2).(*evictable)
+	expectedValue2 := &evictable[ids.ID]{id: ids.ID{2}}
+	returnedValue := cache.Deduplicate(expectedValue2).(*evictable[ids.ID])
 	switch {
 	case returnedValue != expectedValue2:
 		t.Fatalf("Returned unknown value")
@@ -49,8 +49,8 @@ func TestEvictableLRU(t *testing.T) {
 
 	cache.Size = 2
 
-	expectedValue3 := &evictable{id: ids.ID{2}}
-	returnedValue = cache.Deduplicate(expectedValue3).(*evictable)
+	expectedValue3 := &evictable[ids.ID]{id: ids.ID{2}}
+	returnedValue = cache.Deduplicate(expectedValue3).(*evictable[ids.ID])
 	switch {
 	case returnedValue != expectedValue2:
 		t.Fatalf("Returned unknown value")

@@ -5,8 +5,11 @@ package blocks
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -33,6 +36,29 @@ type parser struct {
 
 func NewParser(fxs []fxs.Fx) (Parser, error) {
 	p, err := txs.NewParser(fxs)
+	if err != nil {
+		return nil, err
+	}
+	c := p.CodecRegistry()
+	gc := p.GenesisCodecRegistry()
+
+	errs := wrappers.Errs{}
+	errs.Add(
+		c.RegisterType(&StandardBlock{}),
+		gc.RegisterType(&StandardBlock{}),
+	)
+	return &parser{
+		Parser: p,
+	}, errs.Err
+}
+
+func NewCustomParser(
+	typeToFxIndex map[reflect.Type]int,
+	clock *mockable.Clock,
+	log logging.Logger,
+	fxs []fxs.Fx,
+) (Parser, error) {
+	p, err := txs.NewCustomParser(typeToFxIndex, clock, log, fxs)
 	if err != nil {
 		return nil, err
 	}
