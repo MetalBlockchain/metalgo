@@ -32,10 +32,10 @@ func TestGetCanonicalValidatorSet(t *testing.T) {
 			name: "can't get validator set",
 			stateF: func(ctrl *gomock.Controller) validators.State {
 				state := validators.NewMockState(ctrl)
-				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errMock)
+				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, errTest)
 				return state
 			},
-			expectedErr: errMock,
+			expectedErr: errTest,
 		},
 		{
 			name: "all validators have public keys; no duplicate pub keys",
@@ -244,10 +244,9 @@ func TestFilterValidators(t *testing.T) {
 
 			vdrs, err := FilterValidators(tt.indices, tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
-			if err != nil {
-				return
+			if err == nil {
+				require.Equal(tt.expectedVdrs, vdrs)
 			}
-			require.Equal(tt.expectedVdrs, vdrs)
 		})
 	}
 }
@@ -299,10 +298,9 @@ func TestSumWeight(t *testing.T) {
 
 			sum, err := SumWeight(tt.vdrs)
 			require.ErrorIs(err, tt.expectedErr)
-			if err != nil {
-				return
+			if err == nil {
+				require.Equal(tt.expectedSum, sum)
 			}
-			require.Equal(tt.expectedSum, sum)
 		})
 	}
 }

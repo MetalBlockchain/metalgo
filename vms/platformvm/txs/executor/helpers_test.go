@@ -76,6 +76,7 @@ var (
 	testKeyfactory crypto.FactorySECP256K1R
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
+	errMissing                  = errors.New("missing")
 )
 
 type mutableSharedMemory struct {
@@ -270,7 +271,7 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 				cChainID:                  constants.PrimaryNetworkID,
 			}[chainID]
 			if !ok {
-				return ids.Empty, errors.New("missing")
+				return ids.Empty, errMissing
 			}
 			return subnetID, nil
 		},
@@ -440,7 +441,7 @@ func shutdownEnvironment(env *environment) error {
 			return err
 		}
 
-		for subnetID := range env.config.WhitelistedSubnets {
+		for subnetID := range env.config.TrackedSubnets {
 			vdrs, exist := env.config.Validators.Get(subnetID)
 			if !exist {
 				return nil

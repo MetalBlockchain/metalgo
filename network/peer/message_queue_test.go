@@ -9,11 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-
-	p2ppb "github.com/MetalBlockchain/metalgo/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 func TestMessageQueue(t *testing.T) {
@@ -37,7 +36,7 @@ func TestMessageQueue(t *testing.T) {
 		testID := ids.GenerateTestID()
 		testID2 := ids.GenerateTestID()
 		m, err := mc.Pong(uint32(i),
-			[]*p2ppb.SubnetUptime{
+			[]*p2p.SubnetUptime{
 				{SubnetId: testID[:], Uptime: uint32(i)},
 				{SubnetId: testID2[:], Uptime: uint32(i)},
 			})

@@ -15,24 +15,27 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/api/metrics"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
-	"github.com/MetalBlockchain/metalgo/snow/networking/handler"
-	"github.com/MetalBlockchain/metalgo/snow/networking/timeout"
-	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math/meter"
-	"github.com/MetalBlockchain/metalgo/utils/resource"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
-	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/ava-labs/avalanchego/api/metrics"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/networking/handler"
+	"github.com/ava-labs/avalanchego/snow/networking/timeout"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math/meter"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/version"
 )
+
+const engineType = p2p.EngineType_ENGINE_TYPE_AVALANCHE
 
 func TestShutdown(t *testing.T) {
 	vdrs := validators.NewSet()
@@ -61,6 +64,7 @@ func TestShutdown(t *testing.T) {
 		tm,
 		time.Second,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -85,6 +89,7 @@ func TestShutdown(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -184,6 +189,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -206,6 +212,7 @@ func TestShutdownTimesOut(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -261,7 +268,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	go func() {
 		chainID := ids.ID{}
-		msg := message.InboundPullQuery(chainID, 1, time.Hour, ids.GenerateTestID(), nodeID)
+		msg := message.InboundPullQuery(chainID, 1, time.Hour, ids.GenerateTestID(), nodeID, engineType)
 		handler.Push(context.Background(), msg)
 
 		time.Sleep(50 * time.Millisecond) // Pause to ensure message gets processed
@@ -279,7 +286,7 @@ func TestShutdownTimesOut(t *testing.T) {
 
 // Ensure that a timeout fires if we don't get a response to a request
 func TestRouterTimeout(t *testing.T) {
-	r := require.New(t)
+	require := require.New(t)
 	// Create a timeout manager
 	maxTimeout := 25 * time.Millisecond
 	tm, err := timeout.NewManager(
@@ -294,7 +301,7 @@ func TestRouterTimeout(t *testing.T) {
 		"",
 		prometheus.NewRegistry(),
 	)
-	r.NoError(err)
+	require.NoError(err)
 	go tm.Dispatch()
 
 	// Create a router
@@ -306,13 +313,14 @@ func TestRouterTimeout(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
 		"",
 		prometheus.NewRegistry(),
 	)
-	r.NoError(err)
+	require.NoError(err)
 
 	// Create bootstrapper, engine and handler
 	var (
@@ -329,7 +337,7 @@ func TestRouterTimeout(t *testing.T) {
 	ctx := snow.DefaultConsensusContextTest()
 	vdrs := validators.NewSet()
 	err = vdrs.Add(ids.GenerateTestNodeID(), nil, ids.Empty, 1)
-	r.NoError(err)
+	require.NoError(err)
 
 	resourceTracker, err := tracker.NewResourceTracker(
 		prometheus.NewRegistry(),
@@ -337,7 +345,7 @@ func TestRouterTimeout(t *testing.T) {
 		meter.ContinuousFactory{},
 		time.Second,
 	)
-	r.NoError(err)
+	require.NoError(err)
 
 	handler, err := handler.New(
 		ctx,
@@ -345,10 +353,11 @@ func TestRouterTimeout(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
-	r.NoError(err)
+	require.NoError(err)
 
 	bootstrapper := &common.BootstrapperTest{
 		BootstrapableTest: common.BootstrapableTest{
@@ -474,6 +483,7 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 	}
@@ -492,6 +502,7 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 	}
@@ -510,6 +521,7 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 	}
@@ -528,6 +540,7 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 	}
@@ -546,6 +559,7 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 	}
@@ -592,15 +606,15 @@ func TestRouterTimeout(t *testing.T) {
 	chainRouter.lock.Lock()
 	defer chainRouter.lock.Unlock()
 
-	r.True(calledGetStateSummaryFrontierFailed)
-	r.True(calledGetAcceptedStateSummaryFailed)
-	r.True(calledGetAcceptedFrontierFailed)
-	r.True(calledGetAcceptedFailed)
-	r.True(calledGetAncestorsFailed)
-	r.True(calledGetFailed)
-	r.True(calledQueryFailed)
-	r.True(calledAppRequestFailed)
-	r.True(calledCrossChainAppRequestFailed)
+	require.True(calledGetStateSummaryFrontierFailed)
+	require.True(calledGetAcceptedStateSummaryFailed)
+	require.True(calledGetAcceptedFrontierFailed)
+	require.True(calledGetAcceptedFailed)
+	require.True(calledGetAncestorsFailed)
+	require.True(calledGetFailed)
+	require.True(calledQueryFailed)
+	require.True(calledAppRequestFailed)
+	require.True(calledCrossChainAppRequestFailed)
 }
 
 func TestRouterClearTimeouts(t *testing.T) {
@@ -628,6 +642,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -655,6 +670,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -751,6 +767,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 		msg := message.InboundAcceptedFrontier(
@@ -758,6 +775,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 			requestID,
 			nil,
 			nodeID,
+			engineType,
 		)
 		chainRouter.HandleInbound(context.Background(), msg)
 	}
@@ -775,6 +793,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 		msg := message.InboundAccepted(
@@ -782,6 +801,7 @@ func TestRouterClearTimeouts(t *testing.T) {
 			requestID,
 			nil,
 			nodeID,
+			engineType,
 		)
 		chainRouter.HandleInbound(context.Background(), msg)
 	}
@@ -799,13 +819,16 @@ func TestRouterClearTimeouts(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
+				engineType,
 			),
 		)
 		msg := message.InboundChits(
 			ctx.ChainID,
 			requestID,
 			nil,
+			nil,
 			nodeID,
+			engineType,
 		)
 		chainRouter.HandleInbound(context.Background(), msg)
 	}
@@ -889,6 +912,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -920,6 +944,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -967,8 +992,13 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	nID := ids.GenerateTestNodeID()
 
 	calledF = false
-	inMsg = message.InboundPullQuery(ctx.ChainID, reqID, time.Hour, dummyContainerID,
+	inMsg = message.InboundPullQuery(
+		ctx.ChainID,
+		reqID,
+		time.Hour,
+		dummyContainerID,
 		nID,
+		engineType,
 	)
 	chainRouter.HandleInbound(context.Background(), inMsg)
 
@@ -977,8 +1007,13 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	// Validator case
 	calledF = false
 	reqID++
-	inMsg = message.InboundPullQuery(ctx.ChainID, reqID, time.Hour, dummyContainerID,
+	inMsg = message.InboundPullQuery(
+		ctx.ChainID,
+		reqID,
+		time.Hour,
+		dummyContainerID,
 		vID,
+		engineType,
 	)
 	wg.Add(1)
 	chainRouter.HandleInbound(context.Background(), inMsg)
@@ -995,7 +1030,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		ctx.ChainID,
 		reqID,
 		message.ChitsOp,
-		message.InternalQueryFailed(vID, ctx.ChainID, reqID),
+		message.InternalQueryFailed(vID, ctx.ChainID, reqID, engineType),
 	)
 	require.Equal(t, 1, chainRouter.timedRequests.Len())
 
@@ -1003,7 +1038,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	err = vdrs.RemoveWeight(vID, 1)
 	require.NoError(t, err)
 
-	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nID)
+	inMsg = message.InboundChits(ctx.ChainID, reqID, nil, nil, nID, engineType)
 	chainRouter.HandleInbound(context.Background(), inMsg)
 
 	// shouldn't clear out timed request, as the request should be cleared when
@@ -1036,6 +1071,7 @@ func TestRouterCrossChainMessages(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
+		true,
 		set.Set[ids.ID]{},
 		nil,
 		HealthConfig{},
@@ -1069,6 +1105,7 @@ func TestRouterCrossChainMessages(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -1086,6 +1123,7 @@ func TestRouterCrossChainMessages(t *testing.T) {
 		nil,
 		nil,
 		time.Second,
+		engineType,
 		resourceTracker,
 		validators.UnhandledSubnetConnector,
 	)
@@ -1168,8 +1206,8 @@ func TestConnectedSubnet(t *testing.T) {
 	peerNodeID := ids.GenerateTestNodeID()
 	subnetID0 := ids.GenerateTestID()
 	subnetID1 := ids.GenerateTestID()
-	whitelistedSubnets := set.Set[ids.ID]{}
-	whitelistedSubnets.Add(subnetID0, subnetID1)
+	trackedSubnets := set.Set[ids.ID]{}
+	trackedSubnets.Add(subnetID0, subnetID1)
 	chainRouter := ChainRouter{}
 	err = chainRouter.Initialize(
 		myNodeID,
@@ -1177,7 +1215,8 @@ func TestConnectedSubnet(t *testing.T) {
 		tm,
 		time.Millisecond,
 		set.Set[ids.ID]{},
-		whitelistedSubnets,
+		true,
+		trackedSubnets,
 		nil,
 		HealthConfig{},
 		"",

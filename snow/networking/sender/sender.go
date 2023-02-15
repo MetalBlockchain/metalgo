@@ -11,15 +11,16 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/networking/router"
-	"github.com/MetalBlockchain/metalgo/snow/networking/timeout"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/timeout"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var _ common.Sender = (*sender)(nil)
@@ -54,6 +55,7 @@ type sender struct {
 	// Request message type --> Counts how many of that request
 	// have failed because the node was benched
 	failedDueToBench map[message.Op]prometheus.Counter
+	engineType       p2p.EngineType
 }
 
 func New(
@@ -63,6 +65,7 @@ func New(
 	router router.Router,
 	timeouts timeout.Manager,
 	gossipConfig GossipConfig,
+	engineType p2p.EngineType,
 ) (common.Sender, error) {
 	s := &sender{
 		ctx:              ctx,
@@ -72,6 +75,7 @@ func New(
 		timeouts:         timeouts,
 		gossipConfig:     gossipConfig,
 		failedDueToBench: make(map[message.Op]prometheus.Counter, len(message.ConsensusRequestOps)),
+		engineType:       engineType,
 	}
 
 	for _, op := range message.ConsensusRequestOps {
@@ -335,7 +339,7 @@ func (s *sender) SendAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID
 			zap.Stringer("messageOp", message.AcceptedStateSummaryOp),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("summaryIDs", ids.SliceStringer(summaryIDs)),
+			zap.Stringers("summaryIDs", summaryIDs),
 			zap.Error(err),
 		)
 		return
@@ -356,7 +360,7 @@ func (s *sender) SendAcceptedStateSummary(ctx context.Context, nodeID ids.NodeID
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("summaryIDs", ids.SliceStringer(summaryIDs)),
+			zap.Stringers("summaryIDs", summaryIDs),
 		)
 	}
 }
@@ -378,6 +382,7 @@ func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[id
 			nodeID,
 			s.ctx.ChainID,
 			requestID,
+			s.engineType,
 		)
 		s.router.RegisterRequest(
 			ctx,
@@ -399,6 +404,7 @@ func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[id
 			requestID,
 			deadline,
 			s.ctx.NodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 	}
@@ -408,6 +414,7 @@ func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[id
 		s.ctx.ChainID,
 		requestID,
 		deadline,
+		s.engineType,
 	)
 
 	// Send the message over the network.
@@ -451,6 +458,7 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 			requestID,
 			containerIDs,
 			nodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 		return
@@ -461,13 +469,14 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 		s.ctx.ChainID,
 		requestID,
 		containerIDs,
+		s.engineType,
 	)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.AcceptedFrontierOp),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+			zap.Stringers("containerIDs", containerIDs),
 			zap.Error(err),
 		)
 		return
@@ -488,7 +497,7 @@ func (s *sender) SendAcceptedFrontier(ctx context.Context, nodeID ids.NodeID, re
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+			zap.Stringers("containerIDs", containerIDs),
 		)
 	}
 }
@@ -510,6 +519,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 			nodeID,
 			s.ctx.ChainID,
 			requestID,
+			s.engineType,
 		)
 		s.router.RegisterRequest(
 			ctx,
@@ -532,6 +542,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 			deadline,
 			containerIDs,
 			s.ctx.NodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 	}
@@ -542,6 +553,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 		requestID,
 		deadline,
 		containerIDs,
+		s.engineType,
 	)
 
 	// Send the message over the network.
@@ -558,7 +570,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 			zap.Stringer("messageOp", message.GetAcceptedOp),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+			zap.Stringers("containerIDs", containerIDs),
 			zap.Error(err),
 		)
 	}
@@ -570,7 +582,7 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 				zap.Stringer("nodeID", nodeID),
 				zap.Stringer("chainID", s.ctx.ChainID),
 				zap.Uint32("requestID", requestID),
-				zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+				zap.Stringers("containerIDs", containerIDs),
 			)
 		}
 	}
@@ -585,19 +597,20 @@ func (s *sender) SendAccepted(ctx context.Context, nodeID ids.NodeID, requestID 
 			requestID,
 			containerIDs,
 			nodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 		return
 	}
 
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Accepted(s.ctx.ChainID, requestID, containerIDs)
+	outMsg, err := s.msgCreator.Accepted(s.ctx.ChainID, requestID, containerIDs, s.engineType)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.AcceptedOp),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+			zap.Stringers("containerIDs", containerIDs),
 			zap.Error(err),
 		)
 		return
@@ -618,7 +631,7 @@ func (s *sender) SendAccepted(ctx context.Context, nodeID ids.NodeID, requestID 
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(containerIDs)),
+			zap.Stringers("containerIDs", containerIDs),
 		)
 	}
 }
@@ -632,6 +645,7 @@ func (s *sender) SendGetAncestors(ctx context.Context, nodeID ids.NodeID, reques
 		nodeID,
 		s.ctx.ChainID,
 		requestID,
+		s.engineType,
 	)
 	s.router.RegisterRequest(
 		ctx,
@@ -667,6 +681,7 @@ func (s *sender) SendGetAncestors(ctx context.Context, nodeID ids.NodeID, reques
 		requestID,
 		deadline,
 		containerID,
+		s.engineType,
 	)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
@@ -709,7 +724,7 @@ func (s *sender) SendGetAncestors(ctx context.Context, nodeID ids.NodeID, reques
 // The Ancestors message gives the recipient the contents of several containers.
 func (s *sender) SendAncestors(_ context.Context, nodeID ids.NodeID, requestID uint32, containers [][]byte) {
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Ancestors(s.ctx.ChainID, requestID, containers)
+	outMsg, err := s.msgCreator.Ancestors(s.ctx.ChainID, requestID, containers, s.engineType)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.AncestorsOp),
@@ -754,6 +769,7 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 		nodeID,
 		s.ctx.ChainID,
 		requestID,
+		s.engineType,
 	)
 	s.router.RegisterRequest(
 		ctx,
@@ -789,6 +805,7 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 		requestID,
 		deadline,
 		containerID,
+		s.engineType,
 	)
 
 	// Send the message over the network.
@@ -833,7 +850,7 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 // recipient the contents of the specified container.
 func (s *sender) SendPut(_ context.Context, nodeID ids.NodeID, requestID uint32, container []byte) {
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Put(s.ctx.ChainID, requestID, container)
+	outMsg, err := s.msgCreator.Put(s.ctx.ChainID, requestID, container, s.engineType)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.PutOp),
@@ -889,6 +906,7 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 			nodeID,
 			s.ctx.ChainID,
 			requestID,
+			s.engineType,
 		)
 		s.router.RegisterRequest(
 			ctx,
@@ -915,6 +933,7 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 			deadline,
 			container,
 			s.ctx.NodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 	}
@@ -934,6 +953,7 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
+				s.engineType,
 			)
 			go s.router.HandleInbound(ctx, inMsg)
 		}
@@ -945,6 +965,7 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 		requestID,
 		deadline,
 		container,
+		s.engineType,
 	)
 
 	// Send the message over the network.
@@ -989,6 +1010,7 @@ func (s *sender) SendPushQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
+				s.engineType,
 			)
 			go s.router.HandleInbound(ctx, inMsg)
 		}
@@ -1012,6 +1034,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 			nodeID,
 			s.ctx.ChainID,
 			requestID,
+			s.engineType,
 		)
 		s.router.RegisterRequest(
 			ctx,
@@ -1038,6 +1061,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 			deadline,
 			containerID,
 			s.ctx.NodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 	}
@@ -1056,6 +1080,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
+				s.engineType,
 			)
 			go s.router.HandleInbound(ctx, inMsg)
 		}
@@ -1067,6 +1092,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 		requestID,
 		deadline,
 		containerID,
+		s.engineType,
 	)
 
 	// Send the message over the network.
@@ -1105,6 +1131,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 				nodeID,
 				s.ctx.ChainID,
 				requestID,
+				s.engineType,
 			)
 			go s.router.HandleInbound(ctx, inMsg)
 		}
@@ -1112,7 +1139,7 @@ func (s *sender) SendPullQuery(ctx context.Context, nodeIDs set.Set[ids.NodeID],
 }
 
 // SendChits sends chits
-func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes []ids.ID) {
+func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uint32, votes, accepted []ids.ID) {
 	ctx = utils.Detach(ctx)
 
 	// If [nodeID] is myself, send this message directly
@@ -1122,20 +1149,22 @@ func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uin
 			s.ctx.ChainID,
 			requestID,
 			votes,
+			accepted,
 			nodeID,
+			s.engineType,
 		)
 		go s.router.HandleInbound(ctx, inMsg)
 		return
 	}
 
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes)
+	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, votes, accepted, s.engineType)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.ChitsOp),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(votes)),
+			zap.Stringers("containerIDs", votes),
 			zap.Error(err),
 		)
 		return
@@ -1156,7 +1185,7 @@ func (s *sender) SendChits(ctx context.Context, nodeID ids.NodeID, requestID uin
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("chainID", s.ctx.ChainID),
 			zap.Uint32("requestID", requestID),
-			zap.Stringer("containerIDs", ids.SliceStringer(votes)),
+			zap.Stringers("containerIDs", votes),
 		)
 	}
 }
@@ -1477,6 +1506,7 @@ func (s *sender) SendGossip(_ context.Context, container []byte) {
 		s.ctx.ChainID,
 		constants.GossipMsgRequestID,
 		container,
+		s.engineType,
 	)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
@@ -1521,6 +1551,7 @@ func (s *sender) Accept(ctx *snow.ConsensusContext, _ ids.ID, container []byte) 
 		s.ctx.ChainID,
 		constants.GossipMsgRequestID,
 		container,
+		s.engineType,
 	)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",

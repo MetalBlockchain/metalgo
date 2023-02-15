@@ -110,22 +110,16 @@ type Chain interface {
 	AddTx(tx *txs.Tx, status status.Status)
 }
 
-type LastAccepteder interface {
-	GetLastAccepted() ids.ID
-	SetLastAccepted(blkID ids.ID)
-}
-
-type BlockState interface {
-	GetStatelessBlock(blockID ids.ID) (blocks.Block, choices.Status, error)
-	AddStatelessBlock(block blocks.Block, status choices.Status)
-}
-
 type State interface {
-	LastAccepteder
 	Chain
-	BlockState
 	uptime.State
 	avax.UTXOReader
+
+	GetLastAccepted() ids.ID
+	SetLastAccepted(blkID ids.ID)
+
+	GetStatelessBlock(blockID ids.ID) (blocks.Block, choices.Status, error)
+	AddStatelessBlock(block blocks.Block, status choices.Status)
 
 	// ValidatorSet adds all the validators and delegators of [subnetID] into
 	// [vdrs].
@@ -1357,7 +1351,7 @@ func (s *state) initValidatorSets() error {
 	s.metrics.SetLocalStake(primaryValidators.GetWeight(s.ctx.NodeID))
 	s.metrics.SetTotalStake(primaryValidators.Weight())
 
-	for subnetID := range s.cfg.WhitelistedSubnets {
+	for subnetID := range s.cfg.TrackedSubnets {
 		subnetValidators := validators.NewSet()
 		err := s.ValidatorSet(subnetID, subnetValidators)
 		if err != nil {
@@ -1681,8 +1675,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 				continue
 			}
 
-			// We only track the current validator set of whitelisted subnets.
-			if subnetID != constants.PrimaryNetworkID && !s.cfg.WhitelistedSubnets.Contains(subnetID) {
+			// We only track the current validator set of tracked subnets.
+			if subnetID != constants.PrimaryNetworkID && !s.cfg.TrackedSubnets.Contains(subnetID) {
 				continue
 			}
 

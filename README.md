@@ -22,7 +22,9 @@ If you plan to build MetalGo from source, you will also need the following softw
 - [gcc](https://gcc.gnu.org/)
 - g++
 
-### Native Install
+### Building From Source
+
+#### Clone The Repository
 
 Clone the MetalGo repository:
 
@@ -31,7 +33,7 @@ git clone git@github.com:MetalBlockchain/metalgo.git
 cd metalgo
 ```
 
-This will clone and checkout to `master` branch.
+This will clone and checkout the `master` branch.
 
 #### Building the Metal Executable
 

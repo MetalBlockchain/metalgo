@@ -10,11 +10,8 @@ mkdir -p $DEBIAN_CONF
 mkdir -p $METAL_BUILD_BIN_DIR
 mkdir -p $METAL_LIB_DIR
 
+# Assume binaries are at default locations
 OK=`cp ./build/metalgo $METAL_BUILD_BIN_DIR`
-if [[ $OK -ne 0 ]]; then
-  exit $OK;
-fi
-OK=`cp -r ./build/plugins $METAL_LIB_DIR`
 if [[ $OK -ne 0 ]]; then
   exit $OK;
 fi

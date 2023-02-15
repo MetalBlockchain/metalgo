@@ -21,25 +21,24 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/MetalBlockchain/metalgo/api/health"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/network/dialer"
-	"github.com/MetalBlockchain/metalgo/network/peer"
-	"github.com/MetalBlockchain/metalgo/network/throttling"
-	"github.com/MetalBlockchain/metalgo/snow/networking/router"
-	"github.com/MetalBlockchain/metalgo/snow/networking/sender"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/sampler"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/version"
-
-	p2ppb "github.com/MetalBlockchain/metalgo/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/network/dialer"
+	"github.com/ava-labs/avalanchego/network/peer"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/sender"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/sampler"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 const (
@@ -55,7 +54,7 @@ var (
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
 	errNotValidator             = errors.New("node is not a validator")
-	errNotWhiteListed           = errors.New("subnet is not whitelisted")
+	errNotTracked               = errors.New("subnet is not tracked")
 	errSubnetNotExist           = errors.New("subnet does not exist")
 )
 
@@ -220,7 +219,7 @@ func NewNetwork(
 		return nil, fmt.Errorf("initializing peer metrics failed with: %w", err)
 	}
 
-	metrics, err := newMetrics(config.Namespace, metricsRegisterer, config.WhitelistedSubnets)
+	metrics, err := newMetrics(config.Namespace, metricsRegisterer, config.TrackedSubnets)
 	if err != nil {
 		return nil, fmt.Errorf("initializing network metrics failed with: %w", err)
 	}
@@ -236,7 +235,7 @@ func NewNetwork(
 		Network:              nil, // This is set below.
 		Router:               router,
 		VersionCompatibility: version.GetCompatibility(config.NetworkID),
-		MySubnets:            config.WhitelistedSubnets,
+		MySubnets:            config.TrackedSubnets,
 		Beacons:              config.Beacons,
 		NetworkID:            config.NetworkID,
 		PingFrequency:        config.PingFrequency,
@@ -342,25 +341,28 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	details[SendFailRateKey] = sendFailRate
 	n.metrics.sendFailRate.Set(sendFailRate)
 
-	// Network layer is unhealthy
-	if !healthy {
-		var errorReasons []string
-		if !isConnected {
-			errorReasons = append(errorReasons, fmt.Sprintf("not connected to a minimum of %d peer(s) only %d", n.config.HealthConfig.MinConnectedPeers, connectedTo))
-		}
-		if !wasMsgReceivedRecently {
-			errorReasons = append(errorReasons, fmt.Sprintf("no messages from network received in %s > %s", timeSinceLastMsgReceived, n.config.HealthConfig.MaxTimeSinceMsgReceived))
-		}
-		if !wasMsgSentRecently {
-			errorReasons = append(errorReasons, fmt.Sprintf("no messages from network sent in %s > %s", timeSinceLastMsgSent, n.config.HealthConfig.MaxTimeSinceMsgSent))
-		}
-		if !isMsgFailRate {
-			errorReasons = append(errorReasons, fmt.Sprintf("messages failure send rate %g > %g", sendFailRate, n.config.HealthConfig.MaxSendFailRate))
-		}
+	// emit metrics about the lifetime of peer connections
+	n.metrics.updatePeerConnectionLifetimeMetrics()
 
-		return details, fmt.Errorf("network layer is unhealthy reason: %s", strings.Join(errorReasons, ", "))
+	// Network layer is healthy
+	if healthy || !n.config.HealthConfig.Enabled {
+		return details, nil
 	}
-	return details, nil
+
+	var errorReasons []string
+	if !isConnected {
+		errorReasons = append(errorReasons, fmt.Sprintf("not connected to a minimum of %d peer(s) only %d", n.config.HealthConfig.MinConnectedPeers, connectedTo))
+	}
+	if !wasMsgReceivedRecently {
+		errorReasons = append(errorReasons, fmt.Sprintf("no messages from network received in %s > %s", timeSinceLastMsgReceived, n.config.HealthConfig.MaxTimeSinceMsgReceived))
+	}
+	if !wasMsgSentRecently {
+		errorReasons = append(errorReasons, fmt.Sprintf("no messages from network sent in %s > %s", timeSinceLastMsgSent, n.config.HealthConfig.MaxTimeSinceMsgSent))
+	}
+	if !isMsgFailRate {
+		errorReasons = append(errorReasons, fmt.Sprintf("messages failure send rate %g > %g", sendFailRate, n.config.HealthConfig.MaxSendFailRate))
+	}
+	return details, fmt.Errorf("network layer is unhealthy reason: %s", strings.Join(errorReasons, ", "))
 }
 
 // Connected is called after the peer finishes the handshake.
@@ -380,8 +382,8 @@ func (n *network) Connected(nodeID ids.NodeID) {
 	peerIP := peer.IP()
 	newIP := &ips.ClaimedIPPort{
 		Cert:      peer.Cert(),
-		IPPort:    peerIP.IP.IP,
-		Timestamp: peerIP.IP.Timestamp,
+		IPPort:    peerIP.IPPort,
+		Timestamp: peerIP.Timestamp,
 		Signature: peerIP.Signature,
 	}
 	prevIP, ok := n.peerIPs[nodeID]
@@ -430,7 +432,7 @@ func (n *network) AllowConnection(nodeID ids.NodeID) bool {
 		n.WantsConnection(nodeID)
 }
 
-func (n *network) Track(peerID ids.NodeID, claimedIPPorts []*ips.ClaimedIPPort) ([]*p2ppb.PeerAck, error) {
+func (n *network) Track(peerID ids.NodeID, claimedIPPorts []*ips.ClaimedIPPort) ([]*p2p.PeerAck, error) {
 	// Perform all signature verification and hashing before grabbing the peer
 	// lock.
 	// Note: Avoiding signature verification when the IP isn't needed is a
@@ -549,10 +551,10 @@ func (n *network) Track(peerID ids.NodeID, claimedIPPorts []*ips.ClaimedIPPort) 
 		return nil, nil
 	}
 
-	peerAcks := make([]*p2ppb.PeerAck, len(txIDsToAck))
+	peerAcks := make([]*p2p.PeerAck, len(txIDsToAck))
 	for i, txID := range txIDsToAck {
 		txID := txID
-		peerAcks[i] = &p2ppb.PeerAck{
+		peerAcks[i] = &p2p.PeerAck{
 			TxId: txID[:],
 			// By responding with the highest timestamp, not just the timestamp
 			// the peer provided us, we may be able to avoid some unnecessary
@@ -564,7 +566,7 @@ func (n *network) Track(peerID ids.NodeID, claimedIPPorts []*ips.ClaimedIPPort) 
 	return peerAcks, nil
 }
 
-func (n *network) MarkTracked(peerID ids.NodeID, ips []*p2ppb.PeerAck) error {
+func (n *network) MarkTracked(peerID ids.NodeID, ips []*p2p.PeerAck) error {
 	txIDs := make([]ids.ID, 0, len(ips))
 
 	n.peersLock.RLock()
@@ -659,7 +661,7 @@ func (n *network) Peers(peerID ids.NodeID) ([]ips.ClaimedIPPort, error) {
 		peerIP := n.peerIPs[validator.NodeID]
 		n.peersLock.RUnlock()
 		if !isConnected {
-			n.peerConfig.Log.Debug(
+			n.peerConfig.Log.Verbo(
 				"unable to find validator in connected peers",
 				zap.Stringer("nodeID", validator.NodeID),
 			)
@@ -956,8 +958,8 @@ func (n *network) authenticateIPs(ips []*ips.ClaimedIPPort) ([]*ipAuth, error) {
 
 		// Verify signature if needed
 		signedIP := peer.SignedIP{
-			IP: peer.UnsignedIP{
-				IP:        ip.IPPort,
+			UnsignedIP: peer.UnsignedIP{
+				IPPort:    ip.IPPort,
 				Timestamp: ip.Timestamp,
 			},
 			Signature: ip.Signature,
@@ -1240,8 +1242,8 @@ func (n *network) StartClose() {
 }
 
 func (n *network) NodeUptime(subnetID ids.ID) (UptimeResult, error) {
-	if subnetID != constants.PrimaryNetworkID && !n.config.WhitelistedSubnets.Contains(subnetID) {
-		return UptimeResult{}, errNotWhiteListed
+	if subnetID != constants.PrimaryNetworkID && !n.config.TrackedSubnets.Contains(subnetID) {
+		return UptimeResult{}, errNotTracked
 	}
 
 	validators, ok := n.config.Validators.Get(subnetID)
@@ -1318,7 +1320,7 @@ func (n *network) runTimers() {
 			n.metrics.nodeUptimeWeightedAverage.Set(primaryUptime.WeightedAveragePercentage)
 			n.metrics.nodeUptimeRewardingStake.Set(primaryUptime.RewardingStakePercentage)
 
-			for subnetID := range n.config.WhitelistedSubnets {
+			for subnetID := range n.config.TrackedSubnets {
 				result, err := n.NodeUptime(subnetID)
 				if err != nil {
 					n.peerConfig.Log.Debug("failed to get subnet uptime",

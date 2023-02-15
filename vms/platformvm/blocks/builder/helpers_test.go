@@ -80,6 +80,7 @@ var (
 	testSubnet1ControlKeys = preFundedKeys[0:3]
 
 	errMissingPrimaryValidators = errors.New("missing primary validator set")
+	errMissing                  = errors.New("missing")
 )
 
 type mutableSharedMemory struct {
@@ -163,7 +164,7 @@ func newEnvironment(t *testing.T) *environment {
 	)
 	res.sender = &common.SenderTest{T: t}
 
-	metrics, err := metrics.New("", registerer, res.config.WhitelistedSubnets)
+	metrics, err := metrics.New("", registerer, res.config.TrackedSubnets)
 	if err != nil {
 		panic(fmt.Errorf("failed to create metrics: %w", err))
 	}
@@ -289,7 +290,7 @@ func defaultCtx(db database.Database) (*snow.Context, *mutableSharedMemory) {
 				cChainID:                  constants.PrimaryNetworkID,
 			}[chainID]
 			if !ok {
-				return ids.Empty, errors.New("missing")
+				return ids.Empty, errMissing
 			}
 			return subnetID, nil
 		},

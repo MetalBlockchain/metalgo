@@ -4,8 +4,6 @@
 package snow
 
 import (
-	"crypto"
-	"crypto/x509"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -51,10 +49,7 @@ type Context struct {
 	TeleporterSigner teleporter.Signer
 
 	// snowman++ attributes
-	ValidatorState    validators.State  // interface for P-Chain validators
-	StakingLeafSigner crypto.Signer     // block signer
-	StakingCertLeaf   *x509.Certificate // block certificate
-
+	ValidatorState validators.State // interface for P-Chain validators
 	// Chain-specific directory where arbitrary data can be written
 	ChainDataDir string
 }
@@ -83,8 +78,11 @@ type ConsensusContext struct {
 	// Non-zero iff this chain bootstrapped.
 	state utils.AtomicInterface
 
-	// Non-zero iff this chain is executing transactions.
+	// True iff this chain is executing transactions as part of bootstrapping.
 	executing utils.AtomicBool
+
+	// True iff this chain is currently state-syncing
+	stateSyncing utils.AtomicBool
 
 	// Indicates this chain is available to only validators.
 	validatorOnly utils.AtomicBool
@@ -108,6 +106,14 @@ func (ctx *ConsensusContext) IsExecuting() bool {
 // Set to "true" if there's an ongoing transaction.
 func (ctx *ConsensusContext) Executing(b bool) {
 	ctx.executing.SetValue(b)
+}
+
+func (ctx *ConsensusContext) IsRunningStateSync() bool {
+	return ctx.stateSyncing.GetValue()
+}
+
+func (ctx *ConsensusContext) RunningStateSync(b bool) {
+	ctx.stateSyncing.SetValue(b)
 }
 
 // IsValidatorOnly returns true iff this chain is available only to validators

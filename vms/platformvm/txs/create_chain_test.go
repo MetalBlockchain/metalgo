@@ -6,12 +6,14 @@ package txs
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestUnsignedCreateChainTxVerify(t *testing.T) {
@@ -177,16 +179,16 @@ func TestUnsignedCreateChainTxVerify(t *testing.T) {
 
 		signers := [][]*crypto.PrivateKeySECP256K1R{preFundedKeys}
 		stx, err := NewSigned(createChainTx, Codec, signers)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
 		createChainTx.SyntacticallyVerified = false
 		stx.Unsigned = test.setup(createChainTx)
-		if err := stx.SyntacticVerify(ctx); err != nil && !test.shouldErr {
-			t.Fatalf("test '%s' shouldn't have erred but got: %s", test.description, err)
-		} else if err == nil && test.shouldErr {
-			t.Fatalf("test '%s' didn't error but should have", test.description)
+
+		err = stx.SyntacticVerify(ctx)
+		if !test.shouldErr {
+			require.NoError(t, err)
+		} else {
+			require.Error(t, err)
 		}
 	}
 }

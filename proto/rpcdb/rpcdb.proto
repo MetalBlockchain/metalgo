@@ -36,13 +36,20 @@ service Database {
   rpc IteratorRelease(IteratorReleaseRequest) returns (IteratorReleaseResponse);
 }
 
+enum Error {
+  // ERROR_UNSPECIFIED is used to indicate that no error occurred.
+  ERROR_UNSPECIFIED = 0;
+  ERROR_CLOSED = 1;
+  ERROR_NOT_FOUND = 2;
+}
+
 message HasRequest {
   bytes key = 1;
 }
 
 message HasResponse {
   bool has = 1;
-  uint32 err = 2;
+  Error err = 2;
 }
 
 message GetRequest {
@@ -51,7 +58,7 @@ message GetRequest {
 
 message GetResponse {
   bytes value = 1;
-  uint32 err = 2;
+  Error err = 2;
 }
 
 message PutRequest {
@@ -60,7 +67,7 @@ message PutRequest {
 }
 
 message PutResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message DeleteRequest {
@@ -68,7 +75,7 @@ message DeleteRequest {
 }
 
 message DeleteResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message CompactRequest {
@@ -77,13 +84,13 @@ message CompactRequest {
 }
 
 message CompactResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message CloseRequest {}
 
 message CloseResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message WriteBatchRequest {
@@ -92,7 +99,7 @@ message WriteBatchRequest {
 }
 
 message WriteBatchResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message NewIteratorRequest {}
@@ -119,7 +126,7 @@ message IteratorErrorRequest {
 }
 
 message IteratorErrorResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message IteratorReleaseRequest {
@@ -127,7 +134,7 @@ message IteratorReleaseRequest {
 }
 
 message IteratorReleaseResponse {
-  uint32 err = 1;
+  Error err = 1;
 }
 
 message HealthCheckResponse {

@@ -8,16 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/utils/crypto"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var _ txs.UnsignedTx = (*dummyUnsignedTx)(nil)
@@ -33,12 +35,8 @@ func (*dummyUnsignedTx) Visit(txs.Visitor) error {
 func TestVerifySpendUTXOs(t *testing.T) {
 	fx := &secp256k1fx.Fx{}
 
-	if err := fx.InitializeVM(&secp256k1fx.TestVM{}); err != nil {
-		t.Fatal(err)
-	}
-	if err := fx.Bootstrapped(); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, fx.InitializeVM(&secp256k1fx.TestVM{}))
+	require.NoError(t, fx.Bootstrapped())
 
 	h := &handler{
 		ctx: snow.DefaultContextTest(),
@@ -1094,6 +1092,7 @@ func TestVerifySpendUTXOs(t *testing.T) {
 		h.clk.Set(now)
 
 		t.Run(test.description, func(t *testing.T) {
+			require := require.New(t)
 			err := h.VerifySpendUTXOs(
 				&unsignedTx,
 				test.utxos,
@@ -1103,10 +1102,10 @@ func TestVerifySpendUTXOs(t *testing.T) {
 				test.producedAmounts,
 			)
 
-			if err == nil && test.shouldErr {
-				t.Fatalf("expected error but got none")
-			} else if err != nil && !test.shouldErr {
-				t.Fatalf("unexpected error: %s", err)
+			if test.shouldErr {
+				require.Error(err)
+			} else {
+				require.NoError(err)
 			}
 		})
 	}
