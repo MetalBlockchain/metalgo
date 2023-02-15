@@ -95,7 +95,7 @@ func TestSignatureVerification(t *testing.T) {
 		stateF    func(*gomock.Controller) validators.State
 		quorumNum uint64
 		quorumDen uint64
-		msgF      func(require *require.Assertions) *Message
+		msgF      func(*require.Assertions) *Message
 		err       error
 	}{
 		{
@@ -324,6 +324,41 @@ func TestSignatureVerification(t *testing.T) {
 				return msg
 			},
 			err: ErrParseSignature,
+		},
+		{
+			name: "no validators",
+			stateF: func(ctrl *gomock.Controller) validators.State {
+				state := validators.NewMockState(ctrl)
+				state.EXPECT().GetSubnetID(gomock.Any(), sourceChainID).Return(subnetID, nil)
+				state.EXPECT().GetValidatorSet(gomock.Any(), pChainHeight, subnetID).Return(nil, nil)
+				return state
+			},
+			quorumNum: 1,
+			quorumDen: 2,
+			msgF: func(require *require.Assertions) *Message {
+				unsignedMsg, err := NewUnsignedMessage(
+					sourceChainID,
+					ids.Empty,
+					[]byte{1, 2, 3},
+				)
+				require.NoError(err)
+
+				unsignedBytes := unsignedMsg.Bytes()
+				vdr0Sig := bls.Sign(testVdrs[0].sk, unsignedBytes)
+				aggSigBytes := [bls.SignatureLen]byte{}
+				copy(aggSigBytes[:], bls.SignatureToBytes(vdr0Sig))
+
+				msg, err := NewMessage(
+					unsignedMsg,
+					&BitSetSignature{
+						Signers:   nil,
+						Signature: aggSigBytes,
+					},
+				)
+				require.NoError(err)
+				return msg
+			},
+			err: bls.ErrNoPublicKeys,
 		},
 		{
 			name: "invalid signature (substitute)",

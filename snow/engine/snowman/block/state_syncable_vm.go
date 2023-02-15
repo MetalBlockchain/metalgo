@@ -8,6 +8,26 @@ import (
 	"errors"
 )
 
+// StateSyncMode is returned by the StateSyncableVM when a state summary is
+// passed to it. It indicates which type of state sync the VM is performing.
+type StateSyncMode uint8
+
+const (
+	// StateSyncSkipped indicates that state sync won't be run by the VM. This
+	// may happen if the VM decides that the state sync is too recent and it
+	// would be faster to bootstrap the missing blocks.
+	StateSyncSkipped StateSyncMode = iota + 1
+
+	// StateSyncStatic indicates that engine should stop and wait for the VM to
+	// complete state syncing before moving ahead with bootstrapping.
+	StateSyncStatic
+
+	// StateSummaryDynamic indicates that engine should immediately transition
+	// into bootstrapping and then normal consensus. State sync will proceed
+	// asynchronously in the VM.
+	StateSummaryDynamic
+)
+
 var ErrStateSyncableVMNotImplemented = errors.New("vm does not implement StateSyncableVM interface")
 
 // StateSyncableVM contains the functionality to allow VMs to sync to a given

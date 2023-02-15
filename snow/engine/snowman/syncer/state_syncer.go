@@ -300,6 +300,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		)
 
 		// if we do not restart state sync, move on to bootstrapping.
+		ss.Ctx.RunningStateSync(false)
 		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
 
@@ -309,18 +310,33 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 		zap.Int("numTotalSummaries", size),
 	)
 
-	startedSyncing, err := preferredStateSummary.Accept(ctx)
+	stateSyncMode, err := preferredStateSummary.Accept(ctx)
 	if err != nil {
 		return err
 	}
-	if startedSyncing {
+
+	switch stateSyncMode {
+	case block.StateSyncSkipped:
+		// VM did not accept the summary, move on to bootstrapping.
+		ss.Ctx.RunningStateSync(false)
+		return ss.onDoneStateSyncing(ctx, ss.requestID)
+	case block.StateSyncStatic:
 		// summary was accepted and VM is state syncing.
 		// Engine will wait for notification of state sync done.
+		ss.Ctx.RunningStateSync(true)
 		return nil
+	case block.StateSummaryDynamic:
+		// VM will run state summary but it's able to complete
+		// bootstrapping in the meantime. Proceed to bootstrap
+		ss.Ctx.RunningStateSync(true)
+		return ss.onDoneStateSyncing(ctx, ss.requestID)
+	default:
+		ss.Ctx.Log.Warn("Unhandled state summary mode. Proceeding to bootstrap.",
+			zap.Any("state summary mode", stateSyncMode),
+		)
+		ss.Ctx.RunningStateSync(false)
+		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
-
-	// VM did not accept the summary, move on to bootstrapping.
-	return ss.onDoneStateSyncing(ctx, ss.requestID)
 }
 
 // selectSyncableStateSummary chooses a state summary from all
@@ -453,6 +469,7 @@ func (ss *stateSyncer) startup(ctx context.Context) error {
 	ss.attempts++
 	if ss.targetSeeders.Len() == 0 {
 		ss.Ctx.Log.Info("State syncing skipped due to no provided syncers")
+		ss.Ctx.RunningStateSync(false)
 		return ss.onDoneStateSyncing(ctx, ss.requestID)
 	}
 
@@ -526,6 +543,8 @@ func (ss *stateSyncer) Notify(ctx context.Context, msg common.Message) error {
 		)
 		return nil
 	}
+
+	ss.Ctx.RunningStateSync(false)
 	return ss.onDoneStateSyncing(ctx, ss.requestID)
 }
 
