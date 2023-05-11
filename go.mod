@@ -13,6 +13,7 @@ require (
 	github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/ava-labs/avalanchego v1.10.1
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20230105152938-00a24d05a8c7
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
@@ -24,7 +25,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/holiman/bloomfilter/v2 v2.0.3
-	github.com/huin/goupnp v1.0.3
+	github.com/huin/goupnp v1.2.0
 	github.com/jackpal/gateway v1.0.6
 	github.com/jackpal/go-nat-pmp v1.0.2
 	github.com/mr-tron/base58 v1.2.0
@@ -62,8 +63,8 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.10.0 // indirect
-	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
