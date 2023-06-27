@@ -47,7 +47,7 @@ The Metal binary, named `metalgo`, is in the `build` directory.
 
 ### Docker Install
 
-Make sure docker is installed on the machine - so commands like `docker run` etc. are available.
+Make sure Docker is installed on the machine - so commands like `docker run` etc. are available.
 
 Building the docker image of latest metalgo branch can be done by running:
 

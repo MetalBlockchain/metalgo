@@ -61,6 +61,7 @@ const (
 )
 
 var (
+	// Deprecated key --> deprecation message (i.e. which key replaces it)
 	deprecatedKeys = map[string]string{}
 
 	errInvalidStakerWeights          = errors.New("staking weights must be positive")
@@ -85,9 +86,15 @@ var (
 func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
 	return avalanche.Parameters{
 		Parameters: snowball.Parameters{
-			K:                       v.GetInt(SnowSampleSizeKey),
-			Alpha:                   v.GetInt(SnowQuorumSizeKey),
-			BetaVirtuous:            v.GetInt(SnowVirtuousCommitThresholdKey),
+			K:     v.GetInt(SnowSampleSizeKey),
+			Alpha: v.GetInt(SnowQuorumSizeKey),
+			// During the X-chain linearization we require BetaVirtuous and
+			// BetaRogue to be equal. Therefore we use the more conservative
+			// BetaRogue value for both BetaVirtuous and BetaRogue.
+			//
+			// TODO: After the X-chain linearization use the
+			// SnowVirtuousCommitThresholdKey as before.
+			BetaVirtuous:            v.GetInt(SnowRogueCommitThresholdKey),
 			BetaRogue:               v.GetInt(SnowRogueCommitThresholdKey),
 			ConcurrentRepolls:       v.GetInt(SnowConcurrentRepollsKey),
 			OptimalProcessing:       v.GetInt(SnowOptimalProcessingKey),
@@ -1278,6 +1285,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
 	if err != nil {
 		return node.Config{}, err
+	}
+
+	if nodeConfig.NetworkID == constants.MainnetID {
+		return node.Config{}, errors.New("mainnet is not supported")
 	}
 
 	// Database
