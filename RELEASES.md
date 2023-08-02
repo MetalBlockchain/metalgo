@@ -4,9 +4,9 @@
 
 [This upgrade](https://medium.com/avalancheavax/cortina-x-chain-linearization-a1d9305553f6) linearizes the X-chain, introduces delegation batching to the P-chain, and increases the maximum block size on the C-chain.
 
-The changes in the upgrade go into effect at 11 AM ET, April 25th 2023 on Mainnet.
+The changes in the upgrade go into effect at 10 AM UTC, August 17th 2023 on Mainnet.
 
-**All Mainnet nodes should upgrade before 11 AM ET, April 25th 2023.**
+**All Mainnet nodes should upgrade before 10 AM UTC, August 17th 2023.**
 
 The supported plugin version is `25`.
 
@@ -59,44 +59,6 @@ The supported plugin version is `25`.
 - @dboehm-avalabs made their first contribution in https://github.com/ava-labs/avalanchego/pull/1310
 
 **Full Changelog**: https://github.com/MetalBlockchain/metalgo/compare/v1.9.16...v1.10.0
-
-## [v1.9.16](https://github.com/MetalBlockchain/metalgo/releases/tag/v1.9.16)
-
-**Please note that this release is unable to run mainnet - and will display "mainnet is not supported" if attempted to run with a mainnet configuration.**
-
-[This upgrade](https://medium.com/avalancheavax/cortina-x-chain-linearization-a1d9305553f6) linearizes the X-chain, introduces delegation batching to the P-chain, and increases the maximum block size on the C-chain.
-
-The changes in the upgrade go into effect at 11 AM EST, June 28th 2023 on the Tahoe testnet. After Tahoe is updated and verified, a mainnet compatible release will be published.
-
-**All Tahoe nodes should upgrade before 11 AM EST, June 28th 2023.**
-
-The supported plugin version is `25`.
-
-### What's Changed
-
-- Add CODEOWNERS for the x/ package by @StephenButtolph in https://github.com/ava-labs/avalanchego/pull/1260
-- Feature Spec Template by @richardpringle in https://github.com/ava-labs/avalanchego/pull/1258
-- Standardize CI triggers by @StephenButtolph in https://github.com/ava-labs/avalanchego/pull/1265
-- special case no sent/received message in network health check by @ceyonur in https://github.com/ava-labs/avalanchego/pull/1263
-- Fix bug template by @StephenButtolph in https://github.com/ava-labs/avalanchego/pull/1268
-- Replace `flags` usage with `pflags` by @danlaine in https://github.com/ava-labs/avalanchego/pull/1270
-- Fixed grammatical errors in `README.md` by @krakxn in https://github.com/ava-labs/avalanchego/pull/1102
-- Add tests for race conditions in merkledb by @kyl27 in https://github.com/ava-labs/avalanchego/pull/1256
-- Add P-chain indexer API example by @StephenButtolph in https://github.com/ava-labs/avalanchego/pull/1271
-- use `require` in `snow/choices` tests by @dhrubabasu in https://github.com/ava-labs/avalanchego/pull/1279
-- use `require` in `utils/wrappers` tests by @dhrubabasu in https://github.com/ava-labs/avalanchego/pull/1280
-- add support for tracking delegatee rewards to validator metadata by @dhrubabasu in https://github.com/ava-labs/avalanchego/pull/1273
-- defer delegatee rewards until end of validator staking period by @dhrubabasu in https://github.com/ava-labs/avalanchego/pull/1262
-
-### New Contributors
-
-- @richardpringle made their first contribution in https://github.com/ava-labs/avalanchego/pull/1258
-- @ceyonur made their first contribution in https://github.com/ava-labs/avalanchego/pull/1263
-- @krakxn made their first contribution in https://github.com/ava-labs/avalanchego/pull/1102
-- @kyl27 made their first contribution in https://github.com/ava-labs/avalanchego/pull/1256
-- @dhrubabasu made their first contribution in https://github.com/ava-labs/avalanchego/pull/1279
-
-**Full Changelog**: https://github.com/MetalBlockchain/metalgo/compare/v1.9.16...v1.10.0-tahoe
 
 ## [v1.9.16](https://github.com/MetalBlockchain/metalgo/releases/tag/v1.9.16)
 

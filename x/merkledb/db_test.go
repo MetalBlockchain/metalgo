@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 const minCacheSize = 1000
@@ -269,7 +268,7 @@ func Test_MerkleDB_Commit_Proof_To_Empty_Trie(t *testing.T) {
 	err = batch.Write()
 	require.NoError(t, err)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key3"), 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key3"), 10)
 	require.NoError(t, err)
 
 	freshDB, err := getBasicDB()
@@ -302,7 +301,7 @@ func Test_MerkleDB_Commit_Proof_To_Filled_Trie(t *testing.T) {
 	err = batch.Write()
 	require.NoError(t, err)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key3"), 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key3"), 10)
 	require.NoError(t, err)
 
 	freshDB, err := getBasicDB()
@@ -331,30 +330,6 @@ func Test_MerkleDB_Commit_Proof_To_Filled_Trie(t *testing.T) {
 	oldRoot, err := db.GetMerkleRoot(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, oldRoot, freshRoot)
-}
-
-func Test_MerkleDB_GetKeyValues(t *testing.T) {
-	db, err := getBasicDB()
-	require.NoError(t, err)
-
-	writeBasicBatch(t, db)
-	kvs, size, err := db.getKeyValues(context.Background(), []byte{0}, []byte{10}, 100, set.Set[string]{})
-	require.NoError(t, err)
-	require.Len(t, kvs, 5)
-	require.Equal(t, uint32(20), size)
-
-	// reduce maxSize to eliminate one item
-	kvs, size, err = db.getKeyValues(context.Background(), []byte{0}, []byte{10}, 16, set.Set[string]{})
-	require.NoError(t, err)
-	require.Len(t, kvs, 4)
-	require.Equal(t, uint32(16), size)
-
-	// reduce maxSize by 1 byte
-	// should remove the next item but the next item is 4 bytes so size goes down by more than 1 byte
-	kvs, size, err = db.getKeyValues(context.Background(), []byte{0}, []byte{10}, 15, set.Set[string]{})
-	require.NoError(t, err)
-	require.Len(t, kvs, 3)
-	require.Equal(t, uint32(12), size)
 }
 
 func Test_MerkleDB_GetValues(t *testing.T) {
@@ -812,7 +787,7 @@ func runRandDBTest(require *require.Assertions, r *rand.Rand, rt randTest) {
 			if len(pastRoots) > 0 {
 				root = pastRoots[r.Intn(len(pastRoots))]
 			}
-			rangeProof, err := db.GetRangeProofAtRoot(context.Background(), root, step.key, step.value, 5000)
+			rangeProof, err := db.GetRangeProofAtRoot(context.Background(), root, step.key, step.value, 100)
 			require.NoError(err)
 			err = rangeProof.Verify(
 				context.Background(),

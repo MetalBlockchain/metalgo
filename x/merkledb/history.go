@@ -6,7 +6,6 @@ package merkledb
 import (
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/google/btree"
 
@@ -32,9 +31,6 @@ type trieHistory struct {
 	history *btree.BTreeG[*changeSummaryAndIndex]
 
 	nextIndex uint64
-
-	estimatedValueSize float64
-	valuesCount        int
 }
 
 // Tracks the beginning and ending state of a value.
@@ -81,15 +77,15 @@ func newTrieHistory(maxHistoryLookback int) *trieHistory {
 	}
 }
 
-// Returns up to [maxSize] bytes worth of key-value pair changes with keys in [start, end] that
+// Returns up to [maxLength] key-value pair changes with keys in [start, end] that
 // occurred between [startRoot] and [endRoot].
-func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []byte, maxSize uint32) (map[path]*change[Maybe[[]byte]], error) {
-	if maxSize == 0 {
-		return nil, fmt.Errorf("%w but was %d", ErrInvalidMaxSize, maxSize)
+func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []byte, maxLength int) (*changeSummary, error) {
+	if maxLength <= 0 {
+		return nil, fmt.Errorf("%w but was %d", ErrInvalidMaxLength, maxLength)
 	}
 
 	if startRoot == endRoot {
-		return map[path]*change[Maybe[[]byte]]{}, nil
+		return newChangeSummary(maxLength), nil
 	}
 
 	// Confirm there's a change resulting in [startRoot] before
@@ -142,9 +138,8 @@ func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []b
 	// For each element in the history in the range between [startRoot]'s
 	// last appearance (exclusive) and [endRoot]'s last appearance (inclusive),
 	// add the changes to keys in [start, end] to [combinedChanges].
-	// Only the key-value pairs with total size less than [maxSize] bytes will be kept.
-	estimatedKeyCount := int(math.Min(float64(maxSize)/th.estimatedValueSize, float64(valuesCount)))
-	combinedChanges := make(map[path]*change[Maybe[[]byte]], estimatedKeyCount)
+	// Only the key-value pairs with the greatest [maxLength] keys will be kept.
+	combinedChanges := newChangeSummary(maxLength)
 
 	// For each change after [startRootChanges] up to and including
 	// [lastEndRootChange], record the change in [combinedChanges].
@@ -163,29 +158,22 @@ func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []b
 			for key, valueChange := range item.values {
 				if (len(startPath) == 0 || key.Compare(startPath) >= 0) &&
 					(len(endPath) == 0 || key.Compare(endPath) <= 0) {
-					if existing, ok := combinedChanges[key]; ok {
-						// remove the old value from the size
-						// the meanVarIntLen takes into account storing the lengths of key and value
-						totalSize -= uint32(len(existing.after.value) + len(key) + meanVarIntLen)
+					if existing, ok := combinedChanges.values[key]; ok {
 						existing.after = valueChange.after
 					} else {
-						combinedChanges[key] = &change[Maybe[[]byte]]{
+						combinedChanges.values[key] = &change[Maybe[[]byte]]{
 							before: valueChange.before,
 							after:  valueChange.after,
 						}
 					}
-					// the meanVarIntLen takes into account storing the length of key and value
-					totalSize += uint32(len(key) + len(valueChange.after.value) + meanVarIntLen)
 					sortedKeys.ReplaceOrInsert(key)
 				}
 			}
 
-			// Keep only the smallest keys up to [maxSize] bytes in [combinedChanges].
-			for totalSize > maxSize {
+			// Keep only the smallest [maxLength] items in [combinedChanges.values].
+			for sortedKeys.Len() > maxLength {
 				if greatestKey, found := sortedKeys.DeleteMax(); found {
-					// the meanVarIntLen takes into account storing the length of key and value
-					totalSize -= uint32(len(greatestKey) + len(combinedChanges[greatestKey].after.value) + meanVarIntLen)
-					delete(combinedChanges, greatestKey)
+					delete(combinedChanges.values, greatestKey)
 				}
 			}
 
@@ -256,25 +244,11 @@ func (th *trieHistory) record(changes *changeSummary) {
 		// This change causes us to go over our lookback limit.
 		// Remove the oldest set of changes.
 		oldestEntry, _ := th.history.DeleteMin()
-		th.valuesCount -= len(oldestEntry.values)
-
 		latestChange := th.lastChanges[oldestEntry.rootID]
 		if latestChange == oldestEntry {
 			// The removed change was the most recent resulting in this root ID.
 			delete(th.lastChanges, oldestEntry.rootID)
 		}
-	}
-
-	// update the size estimate of all key/values
-	// used to estimate how much memory to allocate for key/values that will be returned by [getValueChanges]
-	if len(changes.values) > 0 {
-		size := 0
-		for key, value := range changes.values {
-			size += len(key) + len(value.after.value)
-		}
-		newCount := math.Max(float64(th.valuesCount+len(changes.values)), 1)
-		th.estimatedValueSize = (th.estimatedValueSize*float64(th.valuesCount) + float64(size)) / newCount
-		th.valuesCount += len(changes.values)
 	}
 
 	changesAndIndex := &changeSummaryAndIndex{

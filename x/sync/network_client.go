@@ -111,7 +111,7 @@ func (c *networkClient) AppResponse(_ context.Context, nodeID ids.NodeID, reques
 	return nil
 }
 
-// AppRequestFailed can be called by the metalgo -> VM in following cases:
+// AppRequestFailed can be called by the avalanchego -> VM in following cases:
 // - node is benched
 // - failed to send message to [nodeID] due to a network issue
 // - timeout

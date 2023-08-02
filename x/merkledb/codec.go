@@ -38,7 +38,6 @@ const (
 	minHashValuesLen     = minCodecVersionLen + minVarIntLen + minMaybeByteSliceLen + minSerializedPathLen
 	minProofNodeChildLen = minVarIntLen + idLen
 	minChildLen          = minVarIntLen + minSerializedPathLen + idLen
-	meanVarIntLen        = (minVarIntLen + binary.MaxVarintLen64) / 2
 )
 
 var (
@@ -77,9 +76,6 @@ type Encoder interface {
 	EncodeChangeProof(version uint16, p *ChangeProof) ([]byte, error)
 	EncodeRangeProof(version uint16, p *RangeProof) ([]byte, error)
 
-	encodedKeyValueByteCount(version uint16, n KeyValue) (uint32, error)
-	encodedProofPathByteCount(version uint16, n []ProofNode) (uint32, error)
-	encodedByteSliceByteCount(version uint16, n []byte) (uint32, error)
 	encodeDBNode(version uint16, n *dbNode) ([]byte, error)
 	encodeHashValues(version uint16, hv *hashValues) ([]byte, error)
 }
@@ -203,43 +199,6 @@ func (c *codecImpl) EncodeRangeProof(version uint16, proof *RangeProof) ([]byte,
 	}
 
 	return buf.Bytes(), nil
-}
-
-func (c *codecImpl) encodedByteSliceByteCount(version uint16, n []byte) (uint32, error) {
-	if version != codecVersion {
-		return 0, errUnknownVersion
-	}
-	buf := &bytes.Buffer{}
-	if err := c.encodeInt(buf, len(n)); err != nil {
-		return 0, err
-	}
-	return uint32(buf.Len() + len(n)), nil
-}
-
-func (c *codecImpl) encodedKeyValueByteCount(version uint16, n KeyValue) (uint32, error) {
-	if version != codecVersion {
-		return 0, errUnknownVersion
-	}
-	keySize, err := c.encodedByteSliceByteCount(version, n.Key)
-	if err != nil {
-		return 0, err
-	}
-	valueSize, err := c.encodedByteSliceByteCount(version, n.Value)
-	if err != nil {
-		return 0, err
-	}
-	return keySize + valueSize, nil
-}
-
-func (c *codecImpl) encodedProofPathByteCount(version uint16, n []ProofNode) (uint32, error) {
-	if version != codecVersion {
-		return 0, errUnknownVersion
-	}
-	buf := &bytes.Buffer{}
-	if err := c.encodeProofPath(buf, n); err != nil {
-		return 0, err
-	}
-	return uint32(buf.Len()), nil
 }
 
 func (c *codecImpl) encodeDBNode(version uint16, n *dbNode) ([]byte, error) {

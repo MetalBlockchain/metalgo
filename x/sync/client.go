@@ -28,7 +28,7 @@ var (
 	_ Client = &client{}
 
 	errInvalidRangeProof = errors.New("failed to verify range proof")
-	errProofTooLarge     = errors.New("response is larger than specified limit")
+	errTooManyLeaves     = errors.New("response contains more than requested leaves")
 )
 
 // Client synchronously fetches data from the network to fulfill state sync requests.
@@ -77,14 +77,14 @@ func NewClient(config *ClientConfig) Client {
 func (c *client) GetChangeProof(ctx context.Context, req *ChangeProofRequest, db *merkledb.Database) (*merkledb.ChangeProof, error) {
 	parseFn := func(ctx context.Context, responseBytes []byte) (*merkledb.ChangeProof, error) {
 		changeProof := &merkledb.ChangeProof{}
-
-		// Ensure the response is not larger than the limit
-		if len(responseBytes) > int(req.Limit) {
-			return nil, fmt.Errorf("%w: (%d) > %d)", errProofTooLarge, len(responseBytes), req.Limit)
-		}
-
 		if _, err := merkledb.Codec.DecodeChangeProof(responseBytes, changeProof); err != nil {
 			return nil, err
+		}
+
+		// Ensure the response does not contain more than the requested number of leaves
+		// and the start and end roots match the requested roots.
+		if len(changeProof.KeyValues)+len(changeProof.DeletedKeys) > int(req.Limit) {
+			return nil, fmt.Errorf("%w: (%d) > %d)", errTooManyLeaves, len(changeProof.KeyValues), req.Limit)
 		}
 
 		if err := changeProof.Verify(ctx, db, req.Start, req.End, req.EndingRoot); err != nil {
@@ -101,14 +101,13 @@ func (c *client) GetChangeProof(ctx context.Context, req *ChangeProofRequest, db
 func (c *client) GetRangeProof(ctx context.Context, req *RangeProofRequest) (*merkledb.RangeProof, error) {
 	parseFn := func(ctx context.Context, responseBytes []byte) (*merkledb.RangeProof, error) {
 		rangeProof := &merkledb.RangeProof{}
-
-		// Ensure the response is not larger than the limit
-		if len(responseBytes) > int(req.Limit) {
-			return nil, fmt.Errorf("%w: (%d) > %d)", errProofTooLarge, len(responseBytes), req.Limit)
-		}
-
 		if _, err := merkledb.Codec.DecodeRangeProof(responseBytes, rangeProof); err != nil {
 			return nil, err
+		}
+
+		// Ensure the response does not contain more than the maximum requested number of leaves.
+		if len(rangeProof.KeyValues) > int(req.Limit) {
+			return nil, fmt.Errorf("%w: (%d) > %d)", errTooManyLeaves, len(rangeProof.KeyValues), req.Limit)
 		}
 
 		if err := rangeProof.Verify(

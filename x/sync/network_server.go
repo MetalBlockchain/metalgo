@@ -17,14 +17,13 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
 )
 
-// Maximum number of bytes to return in a proof.
+// Maximum number of key-value pairs to return in a proof.
 // This overrides any other Limit specified in a RangeProofRequest
 // or ChangeProofRequest if the given Limit is greater.
-const maxProofSizeLimit = 2 * uint32(units.MiB)
+const maxKeyValuesLimit = 1024
 
 var _ Handler = (*NetworkServer)(nil)
 
@@ -42,7 +41,7 @@ func NewNetworkServer(appSender common.AppSender, db *merkledb.Database, log log
 	}
 }
 
-// AppRequest is called by metalgo -> VM when there is an incoming AppRequest from a peer.
+// AppRequest is called by avalanchego -> VM when there is an incoming AppRequest from a peer.
 // Never returns errors as they are considered fatal.
 // Sends a response back to the sender if length of response returned by the handler > 0.
 func (s *NetworkServer) AppRequest(
@@ -138,11 +137,11 @@ func (s *NetworkServer) HandleChangeProofRequest(
 
 	// override limit if it is greater than maxKeyValuesLimit
 	limit := req.Limit
-	if limit > maxProofSizeLimit {
-		limit = maxProofSizeLimit
+	if limit > maxKeyValuesLimit {
+		limit = maxKeyValuesLimit
 	}
 
-	changeProof, err := s.db.GetChangeProof(ctx, req.StartingRoot, req.EndingRoot, req.Start, req.End, limit)
+	changeProof, err := s.db.GetChangeProof(ctx, req.StartingRoot, req.EndingRoot, req.Start, req.End, int(limit))
 	if err != nil {
 		// handle expected errors so clients cannot cause servers to spam warning logs.
 		if errors.Is(err, merkledb.ErrRootIDNotPresent) || errors.Is(err, merkledb.ErrStartRootNotFound) {
@@ -185,11 +184,11 @@ func (s *NetworkServer) HandleRangeProofRequest(
 
 	// override limit if it is greater than maxKeyValuesLimit
 	limit := req.Limit
-	if limit > maxProofSizeLimit {
-		limit = maxProofSizeLimit
+	if limit > maxKeyValuesLimit {
+		limit = maxKeyValuesLimit
 	}
 
-	rangeProof, err := s.db.GetRangeProofAtRoot(ctx, req.Root, req.Start, req.End, limit)
+	rangeProof, err := s.db.GetRangeProofAtRoot(ctx, req.Root, req.Start, req.End, int(limit))
 	if err != nil {
 		// handle expected errors so clients cannot cause servers to spam warning logs.
 		if errors.Is(err, merkledb.ErrRootIDNotPresent) {

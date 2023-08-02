@@ -223,7 +223,7 @@ func Test_RangeProof_Extra_Value(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte{2}, val)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte{1}, []byte{5, 5}, 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte{1}, []byte{5, 5}, 10)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -295,7 +295,7 @@ func Test_RangeProof_Verify_Bad_Data(t *testing.T) {
 			require.NoError(t, err)
 			writeBasicBatch(t, db)
 
-			proof, err := db.GetRangeProof(context.Background(), []byte{2}, []byte{3, 0}, 1000)
+			proof, err := db.GetRangeProof(context.Background(), []byte{2}, []byte{3, 0}, 50)
 			require.NoError(t, err)
 			require.NotNil(t, proof)
 
@@ -314,8 +314,11 @@ func Test_RangeProof_MaxLength(t *testing.T) {
 	trie, err := dbTrie.NewView()
 	require.NoError(t, err)
 
+	_, err = trie.GetRangeProof(context.Background(), nil, nil, -1)
+	require.ErrorIs(t, err, ErrInvalidMaxLength)
+
 	_, err = trie.GetRangeProof(context.Background(), nil, nil, 0)
-	require.ErrorIs(t, err, ErrInvalidMaxSize)
+	require.ErrorIs(t, err, ErrInvalidMaxLength)
 }
 
 func Test_Proof(t *testing.T) {
@@ -539,7 +542,7 @@ func Test_RangeProof(t *testing.T) {
 	require.NoError(err)
 	writeBasicBatch(t, db)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte{1}, []byte{3, 5}, 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte{1}, []byte{3, 5}, 10)
 	require.NoError(err)
 	require.NotNil(proof)
 	require.Len(proof.KeyValues, 3)
@@ -581,27 +584,37 @@ func Test_RangeProof_BadBounds(t *testing.T) {
 func Test_RangeProof_NilStart(t *testing.T) {
 	db, err := getBasicDB()
 	require.NoError(t, err)
-	writeBasicBatch(t, db)
+	batch := db.NewBatch()
+	err = batch.Put([]byte("key1"), []byte("value1"))
+	require.NoError(t, err)
+	err = batch.Put([]byte("key2"), []byte("value2"))
+	require.NoError(t, err)
+	err = batch.Put([]byte("key3"), []byte("value3"))
+	require.NoError(t, err)
+	err = batch.Put([]byte("key4"), []byte("value4"))
+	require.NoError(t, err)
+	err = batch.Write()
+	require.NoError(t, err)
 
-	proof, err := db.GetRangeProof(context.Background(), nil, []byte{3, 5}, 500)
+	val, err := db.Get([]byte("key1"))
+	require.NoError(t, err)
+	require.Equal(t, []byte("value1"), val)
+
+	proof, err := db.GetRangeProof(context.Background(), nil, []byte("key35"), 2)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
-	require.Len(t, proof.KeyValues, 4)
+	require.Len(t, proof.KeyValues, 2)
 
-	require.Equal(t, []byte{0}, proof.KeyValues[0].Key)
-	require.Equal(t, []byte{1}, proof.KeyValues[1].Key)
-	require.Equal(t, []byte{2}, proof.KeyValues[2].Key)
-	require.Equal(t, []byte{3}, proof.KeyValues[3].Key)
+	require.Equal(t, []byte("key1"), proof.KeyValues[0].Key)
+	require.Equal(t, []byte("key2"), proof.KeyValues[1].Key)
 
-	require.Equal(t, []byte{0}, proof.KeyValues[0].Value)
-	require.Equal(t, []byte{1}, proof.KeyValues[1].Value)
-	require.Equal(t, []byte{2}, proof.KeyValues[2].Value)
-	require.Equal(t, []byte{3}, proof.KeyValues[3].Value)
+	require.Equal(t, []byte("value1"), proof.KeyValues[0].Value)
+	require.Equal(t, []byte("value2"), proof.KeyValues[1].Value)
 
-	require.Equal(t, []byte{}, proof.EndProof[0].KeyPath.Value)
-	require.Equal(t, []byte{0}, proof.EndProof[1].KeyPath.Value)
-	require.Equal(t, []byte{3}, proof.EndProof[2].KeyPath.Value)
+	require.Equal(t, newPath([]byte("key2")).Serialize(), proof.EndProof[2].KeyPath)
+	require.Equal(t, SerializedPath{Value: []uint8{0x6b, 0x65, 0x79, 0x30}, NibbleLength: 7}, proof.EndProof[1].KeyPath)
+	require.Equal(t, newPath([]byte("")).Serialize(), proof.EndProof[0].KeyPath)
 
 	err = proof.Verify(
 		context.Background(),
@@ -618,27 +631,23 @@ func Test_RangeProof_NilEnd(t *testing.T) {
 	writeBasicBatch(t, db)
 	require.NoError(t, err)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte{1}, nil, 500)
+	proof, err := db.GetRangeProof(context.Background(), []byte{1}, nil, 2)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
-	require.Len(t, proof.KeyValues, 4)
+	require.Len(t, proof.KeyValues, 2)
 
 	require.Equal(t, []byte{1}, proof.KeyValues[0].Key)
 	require.Equal(t, []byte{2}, proof.KeyValues[1].Key)
-	require.Equal(t, []byte{3}, proof.KeyValues[2].Key)
-	require.Equal(t, []byte{4}, proof.KeyValues[3].Key)
 
 	require.Equal(t, []byte{1}, proof.KeyValues[0].Value)
 	require.Equal(t, []byte{2}, proof.KeyValues[1].Value)
-	require.Equal(t, []byte{3}, proof.KeyValues[2].Value)
-	require.Equal(t, []byte{4}, proof.KeyValues[3].Value)
 
 	require.Equal(t, []byte{1}, proof.StartProof[0].KeyPath.Value)
 
 	require.Equal(t, []byte{}, proof.EndProof[0].KeyPath.Value)
 	require.Equal(t, []byte{0}, proof.EndProof[1].KeyPath.Value)
-	require.Equal(t, []byte{4}, proof.EndProof[2].KeyPath.Value)
+	require.Equal(t, []byte{2}, proof.EndProof[2].KeyPath.Value)
 
 	err = proof.Verify(
 		context.Background(),
@@ -666,7 +675,7 @@ func Test_RangeProof_EmptyValues(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("value1"), val)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key2"), 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key2"), 10)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -703,7 +712,7 @@ func Test_RangeProof_Marshal_Nil(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte{1}, val)
 
-	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key35"), 1000)
+	proof, err := db.GetRangeProof(context.Background(), []byte("key1"), []byte("key35"), 10)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -733,7 +742,7 @@ func Test_RangeProof_Marshal(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte{1}, val)
 
-	proof, err := db.GetRangeProof(context.Background(), nil, nil, 1000)
+	proof, err := db.GetRangeProof(context.Background(), nil, nil, 10)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -758,7 +767,7 @@ func Test_RangeProof_Marshal_Errors(t *testing.T) {
 	require.NoError(t, err)
 	writeBasicBatch(t, db)
 
-	proof, err := db.GetRangeProof(context.Background(), nil, nil, 1000)
+	proof, err := db.GetRangeProof(context.Background(), nil, nil, 10)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -967,7 +976,7 @@ func Test_ChangeProof_Marshal_Errors(t *testing.T) {
 	endroot, err := db.GetMerkleRoot(context.Background())
 	require.NoError(t, err)
 
-	proof, err := db.GetChangeProof(context.Background(), startRoot, endroot, nil, nil, 5000)
+	proof, err := db.GetChangeProof(context.Background(), startRoot, endroot, nil, nil, 50)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 	require.True(t, proof.HadRootsInHistory)
@@ -1092,7 +1101,7 @@ func Test_ChangeProof_Verify(t *testing.T) {
 	require.NoError(t, err)
 
 	// non-nil start/end
-	proof, err := db.GetChangeProof(context.Background(), startRoot, endRoot, []byte("key21"), []byte("key30"), 1000)
+	proof, err := db.GetChangeProof(context.Background(), startRoot, endRoot, []byte("key21"), []byte("key30"), 50)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -1100,7 +1109,7 @@ func Test_ChangeProof_Verify(t *testing.T) {
 	require.NoError(t, err)
 
 	// low maxLength
-	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, nil, nil, 1000)
+	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, nil, nil, 5)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -1108,7 +1117,7 @@ func Test_ChangeProof_Verify(t *testing.T) {
 	require.NoError(t, err)
 
 	// nil start/end
-	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, nil, nil, 1000)
+	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, nil, nil, 50)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
@@ -1122,46 +1131,12 @@ func Test_ChangeProof_Verify(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, endRoot, newRoot)
 
-	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, []byte("key20"), []byte("key30"), 1000)
+	proof, err = db.GetChangeProof(context.Background(), startRoot, endRoot, []byte("key20"), []byte("key30"), 50)
 	require.NoError(t, err)
 	require.NotNil(t, proof)
 
 	err = proof.Verify(context.Background(), dbClone, []byte("key20"), []byte("key30"), db.getMerkleRoot())
 	require.NoError(t, err)
-}
-
-func Test_ChangeProof_NoKeyValues(t *testing.T) {
-	db, err := getBasicDB()
-	require.NoError(t, err)
-
-	writeBasicBatch(t, db)
-	require.NoError(t, err)
-	startRoot, err := db.GetMerkleRoot(context.Background())
-	require.NoError(t, err)
-
-	require.NoError(t, db.Insert(context.Background(), []byte{9, 10}, []byte{10}))
-	require.NoError(t, db.Insert(context.Background(), []byte{10}, []byte{10}))
-	require.NoError(t, db.Insert(context.Background(), []byte{11}, []byte{11}))
-	require.NoError(t, db.Insert(context.Background(), []byte{12}, []byte{12}))
-	require.NoError(t, db.Insert(context.Background(), []byte{13}, []byte{13}))
-	require.NoError(t, db.Insert(context.Background(), []byte{14}, []byte{14}))
-	endRoot, err := db.GetMerkleRoot(context.Background())
-	require.NoError(t, err)
-
-	proof, err := db.GetChangeProof(context.Background(), startRoot, endRoot, []byte{6}, []byte{9}, 1000)
-	require.NoError(t, err)
-	require.NotNil(t, proof)
-	require.NotNil(t, proof.EndProof)
-	// []byte{9, 10} is the closest node that actually exists
-	require.Equal(t, []byte{9, 10}, proof.EndProof[len(proof.EndProof)-1].KeyPath.Value)
-
-	// the start proof is too large to fit within 100 bytes
-	_, err = db.GetChangeProof(context.Background(), startRoot, endRoot, []byte{6}, []byte{9}, 100)
-	require.ErrorIs(t, err, ErrMinProofIsLargerThanMaxSize)
-
-	// the start proof is smaller than the 450 limit, but the end proof will be too large to fit in the remainder
-	_, err = db.GetChangeProof(context.Background(), startRoot, endRoot, []byte{6}, []byte{9}, 450)
-	require.ErrorIs(t, err, ErrMinProofIsLargerThanMaxSize)
 }
 
 func Test_ChangeProof_Verify_Bad_Data(t *testing.T) {
@@ -1217,7 +1192,7 @@ func Test_ChangeProof_Verify_Bad_Data(t *testing.T) {
 			dbClone, err := getBasicDB()
 			require.NoError(t, err)
 
-			proof, err := db.GetChangeProof(context.Background(), startRoot, endRoot, []byte{2}, []byte{3, 0}, 1000)
+			proof, err := db.GetChangeProof(context.Background(), startRoot, endRoot, []byte{2}, []byte{3, 0}, 50)
 			require.NoError(t, err)
 			require.NotNil(t, proof)
 

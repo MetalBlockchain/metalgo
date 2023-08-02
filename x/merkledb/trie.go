@@ -41,7 +41,7 @@ type ReadOnlyTrie interface {
 	getKeyValues(
 		start []byte,
 		end []byte,
-		maxSize uint32,
+		maxLength int,
 		keysToIgnore set.Set[string],
 		lock bool,
 	) ([]KeyValue, error)
