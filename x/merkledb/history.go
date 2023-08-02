@@ -100,28 +100,32 @@ func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []b
 		return nil, ErrRootIDNotPresent
 	}
 
-	// [lastStartRootChange] is the latest appearance of [startRoot]
-	// which came before [lastEndRootChange].
-	var lastStartRootChange *changeSummaryAndIndex
-	valuesCount := 0
-	th.history.DescendLessOrEqual(
-		lastEndRootChange,
-		func(item *changeSummaryAndIndex) bool {
-			if item == lastEndRootChange {
-				return true // Skip first iteration
-			}
-			valuesCount += len(item.values)
-			if item.rootID == startRoot {
-				lastStartRootChange = item
-				return false
-			}
-			return true
-		},
-	)
-
-	// There's no change resulting in [startRoot] before the latest change resulting in [endRoot].
-	if lastStartRootChange == nil {
+	// [startRootChanges] is the last appearance of [startRoot]
+	startRootChanges, ok := th.lastChanges[startRoot]
+	if !ok {
 		return nil, ErrStartRootNotFound
+	}
+
+	// startRootChanges is after the lastEndRootChange, but that is just the latest appearance of start root
+	// there may be an earlier entry, so attempt to find an entry that comes before lastEndRootChange
+	if startRootChanges.index > lastEndRootChange.index {
+		th.history.DescendLessOrEqual(
+			lastEndRootChange,
+			func(item *changeSummaryAndIndex) bool {
+				if item == lastEndRootChange {
+					return true // Skip first iteration
+				}
+				if item.rootID == startRoot {
+					startRootChanges = item
+					return false
+				}
+				return true
+			},
+		)
+		// There's no change resulting in [startRoot] before the latest change resulting in [endRoot].
+		if startRootChanges.index > lastEndRootChange.index {
+			return nil, ErrStartRootNotFound
+		}
 	}
 
 	// Keep changes sorted so the largest can be removed in order to stay within the maxLength limit.
@@ -142,14 +146,13 @@ func (th *trieHistory) getValueChanges(startRoot, endRoot ids.ID, start, end []b
 	estimatedKeyCount := int(math.Min(float64(maxSize)/th.estimatedValueSize, float64(valuesCount)))
 	combinedChanges := make(map[path]*change[Maybe[[]byte]], estimatedKeyCount)
 
-	totalSize := uint32(0)
-	// For each change after [lastStartRootChange] up to and including
+	// For each change after [startRootChanges] up to and including
 	// [lastEndRootChange], record the change in [combinedChanges].
 	th.history.AscendGreaterOrEqual(
-		lastStartRootChange,
+		startRootChanges,
 		func(item *changeSummaryAndIndex) bool {
-			if item == lastStartRootChange {
-				// Start from the first change after [lastStartRootChange].
+			if item == startRootChanges {
+				// Start from the first change after [startRootChanges].
 				return true
 			}
 			if item.index > lastEndRootChange.index {
