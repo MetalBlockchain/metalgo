@@ -438,6 +438,16 @@ func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- 
 	// chainVM has been initialized. Traffic will immediately start being
 	// handled asynchronously.
 	vm.Atomic.Set(vm.network)
+
+	go func() {
+		err := vm.state.Prune(&vm.ctx.Lock, vm.ctx.Log)
+		if err != nil {
+			vm.ctx.Log.Error("state pruning failed",
+				zap.Error(err),
+			)
+		}
+	}()
+
 	return nil
 }
 
