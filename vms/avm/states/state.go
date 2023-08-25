@@ -29,10 +29,6 @@ const (
 	txCacheSize      = 8192
 	blockIDCacheSize = 8192
 	blockCacheSize   = 2048
-
-	pruneCommitLimit           = 1024
-	pruneCommitSleepMultiplier = 5
-	pruneUpdateFrequency       = 30 * time.Second
 )
 
 var (
@@ -134,10 +130,9 @@ type state struct {
 	utxoDB        database.Database
 	utxoState     avax.UTXOState
 
-	statusesPruned bool
-	addedStatuses  map[ids.ID]choices.Status
-	statusCache    cache.Cacher[ids.ID, *choices.Status] // cache of id -> choices.Status. If the entry is nil, it is not in the database
-	statusDB       database.Database
+	addedStatuses map[ids.ID]choices.Status
+	statusCache   cache.Cacher[ids.ID, *choices.Status] // cache of id -> choices.Status. If the entry is nil, it is not in the database
+	statusDB      database.Database
 
 	addedTxs   map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
 	txCache    cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
@@ -417,10 +412,6 @@ func (s *state) SetTimestamp(t time.Time) {
 
 // TODO: remove status support
 func (s *state) GetStatus(id ids.ID) (choices.Status, error) {
-	if s.statusesPruned {
-		return choices.Unknown, database.ErrNotFound
-	}
-
 	if status, exists := s.addedStatuses[id]; exists {
 		return status, nil
 	}
@@ -444,6 +435,7 @@ func (s *state) GetStatus(id ids.ID) (choices.Status, error) {
 	if err := status.Valid(); err != nil {
 		return choices.Unknown, err
 	}
+
 	s.statusCache.Put(id, &status)
 	return status, nil
 }

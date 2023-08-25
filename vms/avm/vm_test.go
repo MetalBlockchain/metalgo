@@ -429,9 +429,7 @@ func TestVMFormat(t *testing.T) {
 func TestTxCached(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{
-		notLinearized: true,
-	})
+	env := setup(t, &envConfig{})
 	defer func() {
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
@@ -464,9 +462,7 @@ func TestTxCached(t *testing.T) {
 func TestTxNotCached(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{
-		notLinearized: true,
-	})
+	env := setup(t, &envConfig{})
 	defer func() {
 		require.NoError(env.vm.Shutdown(context.Background()))
 		env.vm.ctx.Lock.Unlock()
