@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var (
