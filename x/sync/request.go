@@ -82,8 +82,12 @@ type ChangeProofRequest struct {
 	KeyLimit     uint16 `serialize:"true"`
 	BytesLimit   uint32 `serialize:"true"`
 }
+
+func (r *ChangeProofRequest) Handle(ctx context.Context, nodeID ids.NodeID, requestID uint32, h Handler) error {
+	return h.HandleChangeProofRequest(ctx, nodeID, requestID, r)
 }
 
+func (r ChangeProofRequest) String() string {
 	return fmt.Sprintf(
 		"ChangeProofRequest(StartRoot=%s, EndRoot=%s, Start=%s, End=%s, KeyLimit=%d, BytesLimit=%d)",
 		r.StartingRoot,
