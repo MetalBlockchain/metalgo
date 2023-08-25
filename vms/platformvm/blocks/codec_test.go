@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 )
 
 func TestTypesNotOwner(t *testing.T) {

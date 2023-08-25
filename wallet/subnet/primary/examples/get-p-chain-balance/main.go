@@ -8,13 +8,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
-	"github.com/ava-labs/avalanchego/wallet/chain/p"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 )
 
 func main() {

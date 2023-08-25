@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 var errNoNewRoot = errors.New("there was no updated root in change list")

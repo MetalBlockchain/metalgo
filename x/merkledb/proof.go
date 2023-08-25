@@ -9,13 +9,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/sync"
+	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
 
 const verificationCacheSize = 2_000

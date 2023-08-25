@@ -17,13 +17,13 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/prefixdb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

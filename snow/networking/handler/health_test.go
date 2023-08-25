@@ -12,19 +12,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/proto/pb/p2p"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/networking/tracker"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/subnets"
-	"github.com/ava-labs/avalanchego/utils/math/meter"
-	"github.com/ava-labs/avalanchego/utils/resource"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/subnets"
+	"github.com/MetalBlockchain/metalgo/utils/math/meter"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 
-	commontracker "github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	commontracker "github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 )
 
 func TestHealthCheckSubnet(t *testing.T) {

@@ -3,7 +3,7 @@
 
 package sync
 
-import "github.com/ava-labs/avalanchego/x/merkledb"
+import "github.com/MetalBlockchain/metalgo/x/merkledb"
 
 type SyncableDB interface {
 	merkledb.MerkleRootGetter

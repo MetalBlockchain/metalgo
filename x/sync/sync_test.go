@@ -23,7 +23,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/sync"
+	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
 
 var _ Client = (*mockClient)(nil)

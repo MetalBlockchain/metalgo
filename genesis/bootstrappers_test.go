@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 func TestSampleBootstrappers(t *testing.T) {

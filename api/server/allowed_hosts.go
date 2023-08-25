@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 const wildcard = "*"

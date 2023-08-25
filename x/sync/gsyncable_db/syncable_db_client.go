@@ -9,11 +9,11 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/x/merkledb"
-	"github.com/ava-labs/avalanchego/x/sync"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/x/merkledb"
+	"github.com/MetalBlockchain/metalgo/x/sync"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/sync"
+	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
 
 var _ sync.SyncableDB = (*SyncableDBClient)(nil)

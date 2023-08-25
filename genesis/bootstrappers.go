@@ -9,11 +9,11 @@ import (
 
 	_ "embed"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/ips"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/sampler"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/sampler"
 )
 
 var (

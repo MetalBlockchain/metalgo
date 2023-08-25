@@ -13,15 +13,15 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/ava-labs/avalanchego/database/leveldb"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/compression"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/ulimit"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/MetalBlockchain/metalgo/database/leveldb"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
+	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/utils/compression"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/ulimit"
+	"github.com/MetalBlockchain/metalgo/utils/units"
 )
 
 const (
