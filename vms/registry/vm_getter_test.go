@@ -15,11 +15,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/filesystem"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/resource"
-	"github.com/ava-labs/avalanchego/vms"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/filesystem"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
+	"github.com/MetalBlockchain/metalgo/vms"
 )
 
 var (

@@ -16,8 +16,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/storage"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/storage"
 )
 
 var (
