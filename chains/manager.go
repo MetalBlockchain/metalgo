@@ -953,7 +953,7 @@ func (m *manager) createAvalancheChain(
 		Avalanche: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: avalancheBootstrapper,
-			Consensus:    nil,
+			Consensus:    avalancheEngine,
 		},
 		Snowman: &handler.Engine{
 			StateSyncer:  nil,
