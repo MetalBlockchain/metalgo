@@ -12,13 +12,13 @@ import (
 	sync "sync"
 	time "time"
 
-	database "github.com/ava-labs/avalanchego/database"
-	ids "github.com/ava-labs/avalanchego/ids"
-	choices "github.com/ava-labs/avalanchego/snow/choices"
-	logging "github.com/ava-labs/avalanchego/utils/logging"
-	blocks "github.com/ava-labs/avalanchego/vms/avm/blocks"
-	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
-	avax "github.com/ava-labs/avalanchego/vms/components/avax"
+	database "github.com/MetalBlockchain/metalgo/database"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	choices "github.com/MetalBlockchain/metalgo/snow/choices"
+	logging "github.com/MetalBlockchain/metalgo/utils/logging"
+	blocks "github.com/MetalBlockchain/metalgo/vms/avm/blocks"
+	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
 	gomock "github.com/golang/mock/gomock"
 )
 
