@@ -45,8 +45,8 @@ github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMd
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
-github.com/MetalBlockchain/coreth v0.12.5-rc.0 h1:W47kFmjHciMQXY32tCPL8uxvfiEjWWDGsGyJiSR/8eo=
-github.com/MetalBlockchain/coreth v0.12.5-rc.0/go.mod h1:HnkhWlzaP/Kd+nD7Q0cI22tBsHMBjZaH+oBmFmO6XYg=
+github.com/MetalBlockchain/coreth v0.12.5-rc.1 h1:VANg1KOT0q+ZEHOjR5vo2+OAH98+8nZ7K6Tz/GX7dok=
+github.com/MetalBlockchain/coreth v0.12.5-rc.1/go.mod h1:fjup8lv8d0uGmdhqzWrcqyu729jodGW/hDuJBP6UmLc=
 github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0 h1:OkgNkD4UW9FxS4M27bucZejgCaZHQXGp908pUw5kILE=
 github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0/go.mod h1:/jcbo0G3PZRd+qKYQT0iQCipJOiRuG139fWVju4AmYU=
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
