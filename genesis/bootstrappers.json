@@ -1,186 +1,186 @@
 {
     "mainnet": [
         {
-            "id": "NodeID-A6onFGyJjA37EZ7kYHANMR1PFRT8NmXrF",
-            "ip": "54.94.43.49:9651"
+            "id": "NodeID-2cGXDwRBQasgadR7Q1cNLPrTu1CcBbbPg",
+            "ip": "3.69.62.47:9651"
         },
         {
-            "id": "NodeID-6SwnPJLH8cWfrJ162JjZekbmzaFpjPcf",
-            "ip": "52.79.47.77:9651"
+            "id": "NodeID-2DaDg8ySpZh4G3pYQDoQL6fBpr6kvAEn7",
+            "ip": "3.127.157.125:9651"
         },
         {
-            "id": "NodeID-GSgaA47umS1px2ohVjodW9621Ks63xDxD",
-            "ip": "18.229.206.191:9651"
+            "id": "NodeID-3cR7XPe9cPjXyxe8xSGeHKtZUBW3EY5E9",
+            "ip": "18.158.6.202:9651"
         },
         {
-            "id": "NodeID-BQEo5Fy1FRKLbX51ejqDd14cuSXJKArH2",
-            "ip": "3.34.221.73:9651"
+            "id": "NodeID-4qGU3jCCskkgD23M5Phs58idoss88gACr",
+            "ip": "18.195.232.200:9651"
         },
         {
-            "id": "NodeID-Drv1Qh7iJvW3zGBBeRnYfCzk56VCRM2GQ",
-            "ip": "13.244.155.170:9651"
+            "id": "NodeID-6i7bjwpMLjqAh493mVgjSGeWePD5psUmZ",
+            "ip": "18.198.53.50:9651"
         },
         {
-            "id": "NodeID-DAtCoXfLT6Y83dgJ7FmQg8eR53hz37J79",
-            "ip": "13.244.47.224:9651"
+            "id": "NodeID-6mYSHMtaKhapYefeS33oJtwJRKXqPM1dr",
+            "ip": "44.210.42.105:9651"
         },
         {
-            "id": "NodeID-FGRoKnyYKFWYFMb6Xbocf4hKuyCBENgWM",
-            "ip": "122.248.200.212:9651"
+            "id": "NodeID-21XvgoKWToLv8m2awpP6pjmABYDXWvvu1",
+            "ip": "44.210.42.121:9651"
         },
         {
-            "id": "NodeID-Dw7tuwxpAmcpvVGp9JzaHAR3REPoJ8f2R",
-            "ip": "52.30.9.211:9651"
+            "id": "NodeID-51tYGGYJQhkXj7korVVmF6dFjapPUkpx2",
+            "ip": "44.210.42.153:9651"
         },
         {
-            "id": "NodeID-4kCLS16Wy73nt1Zm54jFZsL7Msrv3UCeJ",
-            "ip": "122.248.199.127:9651"
+            "id": "NodeID-BiG4fTni2A6erA9TD4L867dCzL1ajH9Pz",
+            "ip": "44.210.42.120:9651"
         },
         {
-            "id": "NodeID-9T7NXBFpp8LWCyc58YdKNoowDipdVKAWz",
-            "ip": "18.202.190.40:9651"
+            "id": "NodeID-cRLt953CsEA8Hs6mhSzeawsbb335zziH",
+            "ip": "44.210.42.14:9651"
         },
         {
-            "id": "NodeID-6ghBh6yof5ouMCya2n9fHzhpWouiZFVVj",
-            "ip": "15.206.182.45:9651"
+            "id": "NodeID-CV7P79ttAXb8vqyc5QoUVxcMrVX4J21Y1",
+            "ip": "35.163.168.170:9651"
         },
         {
-            "id": "NodeID-HiFv1DpKXkAAfJ1NHWVqQoojjznibZXHP",
-            "ip": "15.207.11.193:9651"
+            "id": "NodeID-FG5jysE61HB8fVg3NucEmX5sXgs5sTpKn",
+            "ip": "34.217.159.211:9651"
         },
         {
-            "id": "NodeID-Fv3t2shrpkmvLnvNzcv1rqRKbDAYFnUor",
-            "ip": "44.226.118.72:9651"
+            "id": "NodeID-GPtuetLJGjtpwoGcvzebj9KXgemhEcAuY",
+            "ip": "34.218.36.65:9651"
         },
         {
-            "id": "NodeID-AaxT2P4uuPAHb7vAD8mNvjQ3jgyaV7tu9",
-            "ip": "54.185.87.50:9651"
+            "id": "NodeID-HSPLkj13MprfgpEZGYR7Dpm9ptS5m6miV",
+            "ip": "54.190.49.44:9651"
         },
         {
-            "id": "NodeID-kZNuQMHhydefgnwjYX1fhHMpRNAs9my1",
-            "ip": "18.158.15.12:9651"
+            "id": "NodeID-K5yDuQpynevLJWK1iu64ukA9UX566d1Ns",
+            "ip": "44.225.134.136:9651"
         },
         {
-            "id": "NodeID-A7GwTSd47AcDVqpTVj7YtxtjHREM33EJw",
-            "ip": "3.21.38.33:9651"
+            "id": "NodeID-PkUiWb8rf9Yh6twJr5RQbMhp1JZpj4W25",
+            "ip": "18.176.244.200:9651"
         },
         {
-            "id": "NodeID-Hr78Fy8uDYiRYocRYHXp4eLCYeb8x5UuM",
-            "ip": "54.93.182.129:9651"
+            "id": "NodeID-PMRrRcuXfSjBYcs1EBUayvgcWzfaQUt3p",
+            "ip": "35.72.98.123:9651"
         },
         {
-            "id": "NodeID-9CkG9MBNavnw7EVSRsuFr7ws9gascDQy3",
-            "ip": "3.128.138.36:9651"
+            "id": "NodeID-Q8RhVnz4JeRg3s5dQRqnQuc5H4v6Zwrk8",
+            "ip": "3.114.83.143:9651"
         },
         {
-            "id": "NodeID-A8jypu63CWp76STwKdqP6e9hjL675kdiG",
-            "ip": "3.104.107.241:9651"
+            "id": "NodeID-QGrgixzuznapYA5LeJB7RvsNWvVMwmofm",
+            "ip": "13.115.26.228:9651"
         },
         {
-            "id": "NodeID-HsBEx3L71EHWSXaE6gvk2VsNntFEZsxqc",
-            "ip": "3.106.25.139:9651"
+            "id": "NodeID-uhXjVs6ugtw4cStoe4tJa523Bb5kjMQg",
+            "ip": "52.194.127.164:9651"
         },
         {
-            "id": "NodeID-Nr584bLpGgbCUbZFSBaBz3Xum5wpca9Ym",
-            "ip": "18.162.129.129:9651"
+            "id": "NodeID-5cTEiXM4igt3xL9nnX1L3QvEdCAPafTUy",
+            "ip": "43.205.1.217:9651"
         },
         {
-            "id": "NodeID-QKGoUvqcgormCoMj6yPw9isY7DX9H4mdd",
-            "ip": "18.162.161.230:9651"
+            "id": "NodeID-3YaV4kst8K3VXwyZpr1XtdLyKZbFQBnRs",
+            "ip": "43.205.34.97:9651"
         },
         {
-            "id": "NodeID-HCw7S2TVbFPDWNBo1GnFWqJ47f9rDJtt1",
-            "ip": "52.47.181.114:9651"
+            "id": "NodeID-4mXA7qhwuAsSnco38ZboLc5q6UFM1x8Pf",
+            "ip": "65.2.133.10:9651"
         },
         {
-            "id": "NodeID-FYv1Lb29SqMpywYXH7yNkcFAzRF2jvm3K",
-            "ip": "15.188.9.42:9651"
+            "id": "NodeID-8fWznLr2SqE2BQoBWKmeGRjX5yNqUhy8T",
+            "ip": "13.126.110.239:9651"
+        },
+        {
+            "id": "NodeID-KTmn81w4WWwHxV1s19GmL1i2ygYqXjhtR",
+            "ip": "13.233.75.203:9651"
         }
     ],
-    "fuji": [
+    "tahoe": [
         {
-            "id": "NodeID-2m38qc95mhHXtrhjyGbe7r2NhniqHHJRB",
-            "ip": "18.192.93.241:9651"
+            "id": "NodeID-EiRsmffiu3t1MFnhjrrFJEJGqfdtnkEvc",
+            "ip": "18.158.206.92:9651"
         },
         {
-            "id": "NodeID-JjvzhxnLHLUQ5HjVRkvG827ivbLXPwA9u",
-            "ip": "3.76.143.200:9651"
+            "id": "NodeID-6QRpj3qBVPzNwdD2YewfB66Aa9Z9pv243",
+            "ip": "18.157.229.117:9651"
         },
         {
-            "id": "NodeID-LegbVf6qaMKcsXPnLStkdc1JVktmmiDxy",
-            "ip": "16.163.84.252:9651"
+            "id": "NodeID-EW9JuwPmgSdt5SXkePz1JnfW3x9zzsqkd",
+            "ip": "3.69.225.81:9651"
         },
         {
-            "id": "NodeID-HGZ8ae74J3odT8ESreAdCtdnvWG1J4X5n",
-            "ip": "13.237.111.196:9651"
+            "id": "NodeID-AGXv6QpCY4m8Qmug7A9pDYrSSxqdbJAZS",
+            "ip": "3.73.114.4:9651"
         },
         {
-            "id": "NodeID-CYKruAjwH1BmV3m37sXNuprbr7dGQuJwG",
-            "ip": "18.167.242.179:9651"
+            "id": "NodeID-3BPMUK91rSbiG1mdBmpissDqTmVFAfc8J",
+            "ip": "3.74.175.192:9651"
         },
         {
-            "id": "NodeID-4KXitMCoE9p2BHA6VzXtaTxLoEjNDo2Pt",
-            "ip": "54.207.25.7:9651"
+            "id": "NodeID-B73oENBBKtquFNWkjPfjN9F2pHZp5r16g",
+            "ip": "34.196.246.54:9651"
         },
         {
-            "id": "NodeID-LQwRLm4cbJ7T2kxcxp4uXCU5XD8DFrE1C",
-            "ip": "15.184.214.136:9651"
+            "id": "NodeID-GJhvteVE4Rn7unxmzZrTwpUmuHvT4ioJU",
+            "ip": "54.174.105.14:9651"
         },
         {
-            "id": "NodeID-4CWTbdvgXHY1CLXqQNAp22nJDo5nAmts6",
-            "ip": "13.55.124.229:9651"
+            "id": "NodeID-CfsdUtCrAB6grr8kBSLiHSdrKe993Gwvg",
+            "ip": "34.206.150.45:9651"
         },
         {
-            "id": "NodeID-4QBwET5o8kUhvt9xArhir4d3R25CtmZho",
-            "ip": "3.99.55.15:9651"
+            "id": "NodeID-Ew9uKh7xnyEiZHU1xwi5MMVjHsxkmPScN",
+            "ip": "34.194.108.44:9651"
         },
         {
-            "id": "NodeID-JyE4P8f4cTryNV8DCz2M81bMtGhFFHexG",
-            "ip": "157.241.59.198:9651"
+            "id": "NodeID-3uC5oYpq5hqn8Ky46qT13pEYK6avjZY6T",
+            "ip": "44.195.208.173:9651"
         },
         {
-            "id": "NodeID-EDESh4DfZFC15i613pMtWniQ9arbBZRnL",
-            "ip": "52.29.72.46:9651"
+            "id": "NodeID-GmRnQWwWNjeZ2g7hbaHabHMgpcUABZzXV",
+            "ip": "34.212.255.6:9651"
         },
         {
-            "id": "NodeID-BFa1padLXBj7VHa2JYvYGzcTBPQGjPhUy",
-            "ip": "16.163.75.62:9651"
+            "id": "NodeID-HSxLZv4zNkRF9vH2xYQW9zkLwtyQdjnne",
+            "ip": "54.71.4.64:9651"
         },
         {
-            "id": "NodeID-CZmZ9xpCzkWqjAyS7L4htzh5Lg6kf1k18",
-            "ip": "34.248.69.195:9651"
+            "id": "NodeID-H6xhpvuVgKEXjTYbfAH629SnoZFLtsTMW",
+            "ip": "44.226.132.246:9651"
         },
         {
-            "id": "NodeID-FesGqwKq7z5nPFHa5iwZctHE5EZV9Lpdq",
-            "ip": "54.66.120.144:9651"
+            "id": "NodeID-2eypiRnhHyoZe94PBxbwu1TBDNAP9Te7e",
+            "ip": "52.43.222.212:9651"
         },
         {
-            "id": "NodeID-84KbQHSDnojroCVY7vQ7u9Tx7pUonPaS",
-            "ip": "3.97.132.61:9651"
+            "id": "NodeID-AHxkNdDLHMY7x3xFoGXetZgQVfQK9mHpz",
+            "ip": "54.189.216.170:9651"
         },
         {
-            "id": "NodeID-CTtkcXvVdhpNp6f97LEUXPwsRD3A2ZHqP",
-            "ip": "18.230.111.83:9651"
+            "id": "NodeID-BJYAmxn5SMHaz3J61fN97r7sAiNGp1o7H",
+            "ip": "18.178.22.72:9651"
         },
         {
-            "id": "NodeID-hArafGhY2HFTbwaaVh1CSCUCUCiJ2Vfb",
-            "ip": "52.67.156.131:9651"
+            "id": "NodeID-971kRywJGDu651QBGDJDPSDyth5NTb2Yy",
+            "ip": "35.75.87.63:9651"
         },
         {
-            "id": "NodeID-4B4rc5vdD1758JSBYL1xyvE5NHGzz6xzH",
-            "ip": "176.34.80.199:9651"
+            "id": "NodeID-7XmnU74M3APxBV6WLZS51NH9r7KhNoCTr",
+            "ip": "54.65.199.213:9651"
         },
         {
-            "id": "NodeID-EzGaipqomyK9UKx9DBHV6Ky3y68hoknrF",
-            "ip": "176.34.97.64:9651"
+            "id": "NodeID-GGCBNGeqoLbHp6jhc4wtn5o92Eszj9HZt",
+            "ip": "18.177.175.140:9651"
         },
         {
-            "id": "NodeID-NpagUxt6KQiwPch9Sd4osv8kD1TZnkjdk",
-            "ip": "3.97.255.92:9651"
-        },
-        {
-            "id": "NodeID-3VWnZNViBP2b56QBY7pNJSLzN2rkTyqnK",
-            "ip": "15.184.142.50:9651"
+            "id": "NodeID-M1ivUWVi9Ad2HxJcNcXTwoSfimLBhz8SK",
+            "ip": "3.113.255.59:9651"
         }
     ]
 }
