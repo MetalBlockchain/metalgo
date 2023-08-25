@@ -12,17 +12,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database/manager"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/proposervm/proposer"
 )
 
 func TestCoreVMNotRemote(t *testing.T) {
@@ -457,29 +458,31 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	// Note: we assumed that if blkID is not known, that's NOT an error.
 	// Simply return an empty result
 	coreVM.GetAncestorsF = func(_ context.Context, blkID ids.ID, maxBlocksNum, _ int, _ time.Duration) ([][]byte, error) {
-		sortedBlocks := [][]byte{coreBlk4.Bytes(), coreBlk3.Bytes(), coreBlk2.Bytes(), coreBlk1.Bytes()}
-		var startIdx int
+		sortedBlocks := [][]byte{
+			coreBlk4.Bytes(),
+			coreBlk3.Bytes(),
+			coreBlk2.Bytes(),
+			coreBlk1.Bytes(),
+		}
+		var startIndex int
 		switch blkID {
 		case coreBlk4.ID():
-			startIdx = 0
+			startIndex = 0
 		case coreBlk3.ID():
-			startIdx = 1
+			startIndex = 1
 		case coreBlk2.ID():
-			startIdx = 2
+			startIndex = 2
 		case coreBlk1.ID():
-			startIdx = 3
+			startIndex = 3
 		default:
-			return [][]byte{}, nil // unknown blockID
+			return nil, nil // unknown blockID
 		}
 
-		endIdx := startIdx + maxBlocksNum
-		if endIdx > len(sortedBlocks) {
-			endIdx = len(sortedBlocks)
-		}
-		return sortedBlocks[startIdx:endIdx], nil
+		endIndex := math.Min(startIndex+maxBlocksNum, len(sortedBlocks))
+		return sortedBlocks[startIndex:endIndex], nil
 	}
 
-	// load all know blocks
+	// load all known blocks
 	reqBlkID := builtBlk4.ID()
 	maxBlocksNum := 1000                      // an high value to get all built blocks
 	maxBlocksSize := 1000000                  // an high value to get all built blocks
@@ -493,8 +496,8 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	)
 
 	// ... and check returned values are as expected
-	require.NoError(err, "Error calling GetAncestors: %v", err)
-	require.Len(res, 4, "GetAncestor returned %v entries instead of %v", len(res), 4)
+	require.NoError(err, "Error calling GetAncestors")
+	require.Len(res, 4, "Wrong GetAncestor response")
 	require.EqualValues(res[0], builtBlk4.Bytes())
 	require.EqualValues(res[1], builtBlk3.Bytes())
 	require.EqualValues(res[2], builtBlk2.Bytes())
@@ -512,8 +515,8 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 	)
 
 	// ... and check returned values are as expected
-	require.NoError(err, "Error calling GetAncestors: %v", err)
-	require.Len(res, 3, "GetAncestor returned %v entries instead of %v", len(res), 3)
+	require.NoError(err, "Error calling GetAncestors")
+	require.Len(res, 3, "Wrong GetAncestor response")
 	require.EqualValues(res[0], builtBlk4.Bytes())
 	require.EqualValues(res[1], builtBlk3.Bytes())
 	require.EqualValues(res[2], builtBlk2.Bytes())
@@ -527,8 +530,8 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		maxBlocksSize,
 		maxBlocksRetrivalTime,
 	)
-	require.NoError(err, "Error calling GetAncestors: %v", err)
-	require.Len(res, 1, "GetAncestor returned %v entries instead of %v", len(res), 1)
+	require.NoError(err, "Error calling GetAncestors")
+	require.Len(res, 1, "Wrong GetAncestor response")
 	require.EqualValues(res[0], builtBlk1.Bytes())
 
 	// a faulty call
@@ -540,8 +543,8 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 		maxBlocksSize,
 		maxBlocksRetrivalTime,
 	)
-	require.NoError(err, "Error calling GetAncestors: %v", err)
-	require.Len(res, 0, "GetAncestor returned %v entries instead of %v", len(res), 0)
+	require.NoError(err, "Error calling GetAncestors")
+	require.Empty(res, "Wrong GetAncestor response")
 }
 
 func TestBatchedParseBlockPreForkOnly(t *testing.T) {
