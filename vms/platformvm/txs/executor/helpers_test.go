@@ -8,45 +8,48 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/metalgo/chains"
-	"github.com/MetalBlockchain/metalgo/chains/atomic"
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/uptime"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/api"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/builder"
+	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 const defaultWeight = 5 * units.MilliAvax
@@ -109,7 +112,7 @@ func (e *environment) SetState(blkID ids.ID, chainState state.Chain) {
 	e.states[blkID] = chainState
 }
 
-func newEnvironment(postBanff, postCortina bool) *environment {
+func newEnvironment(t *testing.T, postBanff, postCortina bool) *environment {
 	var isBootstrapped utils.Atomic[bool]
 	isBootstrapped.Set(true)
 
@@ -167,15 +170,18 @@ func newEnvironment(postBanff, postCortina bool) *environment {
 		backend:        backend,
 	}
 
-	addSubnet(env, txBuilder)
+	addSubnet(t, env, txBuilder)
 
 	return env
 }
 
 func addSubnet(
+	t *testing.T,
 	env *environment,
 	txBuilder builder.Builder,
 ) {
+	require := require.New(t)
+
 	// Create a subnet
 	var err error
 	testSubnet1, err = txBuilder.NewCreateSubnetTx(
@@ -188,30 +194,21 @@ func addSubnet(
 		[]*secp256k1.PrivateKey{preFundedKeys[0]},
 		preFundedKeys[0].PublicKey().Address(),
 	)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(err)
 
 	// store it
 	stateDiff, err := state.NewDiff(lastAcceptedID, env)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(err)
 
 	executor := StandardTxExecutor{
 		Backend: &env.backend,
 		State:   stateDiff,
 		Tx:      testSubnet1,
 	}
-	err = testSubnet1.Unsigned.Visit(&executor)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(testSubnet1.Unsigned.Visit(&executor))
 
 	stateDiff.AddTx(testSubnet1, status.Committed)
-	if err := stateDiff.Apply(env.state); err != nil {
-		panic(err)
-	}
+	require.NoError(stateDiff.Apply(env.state))
 }
 
 func defaultState(

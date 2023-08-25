@@ -13,18 +13,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/api/server"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block/mocks"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 var (
@@ -324,21 +322,11 @@ func TestIndexer(t *testing.T) {
 	txID, txBytes := ids.GenerateTestID(), utils.RandomBytes(32)
 	expectedTx := Container{
 		ID:        txID,
-		Bytes:     blkBytes,
+		Bytes:     txBytes,
 		Timestamp: now.UnixNano(),
 	}
-	// Mocked VM knows about this tx now
-	dagVM.EXPECT().GetTx(gomock.Any(), txID).Return(
-		&snowstorm.TestTx{
-			TestDecidable: choices.TestDecidable{
-				IDV:     txID,
-				StatusV: choices.Accepted,
-			},
-			BytesV: txBytes,
-		}, nil,
-	).AnyTimes()
 
-	require.NoError(config.TxAcceptorGroup.Accept(chain2Ctx, txID, blkBytes))
+	require.NoError(config.TxAcceptorGroup.Accept(chain2Ctx, txID, txBytes))
 
 	txIdx := idxr.txIndices[chain2Ctx.ChainID]
 	require.NotNil(txIdx)

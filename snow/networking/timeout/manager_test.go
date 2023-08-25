@@ -10,9 +10,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/utils/timer"
 )
 
 func TestManagerFire(t *testing.T) {
@@ -29,9 +31,7 @@ func TestManagerFire(t *testing.T) {
 		"",
 		prometheus.NewRegistry(),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	go manager.Dispatch()
 
 	wg := sync.WaitGroup{}
