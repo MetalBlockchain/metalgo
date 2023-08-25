@@ -57,19 +57,19 @@ var (
 
 	// TODO: remove after the X-chain supports height indexing.
 	mainnetXChainID ids.ID
-	fujiXChainID    ids.ID
+	tahoeXChainID   ids.ID
 
 	dbPrefix = []byte("proposervm")
 )
 
 func init() {
 	var err error
-	mainnetXChainID, err = ids.FromString("2oYMBNV4eNHyqk2fjjV5nVQLDbtmNJzq5s3qs3Lo6ftnC6FByM")
+	mainnetXChainID, err = ids.FromString("UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE")
 	if err != nil {
 		panic(err)
 	}
 
-	fujiXChainID, err = ids.FromString("2JVSBoinj9C2J33VntvzYtVJNZdN2NKiwwKjcumHUWEb5DbBrm")
+	tahoeXChainID, err = ids.FromString("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
 	if err != nil {
 		panic(err)
 	}
@@ -701,13 +701,13 @@ func (vm *VM) getForkHeight() (uint64, error) {
 	case constants.PlatformChainID:
 		switch vm.ctx.NetworkID {
 		case constants.MainnetID:
-			return 805732, nil // https://subnets.avax.network/p-chain/block/805732
-		case constants.FujiID:
-			return 47529, nil // https://subnets-test.avax.network/p-chain/block/47529
+			return 1, nil
+		case constants.TahoeID:
+			return 1, nil
 		}
 	case mainnetXChainID:
 		return 1, nil // https://subnets.avax.network/x-chain/block/1
-	case fujiXChainID:
+	case tahoeXChainID:
 		return 1, nil // https://subnets-test.avax.network/x-chain/block/1
 	}
 	return vm.GetForkHeight()
