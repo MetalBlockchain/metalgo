@@ -9,7 +9,8 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 // Maps a key to a bitset.
@@ -93,10 +94,10 @@ func (b *UniqueBag[T]) Bag(threshold int) Bag[T] {
 	return bag
 }
 
-func (b *UniqueBag[_]) PrefixedString(prefix string) string {
+func (b *UniqueBag[T]) PrefixedString(prefix string) string {
 	sb := strings.Builder{}
 
-	sb.WriteString(fmt.Sprintf("UniqueBag: (Size = %d)", len(*b)))
+	sb.WriteString(fmt.Sprintf("UniqueBag[%T]: (Size = %d)", utils.Zero[T](), len(*b)))
 	for key, set := range *b {
 		sb.WriteString(fmt.Sprintf("\n%s    %v: %s", prefix, key, set))
 	}

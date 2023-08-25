@@ -6,7 +6,7 @@ package cache
 import (
 	"testing"
 
-	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 func TestSizedLRU(t *testing.T) {
@@ -15,7 +15,7 @@ func TestSizedLRU(t *testing.T) {
 	TestBasic(t, cache)
 }
 
-func TestSizedtLRUEviction(t *testing.T) {
+func TestSizedLRUEviction(t *testing.T) {
 	cache := NewSizedLRU[ids.ID, TestSizedInt](2 * TestSizedIntSize)
 
 	TestEviction(t, cache)

@@ -17,18 +17,19 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/api/health"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
-	"github.com/MetalBlockchain/metalgo/snow/networking/worker"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/subnets"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/api/health"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/snow/networking/worker"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/subnets"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
 )
 
 const (
@@ -432,15 +433,18 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
 	)
-	h.ctx.Log.Debug("forwarding sync message to consensus",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("messageOp", op),
-	)
-	h.ctx.Log.Verbo("forwarding sync message to consensus",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("messageOp", op),
-		zap.Any("message", body),
-	)
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding sync message to consensus",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("messageOp", op),
+			zap.Any("message", body),
+		)
+	} else {
+		h.ctx.Log.Debug("forwarding sync message to consensus",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("messageOp", op),
+		)
+	}
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	h.ctx.Lock.Lock()
 	lockAcquiredTime := h.clock.Time()
@@ -756,15 +760,18 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		body      = msg.Message()
 		startTime = h.clock.Time()
 	)
-	h.ctx.Log.Debug("forwarding async message to consensus",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("messageOp", op),
-	)
-	h.ctx.Log.Verbo("forwarding async message to consensus",
-		zap.Stringer("nodeID", nodeID),
-		zap.Stringer("messageOp", op),
-		zap.Any("message", body),
-	)
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding async message to consensus",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("messageOp", op),
+			zap.Any("message", body),
+		)
+	} else {
+		h.ctx.Log.Debug("forwarding async message to consensus",
+			zap.Stringer("nodeID", nodeID),
+			zap.Stringer("messageOp", op),
+		)
+	}
 	h.resourceTracker.StartProcessing(nodeID, startTime)
 	defer func() {
 		var (
@@ -854,13 +861,16 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 		// execution (may change during execution)
 		isNormalOp = h.ctx.State.Get().State == snow.NormalOp
 	)
-	h.ctx.Log.Debug("forwarding chan message to consensus",
-		zap.Stringer("messageOp", op),
-	)
-	h.ctx.Log.Verbo("forwarding chan message to consensus",
-		zap.Stringer("messageOp", op),
-		zap.Any("message", body),
-	)
+	if h.ctx.Log.Enabled(logging.Verbo) {
+		h.ctx.Log.Verbo("forwarding chan message to consensus",
+			zap.Stringer("messageOp", op),
+			zap.Any("message", body),
+		)
+	} else {
+		h.ctx.Log.Debug("forwarding chan message to consensus",
+			zap.Stringer("messageOp", op),
+		)
+	}
 	h.ctx.Lock.Lock()
 	lockAcquiredTime := h.clock.Time()
 	defer func() {

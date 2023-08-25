@@ -5,27 +5,26 @@ package executor
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/chains/atomic"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/window"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validators"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestAcceptorVisitProposalBlock(t *testing.T) {
@@ -61,8 +60,8 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			},
 			state: s,
 		},
-		metrics:          metrics.Noop,
-		recentlyAccepted: nil,
+		metrics:    metrics.Noop,
+		validators: validators.TestManager,
 	}
 
 	err = acceptor.ApricotProposalBlock(blk)
@@ -98,12 +97,8 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics: metrics.Noop,
-		recentlyAccepted: window.New[ids.ID](window.Config{
-			Clock:   &mockable.Clock{},
-			MaxSize: 1,
-			TTL:     time.Hour,
-		}),
+		metrics:    metrics.Noop,
+		validators: validators.TestManager,
 	}
 
 	blk, err := blocks.NewApricotAtomicBlock(
@@ -183,12 +178,8 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics: metrics.Noop,
-		recentlyAccepted: window.New[ids.ID](window.Config{
-			Clock:   clk,
-			MaxSize: 1,
-			TTL:     time.Hour,
-		}),
+		metrics:    metrics.Noop,
+		validators: validators.TestManager,
 	}
 
 	blk, err := blocks.NewBanffStandardBlock(
@@ -278,12 +269,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics: metrics.Noop,
-		recentlyAccepted: window.New[ids.ID](window.Config{
-			Clock:   &mockable.Clock{},
-			MaxSize: 1,
-			TTL:     time.Hour,
-		}),
+		metrics:      metrics.Noop,
+		validators:   validators.TestManager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 
@@ -374,12 +361,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics: metrics.Noop,
-		recentlyAccepted: window.New[ids.ID](window.Config{
-			Clock:   &mockable.Clock{},
-			MaxSize: 1,
-			TTL:     time.Hour,
-		}),
+		metrics:      metrics.Noop,
+		validators:   validators.TestManager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 

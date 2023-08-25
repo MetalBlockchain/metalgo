@@ -6,8 +6,8 @@ package cache
 import (
 	"sync"
 
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
 )
 
 var _ Cacher[struct{}, SizedElement] = (*sizedLRU[struct{}, SizedElement])(nil)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 func TestLRU(t *testing.T) {
