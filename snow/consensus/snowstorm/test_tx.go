@@ -6,8 +6,8 @@ package snowstorm
 import (
 	"context"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
 )
 
 var _ Tx = (*TestTx)(nil)

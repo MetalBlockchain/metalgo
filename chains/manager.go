@@ -59,9 +59,9 @@ import (
 	dbManager "github.com/MetalBlockchain/metalgo/database/manager"
 	timetracker "github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 
-	aveng "github.com/ava-labs/avalanchego/snow/engine/avalanche"
-	avbootstrap "github.com/ava-labs/avalanchego/snow/engine/avalanche/bootstrap"
-	avagetter "github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	aveng "github.com/MetalBlockchain/metalgo/snow/engine/avalanche"
+	avbootstrap "github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap"
+	avagetter "github.com/MetalBlockchain/metalgo/snow/engine/avalanche/getter"
 
 	smcon "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	smeng "github.com/MetalBlockchain/metalgo/snow/engine/snowman"

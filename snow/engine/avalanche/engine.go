@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 )
 
 var (
