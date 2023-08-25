@@ -314,7 +314,7 @@ func getGossipConfig(v *viper.Viper) subnets.GossipConfig {
 
 func getNetworkConfig(
 	v *viper.Viper,
-	stakingEnabled bool,
+	sybilProtectionEnabled bool,
 	halflife time.Duration,
 ) (network.Config, error) {
 	// Set the max number of recent inbound connections upgraded to be
@@ -380,7 +380,7 @@ func getNetworkConfig(
 		},
 
 		HealthConfig: network.HealthConfig{
-			Enabled:                      stakingEnabled,
+			Enabled:                      sybilProtectionEnabled,
 			MaxTimeSinceMsgSent:          v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
 			MaxTimeSinceMsgReceived:      v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
 			MaxPortionSendQueueBytesFull: v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
@@ -793,20 +793,17 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 
 func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, error) {
 	config := node.StakingConfig{
-		// We use SybilProtectionEnabledKey for CLI flags that is shown to the user
-		// and EnableStaking in the rest of the codebase. This is to avoid confusion
-		// with the name "staking" like in "AVAX staking".
-		EnableStaking:         v.GetBool(getRenamedKey(v, StakingEnabledKey, SybilProtectionEnabledKey)),
-		DisabledStakingWeight: v.GetUint64(getRenamedKey(v, StakingDisabledWeightKey, SybilProtectionDisabledWeightKey)),
-		StakingKeyPath:        GetExpandedArg(v, StakingTLSKeyPathKey),
-		StakingCertPath:       GetExpandedArg(v, StakingCertPathKey),
-		StakingSignerPath:     GetExpandedArg(v, StakingSignerKeyPathKey),
+		SybilProtectionEnabled:        v.GetBool(getRenamedKey(v, StakingEnabledKey, SybilProtectionEnabledKey)),
+		SybilProtectionDisabledWeight: v.GetUint64(getRenamedKey(v, StakingDisabledWeightKey, SybilProtectionDisabledWeightKey)),
+		StakingKeyPath:                GetExpandedArg(v, StakingTLSKeyPathKey),
+		StakingCertPath:               GetExpandedArg(v, StakingCertPathKey),
+		StakingSignerPath:             GetExpandedArg(v, StakingSignerKeyPathKey),
 	}
-	if !config.EnableStaking && config.DisabledStakingWeight == 0 {
+	if !config.SybilProtectionEnabled && config.SybilProtectionDisabledWeight == 0 {
 		return node.StakingConfig{}, errSybilProtectionDisabledStakerWeights
 	}
 
-	if !config.EnableStaking && (networkID == constants.MainnetID || networkID == constants.TahoeID) {
+	if !config.SybilProtectionEnabled && (networkID == constants.MainnetID || networkID == constants.TahoeID) {
 		return node.StakingConfig{}, errSybilProtectionDisabledOnPublicNetwork
 	}
 
@@ -1210,40 +1207,26 @@ func getCPUTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 	}
 }
 
-// getMemoryConfig returns:
-// - requiredAvailableMemory under which the node may shutdown
-// - warningThresholdAvailableMemory under which the node report unhealthy
-func getMemoryConfig(v *viper.Viper) (uint64, uint64, error) {
-	requiredAvailableMemory := v.GetUint64(SystemTrackerRequiredAvailableMemoryKey)
-	warningThresholdAvailableMemory := v.GetUint64(SystemTrackerWarningThresholdAvailableMemoryKey)
-	if warningThresholdAvailableMemory < requiredAvailableMemory {
+// getResourceAvailableConfig returns:
+// - requiredThreshold under which the node may shutdown
+// - warningThreshold under which the node may report unhealthy
+func getResourceAvailableConfig(
+	v *viper.Viper,
+	requiredKey string,
+	warningKey string,
+) (uint64, uint64, error) {
+	requiredThreshold := v.GetUint64(requiredKey)
+	warningThreshold := v.GetUint64(warningKey)
+	if warningThreshold < requiredThreshold {
 		return 0, 0, fmt.Errorf(
 			"%q (%d) < %q (%d)",
-			SystemTrackerWarningThresholdAvailableMemoryKey,
-			warningThresholdAvailableMemory,
-			SystemTrackerRequiredAvailableMemoryKey,
-			requiredAvailableMemory,
+			warningKey,
+			warningThreshold,
+			requiredKey,
+			requiredThreshold,
 		)
 	}
-	return requiredAvailableMemory, warningThresholdAvailableMemory, nil
-}
-
-// getDiskSpaceConfig returns:
-// - requiredAvailableDiskSpace under which the node may shutdown
-// - warningThresholdAvailableDiskSpace under which the node report unhealthy
-func getDiskSpaceConfig(v *viper.Viper) (uint64, uint64, error) {
-	requiredAvailableDiskSpace := v.GetUint64(SystemTrackerRequiredAvailableDiskSpaceKey)
-	warningThresholdAvailableDiskSpace := v.GetUint64(SystemTrackerWarningThresholdAvailableDiskSpaceKey)
-	if warningThresholdAvailableDiskSpace < requiredAvailableDiskSpace {
-		return 0, 0, fmt.Errorf(
-			"%q (%d) < %q (%d)",
-			SystemTrackerWarningThresholdAvailableDiskSpaceKey,
-			warningThresholdAvailableDiskSpace,
-			SystemTrackerRequiredAvailableDiskSpaceKey,
-			requiredAvailableDiskSpace,
-		)
-	}
-	return requiredAvailableDiskSpace, warningThresholdAvailableDiskSpace, nil
+	return requiredThreshold, warningThreshold, nil
 }
 
 func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
@@ -1420,7 +1403,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Network Config
-	nodeConfig.NetworkConfig, err = getNetworkConfig(v, nodeConfig.EnableStaking, healthCheckAveragerHalflife)
+	nodeConfig.NetworkConfig, err = getNetworkConfig(v, nodeConfig.SybilProtectionEnabled, healthCheckAveragerHalflife)
 	if err != nil {
 		return node.Config{}, err
 	}
@@ -1507,12 +1490,20 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.SystemTrackerCPUHalflife = v.GetDuration(SystemTrackerCPUHalflifeKey)
 	nodeConfig.SystemTrackerDiskHalflife = v.GetDuration(SystemTrackerDiskHalflifeKey)
 
-	nodeConfig.RequiredAvailableMemory, nodeConfig.WarningThresholdAvailableMemory, err = getMemoryConfig(v)
+	nodeConfig.RequiredAvailableMemory, nodeConfig.WarningThresholdAvailableMemory, err = getResourceAvailableConfig(
+		v,
+		SystemTrackerRequiredAvailableMemoryKey,
+		SystemTrackerWarningThresholdAvailableMemoryKey,
+	)
 	if err != nil {
 		return node.Config{}, err
 	}
 
-	nodeConfig.RequiredAvailableDiskSpace, nodeConfig.WarningThresholdAvailableDiskSpace, err = getDiskSpaceConfig(v)
+	nodeConfig.RequiredAvailableDiskSpace, nodeConfig.WarningThresholdAvailableDiskSpace, err = getResourceAvailableConfig(
+		v,
+		SystemTrackerRequiredAvailableDiskSpaceKey,
+		SystemTrackerWarningThresholdAvailableDiskSpaceKey,
+	)
 	if err != nil {
 		return node.Config{}, err
 	}
