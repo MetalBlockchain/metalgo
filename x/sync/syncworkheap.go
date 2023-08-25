@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"container/heap"
 
-	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/math"
 
 	"github.com/google/btree"
 )

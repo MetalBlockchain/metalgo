@@ -3,7 +3,7 @@
 
 package signer
 
-import "github.com/ava-labs/avalanchego/utils/crypto/bls"
+import "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 
 var _ Signer = (*Empty)(nil)
 

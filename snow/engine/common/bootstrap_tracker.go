@@ -3,7 +3,7 @@
 
 package common
 
-import "github.com/ava-labs/avalanchego/ids"
+import "github.com/MetalBlockchain/metalgo/ids"
 
 // BootstrapTracker describes the standard interface for tracking the status of
 // a subnet bootstrapping

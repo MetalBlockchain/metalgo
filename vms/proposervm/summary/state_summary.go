@@ -3,7 +3,7 @@
 
 package summary
 
-import "github.com/ava-labs/avalanchego/ids"
+import "github.com/MetalBlockchain/metalgo/ids"
 
 var _ StateSummary = (*stateSummary)(nil)
 
