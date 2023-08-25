@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
 func TestCredentialState(t *testing.T) {
