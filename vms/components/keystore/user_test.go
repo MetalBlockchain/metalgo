@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/encdb"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -29,20 +30,20 @@ func TestUserClosedDB(t *testing.T) {
 	u := NewUserFromDB(db)
 
 	_, err = u.GetAddresses()
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
 	_, err = u.GetKey(ids.ShortEmpty)
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
 	_, err = GetKeychain(u, nil)
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 
 	factory := secp256k1.Factory{}
 	sk, err := factory.NewPrivateKey()
 	require.NoError(err)
 
 	err = u.PutKeys(sk)
-	require.Error(err, "closed db should have caused an error")
+	require.ErrorIs(err, database.ErrClosed)
 }
 
 func TestUser(t *testing.T) {

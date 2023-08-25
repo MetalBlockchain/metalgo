@@ -10,7 +10,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/validatorstate"
 )
@@ -70,7 +69,9 @@ func (s *Server) GetValidatorSet(ctx context.Context, req *pb.GetValidatorSetReq
 			Weight: vdr.Weight,
 		}
 		if vdr.PublicKey != nil {
-			vdrPB.PublicKey = bls.PublicKeyToBytes(vdr.PublicKey)
+			// This is a performance optimization to avoid the cost of compression
+			// from PublicKeyToBytes.
+			vdrPB.PublicKey = vdr.PublicKey.Serialize()
 		}
 		resp.Validators[i] = vdrPB
 		i++

@@ -19,6 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/api/keystore"
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/manager"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -235,7 +236,7 @@ func TestGetTxStatus(t *testing.T) {
 
 	// put the chain in existing chain list
 	err = service.vm.Builder.AddUnverifiedTx(tx)
-	require.Error(err)
+	require.ErrorIs(err, database.ErrNotFound) // Missing shared memory UTXO
 
 	mutableSharedMemory.SharedMemory = sm
 
@@ -331,7 +332,7 @@ func TestGetTx(t *testing.T) {
 				}
 				var response api.GetTxReply
 				err = service.GetTx(nil, arg, &response)
-				require.Error(err)
+				require.ErrorIs(err, database.ErrNotFound) // We haven't issued the tx yet
 
 				err = service.vm.Builder.AddUnverifiedTx(tx)
 				require.NoError(err)

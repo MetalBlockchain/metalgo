@@ -3,7 +3,19 @@
 
 package codec
 
-import "github.com/MetalBlockchain/metalgo/utils/wrappers"
+import (
+	"errors"
+
+	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+)
+
+var (
+	ErrUnsupportedType           = errors.New("unsupported type")
+	ErrMaxSliceLenExceeded       = errors.New("max slice length exceeded")
+	ErrDoesNotImplementInterface = errors.New("does not implement interface")
+	ErrUnexportedField           = errors.New("unexported field")
+	ErrExtraSpace                = errors.New("trailing buffer space")
+)
 
 // Codec marshals and unmarshals
 type Codec interface {
