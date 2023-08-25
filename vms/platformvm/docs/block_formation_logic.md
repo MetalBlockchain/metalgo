@@ -1,6 +1,6 @@
 # Block Composition and Formation Logic
 
-MetalGo v1.9.0 (Banff) slightly changes the way the P-chain selects transactions to be included in next block and deals with block timestamps. In this brief document we detail the process and the changes.
+AvalancheGo v1.9.0 (Banff) slightly changes the way the P-chain selects transactions to be included in next block and deals with block timestamps. In this brief document we detail the process and the changes.
 
 ## Apricot
 

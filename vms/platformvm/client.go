@@ -86,7 +86,7 @@ type Client interface {
 	// and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	AddValidator(
 		ctx context.Context,
 		user api.UserPass,
@@ -104,7 +104,7 @@ type Client interface {
 	// and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	AddDelegator(
 		ctx context.Context,
 		user api.UserPass,
@@ -121,7 +121,7 @@ type Client interface {
 	// with ID [subnetID] and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	AddSubnetValidator(
 		ctx context.Context,
 		user api.UserPass,
@@ -137,7 +137,7 @@ type Client interface {
 	// CreateSubnet issues a transaction to create [subnet] and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	CreateSubnet(
 		ctx context.Context,
 		user api.UserPass,
@@ -150,7 +150,7 @@ type Client interface {
 	// ExportAVAX issues an ExportTx transaction and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	ExportAVAX(
 		ctx context.Context,
 		user api.UserPass,
@@ -164,7 +164,7 @@ type Client interface {
 	// ImportAVAX issues an ImportTx transaction and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	ImportAVAX(
 		ctx context.Context,
 		user api.UserPass,
@@ -177,7 +177,7 @@ type Client interface {
 	// CreateBlockchain issues a CreateBlockchain transaction and returns the txID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/p.Wallet` utility.
+	// `avalanchego/wallet/chain/p.Wallet` utility.
 	CreateBlockchain(
 		ctx context.Context,
 		user api.UserPass,

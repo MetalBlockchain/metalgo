@@ -28,7 +28,7 @@ var (
 )
 
 type Initializer interface {
-	// Initialize provides MetalGo with compatibility, networking and
+	// Initialize provides AvalancheGo with compatibility, networking and
 	// process information of a VM.
 	Initialize(ctx context.Context, protocolVersion uint, vmAddr string) error
 }
