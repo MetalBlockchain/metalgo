@@ -11,14 +11,14 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/ava-labs/avalanchego/database"
-	ids "github.com/ava-labs/avalanchego/ids"
-	validators "github.com/ava-labs/avalanchego/snow/validators"
-	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
-	avax "github.com/ava-labs/avalanchego/vms/components/avax"
-	blocks "github.com/ava-labs/avalanchego/vms/platformvm/blocks"
-	status "github.com/ava-labs/avalanchego/vms/platformvm/status"
-	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	database "github.com/MetalBlockchain/metalgo/database"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	validators "github.com/MetalBlockchain/metalgo/snow/validators"
+	bls "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
+	blocks "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	status "github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	gomock "github.com/golang/mock/gomock"
 )
 
