@@ -5,15 +5,11 @@ package states
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"sync"
 	"time"
 
-	stdmath "math"
-
 	"github.com/prometheus/client_golang/prometheus"
-
-	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/cache/metercacher"
@@ -22,9 +18,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -111,18 +104,7 @@ type State interface {
 	// pending changes to the base database.
 	CommitBatch() (database.Batch, error)
 
-	// Asynchronously removes unneeded state from disk.
-	//
-	// Specifically, this removes:
-	// - All transaction statuses
-	// - All non-accepted transactions
-	// - All UTXOs that were consumed by accepted transactions
-	//
-	// [lock] is the AVM's context lock and is assumed to be unlocked when this
-	// method is called.
-	//
-	// TODO: remove after v1.11.x is activated
-	Prune(lock sync.Locker, log logging.Logger) error
+	Checksums() (ids.ID, ids.ID)
 
 	Close() error
 }
@@ -157,9 +139,10 @@ type state struct {
 	statusCache    cache.Cacher[ids.ID, *choices.Status] // cache of id -> choices.Status. If the entry is nil, it is not in the database
 	statusDB       database.Database
 
-	addedTxs map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
-	txCache  cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
-	txDB     database.Database
+	addedTxs   map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
+	txCache    cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
+	txDB       database.Database
+	txChecksum ids.ID
 
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
 	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID. If the entry is ids.Empty, it is not in the database
@@ -224,7 +207,11 @@ func New(
 	}
 
 	utxoState, err := avax.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics)
-	return &state{
+	if err != nil {
+		return nil, err
+	}
+
+	s := &state{
 		parser: parser,
 		db:     db,
 
@@ -249,7 +236,8 @@ func New(
 		blockDB:     blockDB,
 
 		singletonDB: singletonDB,
-	}, err
+	}
+	return s, s.initTxChecksum()
 }
 
 func (s *state) GetUTXO(utxoID ids.ID) (*avax.UTXO, error) {
@@ -534,6 +522,10 @@ func (s *state) writeTxs() error {
 		txID := txID
 		txBytes := tx.Bytes()
 
+		if _, ok := s.addedStatuses[txID]; !ok {
+			s.updateTxChecksum(txID)
+		}
+
 		delete(s.addedTxs, txID)
 		s.txCache.Put(txID, tx)
 		if err := s.txDB.Put(txID[:], txBytes); err != nil {
@@ -591,6 +583,10 @@ func (s *state) writeStatuses() error {
 		id := id
 		status := status
 
+		if status == choices.Accepted {
+			s.updateTxChecksum(id)
+		}
+
 		delete(s.addedStatuses, id)
 		s.statusCache.Put(id, &status)
 		if err := database.PutUInt32(s.statusDB, id[:], uint32(status)); err != nil {
@@ -600,223 +596,57 @@ func (s *state) writeStatuses() error {
 	return nil
 }
 
-func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
-	lock.Lock()
-	// It is possible that more txs are added after grabbing this iterator. No
-	// new txs will write a status, so we don't need to check those txs.
-	statusIter := s.statusDB.NewIterator()
-	// Releasing is done using a closure to ensure that updating statusIter will
-	// result in having the most recent iterator released when executing the
-	// deferred function.
-	defer func() {
-		statusIter.Release()
-	}()
-
-	if !statusIter.Next() {
-		// If there are no statuses on disk, pruning was previously run and
-		// finished.
-		lock.Unlock()
-
-		log.Info("state already pruned")
-
-		return statusIter.Error()
-	}
-
-	startTxIDBytes := statusIter.Key()
-	txIter := s.txDB.NewIteratorWithStart(startTxIDBytes)
-	// Releasing is done using a closure to ensure that updating statusIter will
-	// result in having the most recent iterator released when executing the
-	// deferred function.
-	defer func() {
-		txIter.Release()
-	}()
-
-	// While we are pruning the disk, we disable caching of the data we are
-	// modifying. Caching is re-enabled when pruning finishes.
-	//
-	// Note: If an unexpected error occurs the caches are never re-enabled.
-	// That's fine as the node is going to be in an unhealthy state regardless.
-	oldTxCache := s.txCache
-	s.statusCache = &cache.Empty[ids.ID, *choices.Status]{}
-	s.txCache = &cache.Empty[ids.ID, *txs.Tx]{}
-	lock.Unlock()
-
-	startTime := time.Now()
-	lastCommit := startTime
-	lastUpdate := startTime
-	startProgress := timer.ProgressFromHash(startTxIDBytes)
-
-	startStatusBytes := statusIter.Value()
-	if err := s.cleanupTx(lock, startTxIDBytes, startStatusBytes, txIter); err != nil {
-		return err
-	}
-
-	i := 1
-	for statusIter.Next() {
-		txIDBytes := statusIter.Key()
-		statusBytes := statusIter.Value()
-		if err := s.cleanupTx(lock, txIDBytes, statusBytes, txIter); err != nil {
-			return err
-		}
-
-		i++
-
-		if i%pruneCommitLimit == 0 {
-			// We must hold the lock during committing to make sure we don't
-			// attempt to commit to disk while a block is concurrently being
-			// accepted.
-			lock.Lock()
-			errs := wrappers.Errs{}
-			errs.Add(
-				s.Commit(),
-				statusIter.Error(),
-				txIter.Error(),
-			)
-			lock.Unlock()
-			if errs.Errored() {
-				return errs.Err
-			}
-
-			// We release the iterators here to allow the underlying database to
-			// clean up deleted state.
-			statusIter.Release()
-			txIter.Release()
-
-			now := time.Now()
-			if now.Sub(lastUpdate) > pruneUpdateFrequency {
-				lastUpdate = now
-
-				progress := timer.ProgressFromHash(txIDBytes)
-				eta := timer.EstimateETA(
-					startTime,
-					progress-startProgress,
-					stdmath.MaxUint64-startProgress,
-				)
-				log.Info("committing state pruning",
-					zap.Int("count", i),
-					zap.Duration("eta", eta),
-				)
-			}
-
-			// We take the minimum here because it's possible that the node is
-			// currently bootstrapping. This would mean that grabbing the lock
-			// could take an extremely long period of time; which we should not
-			// delay processing for.
-			pruneDuration := now.Sub(lastCommit)
-			sleepDuration := math.Min(
-				pruneCommitSleepMultiplier*pruneDuration,
-				10*time.Second,
-			)
-			time.Sleep(sleepDuration)
-
-			// Make sure not to include the sleep duration into the next prune
-			// duration.
-			lastCommit = time.Now()
-
-			// We shouldn't need to grab the lock here, but doing so ensures
-			// that we see a consistent view across both the statusDB and the
-			// txDB.
-			lock.Lock()
-			statusIter = s.statusDB.NewIteratorWithStart(txIDBytes)
-			txIter = s.txDB.NewIteratorWithStart(txIDBytes)
-			lock.Unlock()
-		}
-	}
-
-	lock.Lock()
-	defer lock.Unlock()
-
-	errs := wrappers.Errs{}
-	errs.Add(
-		s.Commit(),
-		statusIter.Error(),
-		txIter.Error(),
-	)
-
-	// Make sure we flush the original cache before re-enabling it to prevent
-	// surfacing any stale data.
-	oldTxCache.Flush()
-	s.statusesPruned = true
-	s.txCache = oldTxCache
-
-	log.Info("finished state pruning",
-		zap.Int("count", i),
-		zap.Duration("duration", time.Since(startTime)),
-	)
-
-	return errs.Err
+func (s *state) Checksums() (ids.ID, ids.ID) {
+	return s.txChecksum, s.utxoState.Checksum()
 }
 
-// Assumes [lock] is unlocked.
-func (s *state) cleanupTx(lock sync.Locker, txIDBytes []byte, statusBytes []byte, txIter database.Iterator) error {
-	// After the linearization, we write txs to disk without statuses to mark
-	// them as accepted. This means that there may be more txs than statuses and
-	// we need to skip over them.
-	//
-	// Note: We do not need to remove UTXOs consumed after the linearization, as
-	// those UTXOs are guaranteed to have already been deleted.
-	if err := skipTo(txIter, txIDBytes); err != nil {
-		return err
-	}
-	// txIter.Key() is now `txIDBytes`
+func (s *state) initTxChecksum() error {
+	txIt := s.txDB.NewIterator()
+	defer txIt.Release()
+	statusIt := s.statusDB.NewIterator()
+	defer statusIt.Release()
 
-	statusInt, err := database.ParseUInt32(statusBytes)
-	if err != nil {
-		return err
-	}
-	status := choices.Status(statusInt)
+	statusHasNext := statusIt.Next()
+	for txIt.Next() {
+		txIDBytes := txIt.Key()
+		if statusHasNext { // if status was exhausted, everything is accepted
+			statusIDBytes := statusIt.Key()
+			if bytes.Equal(txIDBytes, statusIDBytes) { // if the status key doesn't match this was marked as accepted
+				statusInt, err := database.ParseUInt32(statusIt.Value())
+				if err != nil {
+					return err
+				}
 
-	if status == choices.Accepted {
-		txBytes := txIter.Value()
-		tx, err := s.parser.ParseGenesisTx(txBytes)
+				statusHasNext = statusIt.Next() // we processed the txID, so move on to the next status
+
+				if choices.Status(statusInt) != choices.Accepted { // the status isn't accepted, so we skip the txID
+					continue
+				}
+			}
+		}
+
+		txID, err := ids.ToID(txIDBytes)
 		if err != nil {
 			return err
 		}
 
-		utxos := tx.Unsigned.InputUTXOs()
-
-		// Locking is done here to make sure that any concurrent verification is
-		// performed with a valid view of the state.
-		lock.Lock()
-		defer lock.Unlock()
-
-		// Remove all the UTXOs consumed by the accepted tx. Technically we only
-		// need to remove UTXOs consumed by operations, but it's easy to just
-		// remove all of them.
-		for _, UTXO := range utxos {
-			if err := s.utxoState.DeleteUTXO(UTXO.InputID()); err != nil {
-				return err
-			}
-		}
-	} else {
-		lock.Lock()
-		defer lock.Unlock()
-
-		// This tx wasn't accepted, so we can remove it entirely from disk.
-		if err := s.txDB.Delete(txIDBytes); err != nil {
-			return err
-		}
+		s.updateTxChecksum(txID)
 	}
-	// By removing the status, we will treat the tx as accepted if it is still
-	// on disk.
-	return s.statusDB.Delete(txIDBytes)
+
+	if statusHasNext {
+		return errors.New("dangling tx status")
+	}
+
+	errs := wrappers.Errs{}
+	errs.Add(
+		txIt.Error(),
+		statusIt.Error(),
+	)
+	return errs.Err
 }
 
-// skipTo advances [iter] until its key is equal to [targetKey]. If [iter] does
-// not contain [targetKey] an error will be returned.
-//
-// Note: [iter.Next()] will always be called at least once.
-func skipTo(iter database.Iterator, targetKey []byte) error {
-	for {
-		if !iter.Next() {
-			return fmt.Errorf("%w: 0x%x", database.ErrNotFound, targetKey)
-		}
-		key := iter.Key()
-		switch bytes.Compare(targetKey, key) {
-		case -1:
-			return fmt.Errorf("%w: 0x%x", database.ErrNotFound, targetKey)
-		case 0:
-			return nil
-		}
+func (s *state) updateTxChecksum(modifiedID ids.ID) {
+	for i, b := range modifiedID {
+		s.txChecksum[i] ^= b
 	}
 }
