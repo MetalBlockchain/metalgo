@@ -213,10 +213,18 @@ type stateBlk struct {
  * | | '-. subnetDelegator
  * | |   '-. list
  * | |     '-- txID -> nil
- * | |-. weight diffs
+ * | |-. nested weight diffs TODO: Remove once only the flat db is needed
+ * | | '-. height+subnet
+ * | |   '-. list
+ * | |     '-- nodeID -> weightChange
+ * | |-. nested pub key diffs TODO: Remove once only the flat db is needed
+ * | | '-. height
+ * | |   '-. list
+ * | |     '-- nodeID -> public key
+ * | |-. flat weight diffs
  * | | '-- subnet+height+nodeID -> weightChange
- * | '-. pub key diffs
- * |   '-- height+nodeID -> public key or nil
+ * | '-. flat pub key diffs
+ * |   '-- subnet+height+nodeID -> public key or nil
  * |-. blocks
  * | '-- blockID -> block bytes
  * |-. txs
@@ -327,6 +335,9 @@ type state struct {
 
 // heightRange is used to track which heights are safe to use the native DB
 // iterator for querying validator diffs.
+//
+// TODO: Remove once we are guaranteed nodes can not rollback to not support the
+// new indexing mechanism.
 type heightRange struct {
 	LowerBound uint64 `serialize:"true"`
 	UpperBound uint64 `serialize:"true"`
@@ -974,7 +985,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 	subnetID ids.ID,
 ) error {
 	diffIter := s.flatValidatorWeightDiffsDB.NewIteratorWithStartAndPrefix(
-		getStartWeightKey(subnetID, startHeight),
+		getStartDiffKey(subnetID, startHeight),
 		subnetID[:],
 	)
 	defer diffIter.Release()
@@ -987,7 +998,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 			return err
 		}
 
-		_, parsedHeight, nodeID, err := parseWeightKey(diffIter.Key())
+		_, parsedHeight, nodeID, err := parseDiffKey(diffIter.Key())
 		if err != nil {
 			return err
 		}
@@ -1007,6 +1018,10 @@ func (s *state) ApplyValidatorWeightDiffs(
 		if err := applyWeightDiff(validators, nodeID, weightDiff); err != nil {
 			return err
 		}
+	}
+
+	if err := diffIter.Error(); err != nil {
+		return err
 	}
 
 	// TODO: Remove this once it is assumed that all subnet validators have
@@ -1048,7 +1063,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 		}
 	}
 
-	return diffIter.Error()
+	return nil
 }
 
 func applyWeightDiff(
@@ -1094,8 +1109,9 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 	startHeight uint64,
 	endHeight uint64,
 ) error {
-	diffIter := s.flatValidatorPublicKeyDiffsDB.NewIteratorWithStart(
-		getStartBLSKey(startHeight),
+	diffIter := s.flatValidatorPublicKeyDiffsDB.NewIteratorWithStartAndPrefix(
+		getStartDiffKey(constants.PrimaryNetworkID, startHeight),
+		constants.PrimaryNetworkID[:],
 	)
 	defer diffIter.Release()
 
@@ -1104,7 +1120,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 			return err
 		}
 
-		parsedHeight, nodeID, err := parseBLSKey(diffIter.Key())
+		_, parsedHeight, nodeID, err := parseDiffKey(diffIter.Key())
 		if err != nil {
 			return err
 		}
@@ -1776,7 +1792,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 					// added. This means the prior value for the public key was
 					// nil.
 					err := s.flatValidatorPublicKeyDiffsDB.Put(
-						getBLSKey(height, nodeID),
+						getDiffKey(constants.PrimaryNetworkID, height, nodeID),
 						nil,
 					)
 					if err != nil {
@@ -1815,9 +1831,11 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 				// Invariant: Only the Primary Network contains non-nil public
 				// keys.
 				if staker.PublicKey != nil {
-					// Record the public key of the validator being removed.
+					// Record that the public key for the validator is being
+					// removed. This means we must record the prior value of the
+					// public key.
 					err := s.flatValidatorPublicKeyDiffsDB.Put(
-						getBLSKey(height, nodeID),
+						getDiffKey(constants.PrimaryNetworkID, height, nodeID),
 						staker.PublicKey.Serialize(),
 					)
 					if err != nil {
@@ -1854,7 +1872,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			}
 
 			err = s.flatValidatorWeightDiffsDB.Put(
-				getWeightKey(subnetID, height, nodeID),
+				getDiffKey(subnetID, height, nodeID),
 				getWeightValue(weightDiff),
 			)
 			if err != nil {
