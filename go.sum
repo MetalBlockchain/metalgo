@@ -41,8 +41,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
-github.com/MetalBlockchain/coreth v0.12.1-rc.0 h1:AjVRm+Ln3Pg897kcabvcRXYnnM1CGiTZKMyTWjnFcRU=
-github.com/MetalBlockchain/coreth v0.12.1-rc.0/go.mod h1:3kgyC5c5y+hrZyHlL2yl6S87Rg9U7SeqTazBTk02ZVg=
+github.com/MetalBlockchain/coreth v0.12.2-rc.0 h1:kmLH4Zdbm/FmFIm5P2wg3AlKa1uNLDXL+R1a3VNJ09g=
+github.com/MetalBlockchain/coreth v0.12.2-rc.0/go.mod h1:k7b1eq0HI0hDSgEjUzjeqMF9+gM7b5Hlf4MF9FvyIgI=
 github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0 h1:OkgNkD4UW9FxS4M27bucZejgCaZHQXGp908pUw5kILE=
 github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0/go.mod h1:/jcbo0G3PZRd+qKYQT0iQCipJOiRuG139fWVju4AmYU=
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
