@@ -11,9 +11,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/utils/logging"
 )
 
 var errTest = errors.New("non-nil error")
@@ -25,7 +26,7 @@ func TestGetAncestorsDatabaseNotFound(t *testing.T) {
 		require.Equal(t, someID, id)
 		return nil, database.ErrNotFound
 	}
-	containers, err := GetAncestors(context.Background(), vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), logging.NoLog{}, vm, someID, 10, 10, 1*time.Second)
 	require.NoError(t, err)
 	require.Empty(t, containers)
 }
@@ -39,7 +40,7 @@ func TestGetAncestorsPropagatesErrors(t *testing.T) {
 		require.Equal(t, someID, id)
 		return nil, errTest
 	}
-	containers, err := GetAncestors(context.Background(), vm, someID, 10, 10, 1*time.Second)
+	containers, err := GetAncestors(context.Background(), logging.NoLog{}, vm, someID, 10, 10, 1*time.Second)
 	require.Nil(t, containers)
 	require.ErrorIs(t, err, errTest)
 }
