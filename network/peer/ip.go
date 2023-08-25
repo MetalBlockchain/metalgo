@@ -8,9 +8,10 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/staking"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 // UnsignedIP is used for a validator to claim an IP. The [Timestamp] is used to
@@ -50,8 +51,8 @@ type SignedIP struct {
 }
 
 func (ip *SignedIP) Verify(cert *x509.Certificate) error {
-	return cert.CheckSignature(
-		cert.SignatureAlgorithm,
+	return staking.CheckSignature(
+		cert,
 		ip.UnsignedIP.bytes(),
 		ip.Signature,
 	)

@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/staking"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 var (
@@ -129,5 +130,9 @@ func (b *statelessBlock) Verify(shouldHaveProposer bool, chainID ids.ID) error {
 	}
 
 	headerBytes := header.Bytes()
-	return b.cert.CheckSignature(b.cert.SignatureAlgorithm, headerBytes, b.Signature)
+	return staking.CheckSignature(
+		b.cert,
+		headerBytes,
+		b.Signature,
+	)
 }
