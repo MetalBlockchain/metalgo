@@ -59,8 +59,6 @@ import (
 	dbManager "github.com/MetalBlockchain/metalgo/database/manager"
 	timetracker "github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 
-	avcon "github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	aveng "github.com/MetalBlockchain/metalgo/snow/engine/avalanche"
 	avbootstrap "github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap"
 	avagetter "github.com/MetalBlockchain/metalgo/snow/engine/avalanche/getter"
 
@@ -921,47 +919,21 @@ func (m *manager) createAvalancheChain(
 	}
 
 	// create bootstrap gear
+	_, specifiedLinearizationTime := version.CortinaTimes[ctx.NetworkID]
+	specifiedLinearizationTime = specifiedLinearizationTime && ctx.ChainID == m.XChainID
 	avalancheBootstrapperConfig := avbootstrap.Config{
-		Config:        avalancheCommonCfg,
-		AllGetsServer: avaGetHandler,
-		VtxBlocked:    vtxBlocker,
-		TxBlocked:     txBlocker,
-		Manager:       vtxManager,
-		VM:            linearizableVM,
-	}
-
-	var avalancheConsensus avcon.Consensus = &avcon.Topological{}
-	if m.TracingEnabled {
-		avalancheConsensus = avcon.Trace(avalancheConsensus, m.Tracer)
-	}
-
-	// create engine gear
-	avalancheEngineConfig := aveng.Config{
-		Ctx:           ctx,
-		AllGetsServer: avaGetHandler,
-		VM:            linearizableVM,
-		Manager:       vtxManager,
-		Sender:        avalancheMessageSender,
-		Validators:    vdrs,
-		Params:        consensusParams,
-		Consensus:     avalancheConsensus,
-	}
-	avalancheEngine, err := aveng.New(
-		avalancheEngineConfig,
-		snowmanEngine.Start,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing avalanche engine: %w", err)
-	}
-
-	if m.TracingEnabled {
-		avalancheEngine = aveng.TraceEngine(avalancheEngine, m.Tracer)
+		Config:             avalancheCommonCfg,
+		AllGetsServer:      avaGetHandler,
+		VtxBlocked:         vtxBlocker,
+		TxBlocked:          txBlocker,
+		Manager:            vtxManager,
+		VM:                 linearizableVM,
+		LinearizeOnStartup: !specifiedLinearizationTime,
 	}
 
 	avalancheBootstrapper, err := avbootstrap.New(
 		context.TODO(),
 		avalancheBootstrapperConfig,
-		avalancheEngine.Start,
 		snowmanBootstrapper.Start,
 	)
 	if err != nil {
@@ -976,7 +948,7 @@ func (m *manager) createAvalancheChain(
 		Avalanche: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: avalancheBootstrapper,
-			Consensus:    avalancheEngine,
+			Consensus:    nil,
 		},
 		Snowman: &handler.Engine{
 			StateSyncer:  nil,
