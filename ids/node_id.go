@@ -13,7 +13,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
-const NodeIDPrefix = "NodeID-"
+const (
+	NodeIDPrefix = "NodeID-"
+	NodeIDLen    = ShortIDLen
+)
 
 var (
 	EmptyNodeID = NodeID{}

@@ -6,14 +6,13 @@ package state
 import (
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 type state struct {
@@ -109,7 +108,7 @@ func (s *state) Edge(id ids.ID) []ids.ID {
 		frontierSize := p.UnpackInt()
 		frontier := make([]ids.ID, frontierSize)
 		for i := 0; i < int(frontierSize) && !p.Errored(); i++ {
-			id, err := ids.ToID(p.UnpackFixedBytes(hashing.HashLen))
+			id, err := ids.ToID(p.UnpackFixedBytes(ids.IDLen))
 			p.Add(err)
 			frontier[i] = id
 		}
@@ -137,7 +136,7 @@ func (s *state) SetEdge(id ids.ID, frontier []ids.ID) error {
 		return s.db.Delete(id[:])
 	}
 
-	size := wrappers.IntLen + hashing.HashLen*len(frontier)
+	size := wrappers.IntLen + ids.IDLen*len(frontier)
 	p := wrappers.Packer{Bytes: make([]byte, size)}
 	p.PackInt(uint32(len(frontier)))
 	for _, id := range frontier {

@@ -13,23 +13,22 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/api/server"
-	"github.com/MetalBlockchain/metalgo/chains"
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
 const (
@@ -39,9 +38,9 @@ const (
 	// Assumes no containers are larger than math.MaxUint32
 	// wrappers.IntLen accounts for the size of the container bytes
 	// wrappers.LongLen accounts for the timestamp of the container
-	// hashing.HashLen accounts for the container ID
+	// ids.IDLen accounts for the container ID
 	// wrappers.ShortLen accounts for the codec version
-	codecMaxSize = int(constants.DefaultMaxMessageSize) + wrappers.IntLen + wrappers.LongLen + hashing.HashLen + wrappers.ShortLen
+	codecMaxSize = int(constants.DefaultMaxMessageSize) + wrappers.IntLen + wrappers.LongLen + ids.IDLen + wrappers.ShortLen
 )
 
 var (
@@ -333,9 +332,9 @@ func (i *indexer) registerChainHelper(
 	name, endpoint string,
 	acceptorGroup snow.AcceptorGroup,
 ) (Index, error) {
-	prefix := make([]byte, hashing.HashLen+wrappers.ByteLen)
+	prefix := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(prefix, chainID[:])
-	prefix[hashing.HashLen] = prefixEnd
+	prefix[ids.IDLen] = prefixEnd
 	indexDB := prefixdb.New(prefix, i.db)
 	index, err := newIndex(indexDB, i.log, i.codec, i.clock)
 	if err != nil {
@@ -409,32 +408,32 @@ func (i *indexer) close() error {
 }
 
 func (i *indexer) markIncomplete(chainID ids.ID) error {
-	key := make([]byte, hashing.HashLen+wrappers.ByteLen)
+	key := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(key, chainID[:])
-	key[hashing.HashLen] = isIncompletePrefix
+	key[ids.IDLen] = isIncompletePrefix
 	return i.db.Put(key, nil)
 }
 
 // Returns true if this chain is incomplete
 func (i *indexer) isIncomplete(chainID ids.ID) (bool, error) {
-	key := make([]byte, hashing.HashLen+wrappers.ByteLen)
+	key := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(key, chainID[:])
-	key[hashing.HashLen] = isIncompletePrefix
+	key[ids.IDLen] = isIncompletePrefix
 	return i.db.Has(key)
 }
 
 func (i *indexer) markPreviouslyIndexed(chainID ids.ID) error {
-	key := make([]byte, hashing.HashLen+wrappers.ByteLen)
+	key := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(key, chainID[:])
-	key[hashing.HashLen] = previouslyIndexedPrefix
+	key[ids.IDLen] = previouslyIndexedPrefix
 	return i.db.Put(key, nil)
 }
 
 // Returns true if this chain is incomplete
 func (i *indexer) previouslyIndexed(chainID ids.ID) (bool, error) {
-	key := make([]byte, hashing.HashLen+wrappers.ByteLen)
+	key := make([]byte, ids.IDLen+wrappers.ByteLen)
 	copy(key, chainID[:])
-	key[hashing.HashLen] = previouslyIndexedPrefix
+	key[ids.IDLen] = previouslyIndexedPrefix
 	return i.db.Has(key)
 }
 
