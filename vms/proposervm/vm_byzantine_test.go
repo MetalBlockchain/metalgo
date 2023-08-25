@@ -11,13 +11,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/vms/proposervm/block"
+	"github.com/ava-labs/avalanchego/vms/proposervm/proposer"
 )
 
 // Ensure that a byzantine node issuing an invalid PreForkBlock (Y) when the
@@ -103,6 +105,8 @@ func TestInvalidByzantineProposerParent(t *testing.T) {
 //	   / \
 //	  Y   Z
 func TestInvalidByzantineProposerOracleParent(t *testing.T) {
+	require := require.New(t)
+
 	coreVM, _, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0)
 	proVM.Set(coreGenBlk.Timestamp())
 
@@ -176,11 +180,8 @@ func TestInvalidByzantineProposerOracleParent(t *testing.T) {
 		t.Fatal("could not build post fork oracle block")
 	}
 
-	aBlock, ok := aBlockIntf.(*postForkBlock)
-	if !ok {
-		t.Fatal("expected post fork block")
-	}
-
+	require.IsType(&postForkBlock{}, aBlockIntf)
+	aBlock := aBlockIntf.(*postForkBlock)
 	opts, err := aBlock.Options(context.Background())
 	if err != nil {
 		t.Fatal("could not retrieve options from post fork oracle block")
@@ -330,6 +331,8 @@ func TestInvalidByzantineProposerPreForkParent(t *testing.T) {
 //	|     /
 //	B - Y
 func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
+	require := require.New(t)
+
 	coreVM, _, proVM, coreGenBlk, _ := initTestProposerVM(t, time.Time{}, 0)
 	proVM.Set(coreGenBlk.Timestamp())
 
@@ -402,10 +405,8 @@ func TestBlockVerify_PostForkOption_FaultyParent(t *testing.T) {
 		t.Fatal("could not build post fork oracle block")
 	}
 
-	aBlock, ok := aBlockIntf.(*postForkBlock)
-	if !ok {
-		t.Fatal("expected post fork block")
-	}
+	require.IsType(&postForkBlock{}, aBlockIntf)
+	aBlock := aBlockIntf.(*postForkBlock)
 	opts, err := aBlock.Options(context.Background())
 	if err != nil {
 		t.Fatal("could not retrieve options from post fork oracle block")

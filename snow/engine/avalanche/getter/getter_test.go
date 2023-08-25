@@ -8,14 +8,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var errUnknownVertex = errors.New("unknown vertex")
@@ -62,6 +64,8 @@ func testSetup(t *testing.T) (*vertex.TestManager, *common.SenderTest, common.Co
 }
 
 func TestAcceptedFrontier(t *testing.T) {
+	require := require.New(t)
+
 	manager, sender, config := testSetup(t)
 
 	vtxID0 := ids.GenerateTestID()
@@ -72,10 +76,8 @@ func TestAcceptedFrontier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bs, ok := bsIntf.(*getter)
-	if !ok {
-		t.Fatal("Unexpected get handler")
-	}
+	require.IsType(&getter{}, bsIntf)
+	bs := bsIntf.(*getter)
 
 	manager.EdgeF = func(context.Context) []ids.ID {
 		return []ids.ID{
@@ -110,6 +112,8 @@ func TestAcceptedFrontier(t *testing.T) {
 }
 
 func TestFilterAccepted(t *testing.T) {
+	require := require.New(t)
+
 	manager, sender, config := testSetup(t)
 
 	vtxID0 := ids.GenerateTestID()
@@ -129,10 +133,8 @@ func TestFilterAccepted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bs, ok := bsIntf.(*getter)
-	if !ok {
-		t.Fatal("Unexpected get handler")
-	}
+	require.IsType(&getter{}, bsIntf)
+	bs := bsIntf.(*getter)
 
 	vtxIDs := []ids.ID{vtxID0, vtxID1, vtxID2}
 

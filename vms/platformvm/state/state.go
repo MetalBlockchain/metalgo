@@ -12,44 +12,49 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/cache/metercacher"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/linkeddb"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/uptime"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/linkeddb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/uptime"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 const (
+	blockCacheSize               = 64 * units.MiB
+	txCacheSize                  = 1 * units.GiB
+	transformedSubnetTxCacheSize = 4 * units.MiB
+
 	validatorDiffsCacheSize = 2048
-	blockCacheSize          = 2048
-	txCacheSize             = 2048
 	rewardUTXOsCacheSize    = 2048
 	chainCacheSize          = 2048
 	chainDBCacheSize        = 2048
 )
 
 var (
-	_ State = (*state)(nil)
+	_ State              = (*state)(nil)
+	_ cache.SizedElement = (*stateBlk)(nil)
+	_ cache.SizedElement = (*txAndStatus)(nil)
 
 	ErrDelegatorSubset              = errors.New("delegator's time range must be a subset of the validator's time range")
 	errMissingValidatorSet          = errors.New("missing validator set")
@@ -151,6 +156,13 @@ type stateBlk struct {
 	Blk    blocks.Block
 	Bytes  []byte         `serialize:"true"`
 	Status choices.Status `serialize:"true"`
+}
+
+func (b *stateBlk) Size() int {
+	if b == nil {
+		return wrappers.LongLen
+	}
+	return len(b.Bytes) + wrappers.IntLen + wrappers.LongLen
 }
 
 /*
@@ -335,6 +347,13 @@ type txAndStatus struct {
 	status status.Status
 }
 
+func (t *txAndStatus) Size() int {
+	if t == nil {
+		return wrappers.LongLen
+	}
+	return t.tx.Size() + wrappers.IntLen + wrappers.LongLen
+}
+
 func New(
 	db database.Database,
 	genesisBytes []byte,
@@ -377,10 +396,10 @@ func new(
 	rewards reward.Calculator,
 	bootstrapped *utils.Atomic[bool],
 ) (*state, error) {
-	blockCache, err := metercacher.New[ids.ID, *stateBlk](
+	blockCache, err := metercacher.New(
 		"block_cache",
 		metricsReg,
-		&cache.LRU[ids.ID, *stateBlk]{Size: blockCacheSize},
+		cache.NewSizedLRU[ids.ID, *stateBlk](blockCacheSize),
 	)
 	if err != nil {
 		return nil, err
@@ -422,10 +441,10 @@ func new(
 		return nil, err
 	}
 
-	txCache, err := metercacher.New[ids.ID, *txAndStatus](
+	txCache, err := metercacher.New(
 		"tx_cache",
 		metricsReg,
-		&cache.LRU[ids.ID, *txAndStatus]{Size: txCacheSize},
+		cache.NewSizedLRU[ids.ID, *txAndStatus](txCacheSize),
 	)
 	if err != nil {
 		return nil, err
@@ -449,10 +468,10 @@ func new(
 
 	subnetBaseDB := prefixdb.New(subnetPrefix, baseDB)
 
-	transformedSubnetCache, err := metercacher.New[ids.ID, *txs.Tx](
+	transformedSubnetCache, err := metercacher.New(
 		"transformed_subnet_cache",
 		metricsReg,
-		&cache.LRU[ids.ID, *txs.Tx]{Size: chainCacheSize},
+		cache.NewSizedLRU[ids.ID, *txs.Tx](transformedSubnetTxCacheSize),
 	)
 	if err != nil {
 		return nil, err

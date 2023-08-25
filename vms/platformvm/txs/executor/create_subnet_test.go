@@ -9,39 +9,40 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/utxo"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 	ap3Time := defaultGenesisTime.Add(time.Hour)
 	tests := []struct {
-		name         string
-		time         time.Time
-		fee          uint64
-		expectsError bool
+		name        string
+		time        time.Time
+		fee         uint64
+		expectedErr error
 	}{
 		{
-			name:         "pre-fork - correctly priced",
-			time:         defaultGenesisTime,
-			fee:          0,
-			expectsError: false,
+			name:        "pre-fork - correctly priced",
+			time:        defaultGenesisTime,
+			fee:         0,
+			expectedErr: nil,
 		},
 		{
-			name:         "post-fork - incorrectly priced",
-			time:         ap3Time,
-			fee:          100*defaultTxFee - 1*units.NanoAvax,
-			expectsError: true,
+			name:        "post-fork - incorrectly priced",
+			time:        ap3Time,
+			fee:         100*defaultTxFee - 1*units.NanoAvax,
+			expectedErr: utxo.ErrInsufficientUnlockedFunds,
 		},
 		{
-			name:         "post-fork - correctly priced",
-			time:         ap3Time,
-			fee:          100 * defaultTxFee,
-			expectsError: false,
+			name:        "post-fork - correctly priced",
+			time:        ap3Time,
+			fee:         100 * defaultTxFee,
+			expectedErr: nil,
 		},
 	}
 	for _, test := range tests {
@@ -82,7 +83,7 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 				Tx:      tx,
 			}
 			err = tx.Unsigned.Visit(&executor)
-			require.Equal(test.expectsError, err != nil)
+			require.ErrorIs(err, test.expectedErr)
 		})
 	}
 }

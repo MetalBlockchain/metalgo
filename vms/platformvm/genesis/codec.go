@@ -3,9 +3,7 @@
 
 package genesis
 
-import (
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-)
+import "github.com/ava-labs/avalanchego/vms/platformvm/blocks"
 
 const Version = blocks.Version
 

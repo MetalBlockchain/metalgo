@@ -5,7 +5,7 @@ package merkledb
 
 import "github.com/MetalBlockchain/metalgo/database"
 
-var _ database.Iterator = &iterator{}
+var _ database.Iterator = (*iterator)(nil)
 
 type iterator struct {
 	db       *Database

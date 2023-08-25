@@ -7,17 +7,21 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/hashing"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 var (
+	_ cache.SizedElement = (*Tx)(nil)
+
 	ErrNilSignedTx = errors.New("nil signed tx is not valid")
 
 	errSignedTxNotInitialized = errors.New("signed tx was never initialized and is not valid")
@@ -83,6 +87,13 @@ func Parse(c codec.Manager, signedBytes []byte) (*Tx, error) {
 	unsignedBytes := signedBytes[:unsignedBytesLen]
 	tx.SetBytes(unsignedBytes, signedBytes)
 	return tx, nil
+}
+
+func (tx *Tx) Size() int {
+	if tx == nil {
+		return wrappers.LongLen
+	}
+	return len(tx.bytes) + wrappers.LongLen
 }
 
 func (tx *Tx) Bytes() []byte {
