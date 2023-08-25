@@ -13,25 +13,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/genesis"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 const trackChecksum = false
@@ -836,5 +837,110 @@ func TestStateAddRemoveValidator(t *testing.T) {
 		gotPublicKeyDiffs, err := state.GetValidatorPublicKeyDiffs(newHeight)
 		require.NoError(err)
 		require.Equal(diff.expectedPublicKeyDiff, gotPublicKeyDiffs)
+	}
+}
+
+func TestParsedStateBlock(t *testing.T) {
+	require := require.New(t)
+
+	var blks []blocks.Block
+
+	{
+		blk, err := blocks.NewApricotAbortBlock(ids.GenerateTestID(), 1000)
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewApricotAtomicBlock(ids.GenerateTestID(), 1000, &txs.Tx{
+			Unsigned: &txs.AdvanceTimeTx{
+				Time: 1000,
+			},
+		})
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewApricotCommitBlock(ids.GenerateTestID(), 1000)
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewApricotProposalBlock(ids.GenerateTestID(), 1000, &txs.Tx{
+			Unsigned: &txs.RewardValidatorTx{
+				TxID: ids.GenerateTestID(),
+			},
+		})
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewApricotStandardBlock(ids.GenerateTestID(), 1000, []*txs.Tx{
+			{
+				Unsigned: &txs.RewardValidatorTx{
+					TxID: ids.GenerateTestID(),
+				},
+			},
+		})
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewBanffAbortBlock(time.Now(), ids.GenerateTestID(), 1000)
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewBanffCommitBlock(time.Now(), ids.GenerateTestID(), 1000)
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewBanffProposalBlock(time.Now(), ids.GenerateTestID(), 1000, &txs.Tx{
+			Unsigned: &txs.RewardValidatorTx{
+				TxID: ids.GenerateTestID(),
+			},
+		})
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	{
+		blk, err := blocks.NewBanffStandardBlock(time.Now(), ids.GenerateTestID(), 1000, []*txs.Tx{
+			{
+				Unsigned: &txs.RewardValidatorTx{
+					TxID: ids.GenerateTestID(),
+				},
+			},
+		})
+		require.NoError(err)
+		blks = append(blks, blk)
+	}
+
+	for _, blk := range blks {
+		stBlk := stateBlk{
+			Blk:    blk,
+			Bytes:  blk.Bytes(),
+			Status: choices.Accepted,
+		}
+
+		stBlkBytes, err := blocks.GenesisCodec.Marshal(blocks.Version, &stBlk)
+		require.NoError(err)
+
+		gotBlk, _, isStateBlk, err := parseStoredBlock(stBlkBytes)
+		require.NoError(err)
+		require.True(isStateBlk)
+		require.Equal(blk.ID(), gotBlk.ID())
+
+		gotBlk, _, isStateBlk, err = parseStoredBlock(blk.Bytes())
+		require.NoError(err)
+		require.False(isStateBlk)
+		require.Equal(blk.ID(), gotBlk.ID())
 	}
 }

@@ -10,37 +10,40 @@ import (
 	"net/http"
 	"time"
 
+	stdjson "encoding/json"
 	stdmath "math"
 
 	"go.uber.org/zap"
 
 	"golang.org/x/exp/maps"
 
-	"github.com/MetalBlockchain/metalgo/api"
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/api"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/keystore"
+	"github.com/ava-labs/avalanchego/vms/platformvm/fx"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/signer"
+	"github.com/ava-labs/avalanchego/vms/platformvm/stakeable"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/builder"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/executor"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
 	platformapi "github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 )
@@ -2536,11 +2539,68 @@ type GetValidatorsAtArgs struct {
 	SubnetID ids.ID      `json:"subnetID"`
 }
 
+type jsonGetValidatorOutput struct {
+	PublicKey *string     `json:"publicKey"`
+	Weight    json.Uint64 `json:"weight"`
+}
+
+func (v *GetValidatorsAtReply) MarshalJSON() ([]byte, error) {
+	m := make(map[ids.NodeID]*jsonGetValidatorOutput, len(v.Validators))
+	for _, vdr := range v.Validators {
+		vdrJSON := &jsonGetValidatorOutput{
+			Weight: json.Uint64(vdr.Weight),
+		}
+
+		if vdr.PublicKey != nil {
+			pk, err := formatting.Encode(formatting.HexNC, bls.PublicKeyToBytes(vdr.PublicKey))
+			if err != nil {
+				return nil, err
+			}
+			vdrJSON.PublicKey = &pk
+		}
+
+		m[vdr.NodeID] = vdrJSON
+	}
+	return stdjson.Marshal(m)
+}
+
+func (v *GetValidatorsAtReply) UnmarshalJSON(b []byte) error {
+	var m map[ids.NodeID]*jsonGetValidatorOutput
+	if err := stdjson.Unmarshal(b, &m); err != nil {
+		return err
+	}
+
+	if m == nil {
+		v.Validators = nil
+		return nil
+	}
+
+	v.Validators = make(map[ids.NodeID]*validators.GetValidatorOutput, len(m))
+	for nodeID, vdrJSON := range m {
+		vdr := &validators.GetValidatorOutput{
+			NodeID: nodeID,
+			Weight: uint64(vdrJSON.Weight),
+		}
+
+		if vdrJSON.PublicKey != nil {
+			pkBytes, err := formatting.Decode(formatting.HexNC, *vdrJSON.PublicKey)
+			if err != nil {
+				return err
+			}
+			vdr.PublicKey, err = bls.PublicKeyFromBytes(pkBytes)
+			if err != nil {
+				return err
+			}
+		}
+
+		v.Validators[nodeID] = vdr
+	}
+	return nil
+}
+
 // GetValidatorsAtReply is the response from GetValidatorsAt
 type GetValidatorsAtReply struct {
-	// TODO should we change this to map[ids.NodeID]*validators.Validator?
-	// We'd have to add a MarshalJSON method to validators.Validator.
-	Validators map[ids.NodeID]uint64 `json:"validators"`
+	Validators map[ids.NodeID]*validators.GetValidatorOutput
 }
 
 // GetValidatorsAt returns the weights of the validator set of a provided subnet
@@ -2556,13 +2616,9 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 
 	ctx := r.Context()
 	var err error
-	vdrs, err := s.vm.GetValidatorSet(ctx, height, args.SubnetID)
+	reply.Validators, err = s.vm.GetValidatorSet(ctx, height, args.SubnetID)
 	if err != nil {
 		return fmt.Errorf("failed to get validator set: %w", err)
-	}
-	reply.Validators = make(map[ids.NodeID]uint64, len(vdrs))
-	for _, vdr := range vdrs {
-		reply.Validators[vdr.NodeID] = vdr.Weight
 	}
 	return nil
 }

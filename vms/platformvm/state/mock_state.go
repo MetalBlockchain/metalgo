@@ -9,16 +9,18 @@ package state
 
 import (
 	reflect "reflect"
+	sync "sync"
 	time "time"
 
-	database "github.com/MetalBlockchain/metalgo/database"
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	validators "github.com/MetalBlockchain/metalgo/snow/validators"
-	bls "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
-	blocks "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	status "github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	database "github.com/ava-labs/avalanchego/database"
+	ids "github.com/ava-labs/avalanchego/ids"
+	validators "github.com/ava-labs/avalanchego/snow/validators"
+	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
+	logging "github.com/ava-labs/avalanchego/utils/logging"
+	avax "github.com/ava-labs/avalanchego/vms/components/avax"
+	blocks "github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	status "github.com/ava-labs/avalanchego/vms/platformvm/status"
+	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -256,6 +258,21 @@ func (m *MockState) DeleteUTXO(arg0 ids.ID) {
 func (mr *MockStateMockRecorder) DeleteUTXO(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUTXO", reflect.TypeOf((*MockState)(nil).DeleteUTXO), arg0)
+}
+
+// GetBlockIDAtHeight mocks base method.
+func (m *MockState) GetBlockIDAtHeight(arg0 uint64) (ids.ID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockIDAtHeight", arg0)
+	ret0, _ := ret[0].(ids.ID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockIDAtHeight indicates an expected call of GetBlockIDAtHeight.
+func (mr *MockStateMockRecorder) GetBlockIDAtHeight(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockIDAtHeight", reflect.TypeOf((*MockState)(nil).GetBlockIDAtHeight), arg0)
 }
 
 // GetChains mocks base method.
@@ -571,6 +588,20 @@ func (m *MockState) GetValidatorWeightDiffs(arg0 uint64, arg1 ids.ID) (map[ids.N
 func (mr *MockStateMockRecorder) GetValidatorWeightDiffs(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorWeightDiffs", reflect.TypeOf((*MockState)(nil).GetValidatorWeightDiffs), arg0, arg1)
+}
+
+// PruneAndIndex mocks base method.
+func (m *MockState) PruneAndIndex(arg0 sync.Locker, arg1 logging.Logger) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneAndIndex", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneAndIndex indicates an expected call of PruneAndIndex.
+func (mr *MockStateMockRecorder) PruneAndIndex(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneAndIndex", reflect.TypeOf((*MockState)(nil).PruneAndIndex), arg0, arg1)
 }
 
 // PutCurrentDelegator mocks base method.
