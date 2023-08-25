@@ -10,8 +10,8 @@ import (
 
 	"github.com/thepudds/fzgen/fuzzer"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func FuzzGetWeightKey(f *testing.F) {
