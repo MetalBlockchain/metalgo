@@ -12,7 +12,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 const (

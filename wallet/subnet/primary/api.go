@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	MainnetAPIURI = "https://api.avax.network"
-	FujiAPIURI    = "https://api.avax-test.network"
+	MainnetAPIURI = "https://api.metalblockchain.org"
+	TahoeAPIURI   = "https://tahoe.metalblockchain.org"
 	LocalAPIURI   = "http://localhost:9650"
 
 	fetchLimit = 1024
