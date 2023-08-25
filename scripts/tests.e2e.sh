@@ -73,7 +73,7 @@ echo "running e2e tests against the local cluster with ${METALGO_PATH}"
 --ginkgo.v \
 --log-level debug \
 --network-runner-grpc-endpoint="0.0.0.0:12342" \
---network-runner-metalgo-path=${AVALANCHEGO_PATH} \
+--network-runner-metalgo-path=${METALGO_PATH} \
 --network-runner-metalgo-log-level="WARN" \
 --test-keys-file=tests/test.insecure.secp256k1.keys \
 && EXIT_CODE=$? || EXIT_CODE=$?
