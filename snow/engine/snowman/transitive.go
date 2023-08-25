@@ -9,30 +9,36 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/cache/metercacher"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/poll"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/metalgo/snow/events"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/bag"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman/poll"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/events"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/bag"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 )
 
-const nonVerifiedCacheSize = 128
+const nonVerifiedCacheSize = 128 * units.MiB
 
 var _ Engine = (*Transitive)(nil)
 
 func New(config Config) (Engine, error) {
 	return newTransitive(config)
+}
+
+func cachedBlockSize(_ ids.ID, blk snowman.Block) int {
+	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
 // Transitive implements the Engine interface by attempting to fetch all
@@ -92,7 +98,10 @@ func newTransitive(config Config) (*Transitive, error) {
 	nonVerifiedCache, err := metercacher.New[ids.ID, snowman.Block](
 		"non_verified_cache",
 		config.Ctx.Registerer,
-		&cache.LRU[ids.ID, snowman.Block]{Size: nonVerifiedCacheSize},
+		cache.NewSizedLRU[ids.ID, snowman.Block](
+			nonVerifiedCacheSize,
+			cachedBlockSize,
+		),
 	)
 	if err != nil {
 		return nil, err

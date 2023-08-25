@@ -40,8 +40,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
-const pointerOverhead = wrappers.LongLen
-
 var (
 	_ State = (*state)(nil)
 
@@ -126,15 +124,16 @@ type State interface {
 	ValidatorSet(subnetID ids.ID, vdrs validators.Set) error
 
 	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
-	// block until it has applied all of the diffs through [endHeight]. Applying
-	// the diffs results in modifying [validators].
+	// block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
 	//
 	// Invariant: If attempting to generate the validator set for
-	// [endHeight - 1], [validators] should initially contain the validator
+	// [endHeight - 1], [validators] must initially contain the validator
 	// weights for [startHeight].
 	//
 	// Note: Because this function iterates towards the genesis, [startHeight]
-	// should normally be greater than or equal to [endHeight].
+	// will typically be greater than or equal to [endHeight]. If [startHeight]
+	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorWeightDiffs(
 		ctx context.Context,
 		validators map[ids.NodeID]*validators.GetValidatorOutput,
@@ -144,15 +143,16 @@ type State interface {
 	) error
 
 	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
-	// genesis block until it has applied all of the diffs through [endHeight].
-	// Applying the diffs results in modifying [validators].
+	// genesis block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
 	//
 	// Invariant: If attempting to generate the validator set for
-	// [endHeight - 1], [validators] should initially contain the validators for
-	// [endHeight - 1] and the public keys for [startHeight].
+	// [endHeight - 1], [validators] must initially contain the validator
+	// weights for [startHeight].
 	//
 	// Note: Because this function iterates towards the genesis, [startHeight]
-	// should normally be greater than or equal to [endHeight].
+	// will typically be greater than or equal to [endHeight]. If [startHeight]
+	// is less than [endHeight], no diffs will be applied.
 	ApplyValidatorPublicKeyDiffs(
 		ctx context.Context,
 		validators map[ids.NodeID]*validators.GetValidatorOutput,
@@ -220,11 +220,11 @@ type stateBlk struct {
  * | |-. nested pub key diffs TODO: Remove once only the flat db is needed
  * | | '-. height
  * | |   '-. list
- * | |     '-- nodeID -> public key
+ * | |     '-- nodeID -> compressed public key
  * | |-. flat weight diffs
  * | | '-- subnet+height+nodeID -> weightChange
  * | '-. flat pub key diffs
- * |   '-- subnet+height+nodeID -> public key or nil
+ * |   '-- subnet+height+nodeID -> uncompressed public key or nil
  * |-. blocks
  * | '-- blockID -> block bytes
  * |-. txs
@@ -379,25 +379,25 @@ type txAndStatus struct {
 	status status.Status
 }
 
-func txSize(tx *txs.Tx) int {
+func txSize(_ ids.ID, tx *txs.Tx) int {
 	if tx == nil {
-		return pointerOverhead
+		return ids.IDLen + constants.PointerOverhead
 	}
-	return len(tx.Bytes()) + pointerOverhead
+	return ids.IDLen + len(tx.Bytes()) + constants.PointerOverhead
 }
 
-func txAndStatusSize(t *txAndStatus) int {
+func txAndStatusSize(_ ids.ID, t *txAndStatus) int {
 	if t == nil {
-		return pointerOverhead
+		return ids.IDLen + constants.PointerOverhead
 	}
-	return len(t.tx.Bytes()) + wrappers.IntLen + pointerOverhead
+	return ids.IDLen + len(t.tx.Bytes()) + wrappers.IntLen + 2*constants.PointerOverhead
 }
 
-func blockSize(blk blocks.Block) int {
+func blockSize(_ ids.ID, blk blocks.Block) int {
 	if blk == nil {
-		return pointerOverhead
+		return ids.IDLen + constants.PointerOverhead
 	}
-	return len(blk.Bytes()) + pointerOverhead
+	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
 }
 
 func New(
@@ -985,7 +985,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 	subnetID ids.ID,
 ) error {
 	diffIter := s.flatValidatorWeightDiffsDB.NewIteratorWithStartAndPrefix(
-		getStartDiffKey(subnetID, startHeight),
+		marshalStartDiffKey(subnetID, startHeight),
 		subnetID[:],
 	)
 	defer diffIter.Release()
@@ -998,7 +998,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 			return err
 		}
 
-		_, parsedHeight, nodeID, err := parseDiffKey(diffIter.Key())
+		_, parsedHeight, nodeID, err := unmarshalDiffKey(diffIter.Key())
 		if err != nil {
 			return err
 		}
@@ -1010,7 +1010,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 
 		prevHeight = parsedHeight
 
-		weightDiff, err := parseWeightValue(diffIter.Value())
+		weightDiff, err := unmarshalWeightDiff(diffIter.Value())
 		if err != nil {
 			return err
 		}
@@ -1019,7 +1019,6 @@ func (s *state) ApplyValidatorWeightDiffs(
 			return err
 		}
 	}
-
 	if err := diffIter.Error(); err != nil {
 		return err
 	}
@@ -1110,7 +1109,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 	endHeight uint64,
 ) error {
 	diffIter := s.flatValidatorPublicKeyDiffsDB.NewIteratorWithStartAndPrefix(
-		getStartDiffKey(constants.PrimaryNetworkID, startHeight),
+		marshalStartDiffKey(constants.PrimaryNetworkID, startHeight),
 		constants.PrimaryNetworkID[:],
 	)
 	defer diffIter.Release()
@@ -1120,7 +1119,7 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 			return err
 		}
 
-		_, parsedHeight, nodeID, err := parseDiffKey(diffIter.Key())
+		_, parsedHeight, nodeID, err := unmarshalDiffKey(diffIter.Key())
 		if err != nil {
 			return err
 		}
@@ -1143,6 +1142,12 @@ func (s *state) ApplyValidatorPublicKeyDiffs(
 
 		vdr.PublicKey = new(bls.PublicKey).Deserialize(pkBytes)
 	}
+
+	// Note: this does not fallback to the linkeddb index because the linkeddb
+	// index does not contain entries for when to remove the public key.
+	//
+	// Nodes may see inconsistent public keys for heights before the new public
+	// key index was populated.
 	return diffIter.Error()
 }
 
@@ -1647,6 +1652,9 @@ func (s *state) AddStatelessBlock(block blocks.Block) {
 
 func (s *state) SetHeight(height uint64) {
 	if s.indexedHeights == nil {
+		// If indexedHeights hasn't been created yet, then we are newly tracking
+		// the range. This means we should initialize the LowerBound to the
+		// current height.
 		s.indexedHeights = &heightRange{
 			LowerBound: height,
 		}
@@ -1747,8 +1755,8 @@ func (s *state) GetStatelessBlock(blockID ids.ID) (blocks.Block, error) {
 
 func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error {
 	heightBytes := database.PackUInt64(height)
-	rawPublicKeyDiffDB := prefixdb.New(heightBytes, s.nestedValidatorPublicKeyDiffsDB)
-	pkDiffDB := linkeddb.NewDefault(rawPublicKeyDiffDB)
+	rawNestedPublicKeyDiffDB := prefixdb.New(heightBytes, s.nestedValidatorPublicKeyDiffsDB)
+	nestedPKDiffDB := linkeddb.NewDefault(rawNestedPublicKeyDiffDB)
 
 	for subnetID, validatorDiffs := range s.currentStakers.validatorDiffs {
 		delete(s.currentStakers.validatorDiffs, subnetID)
@@ -1769,8 +1777,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 		if err != nil {
 			return fmt.Errorf("failed to create prefix bytes: %w", err)
 		}
-		rawWeightDiffDB := prefixdb.New(prefixBytes, s.nestedValidatorWeightDiffsDB)
-		weightDiffDB := linkeddb.NewDefault(rawWeightDiffDB)
+		rawNestedWeightDiffDB := prefixdb.New(prefixBytes, s.nestedValidatorWeightDiffsDB)
+		nestedWeightDiffDB := linkeddb.NewDefault(rawNestedWeightDiffDB)
 
 		// Record the change in weight and/or public key for each validator.
 		for nodeID, validatorDiff := range validatorDiffs {
@@ -1792,7 +1800,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 					// added. This means the prior value for the public key was
 					// nil.
 					err := s.flatValidatorPublicKeyDiffsDB.Put(
-						getDiffKey(constants.PrimaryNetworkID, height, nodeID),
+						marshalDiffKey(constants.PrimaryNetworkID, height, nodeID),
 						nil,
 					)
 					if err != nil {
@@ -1834,8 +1842,12 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 					// Record that the public key for the validator is being
 					// removed. This means we must record the prior value of the
 					// public key.
+					//
+					// Note: We store the uncompressed public key here as it is
+					// significantly more efficient to parse when applying
+					// diffs.
 					err := s.flatValidatorPublicKeyDiffsDB.Put(
-						getDiffKey(constants.PrimaryNetworkID, height, nodeID),
+						marshalDiffKey(constants.PrimaryNetworkID, height, nodeID),
 						staker.PublicKey.Serialize(),
 					)
 					if err != nil {
@@ -1844,8 +1856,10 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 
 					// TODO: Remove this once we no longer support version
 					// rollbacks.
+					//
+					// Note: We store the compressed public key here.
 					pkBytes := bls.PublicKeyToBytes(staker.PublicKey)
-					if err := pkDiffDB.Put(nodeID[:], pkBytes); err != nil {
+					if err := nestedPKDiffDB.Put(nodeID[:], pkBytes); err != nil {
 						return err
 					}
 				}
@@ -1872,8 +1886,8 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			}
 
 			err = s.flatValidatorWeightDiffsDB.Put(
-				getDiffKey(subnetID, height, nodeID),
-				getWeightValue(weightDiff),
+				marshalDiffKey(subnetID, height, nodeID),
+				marshalWeightDiff(weightDiff),
 			)
 			if err != nil {
 				return err
@@ -1884,7 +1898,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			if err != nil {
 				return fmt.Errorf("failed to serialize validator weight diff: %w", err)
 			}
-			if err := weightDiffDB.Put(nodeID[:], weightDiffBytes); err != nil {
+			if err := nestedWeightDiffDB.Put(nodeID[:], weightDiffBytes); err != nil {
 				return err
 			}
 

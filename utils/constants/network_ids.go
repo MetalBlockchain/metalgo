@@ -9,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 // Const variables to be exported
@@ -60,6 +61,10 @@ var (
 		TahoeHRP:    TahoeID,
 		UnitTestHRP: UnitTestID,
 		LocalHRP:    LocalID,
+	}
+	ProductionNetworkIDs = set.Set[uint32]{
+		MainnetID: struct{}{},
+		FujiID:    struct{}{},
 	}
 
 	ValidNetworkPrefix = "network-"

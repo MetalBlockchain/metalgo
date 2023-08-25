@@ -13,26 +13,26 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database/leveldb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/database/leveldb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/formatting"
+	"github.com/ava-labs/avalanchego/utils/formatting/address"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/platformvm/api"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 // BenchmarkGetValidatorSet generates 10k diffs and calculates the time to
@@ -55,6 +55,9 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
+	defer func() {
+		require.NoError(db.Close())
+	}()
 
 	avaxAssetID := ids.GenerateTestID()
 	genesisTime := time.Now().Truncate(time.Second)
@@ -146,14 +149,19 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		currentHeight uint64
 	)
 	for i := 0; i < 50; i++ {
-		require.NoError(addPrimaryValidator(s, genesisTime, genesisEndTime, &nodeIDs, &currentHeight))
+		currentHeight++
+		nodeID, err := addPrimaryValidator(s, genesisTime, genesisEndTime, currentHeight)
+		require.NoError(err)
+		nodeIDs = append(nodeIDs, nodeID)
 	}
 	subnetID := ids.GenerateTestID()
 	for _, nodeID := range nodeIDs {
-		require.NoError(addSubnetValidator(s, subnetID, genesisTime, genesisEndTime, nodeID, &currentHeight))
+		currentHeight++
+		require.NoError(addSubnetValidator(s, subnetID, genesisTime, genesisEndTime, nodeID, currentHeight))
 	}
 	for i := 0; i < 9900; i++ {
-		require.NoError(addSubnetDelegator(s, subnetID, genesisTime, genesisEndTime, nodeIDs, &currentHeight))
+		currentHeight++
+		require.NoError(addSubnetDelegator(s, subnetID, genesisTime, genesisEndTime, nodeIDs, currentHeight))
 	}
 
 	ctx := context.Background()
@@ -167,12 +175,19 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 		_, err := m.GetValidatorSet(ctx, 0, subnetID)
 		require.NoError(err)
 	}
+
+	b.StopTimer()
 }
 
-func addPrimaryValidator(s state.State, startTime, endTime time.Time, nodeIDs *[]ids.NodeID, height *uint64) error {
+func addPrimaryValidator(
+	s state.State,
+	startTime time.Time,
+	endTime time.Time,
+	height uint64,
+) (ids.NodeID, error) {
 	sk, err := bls.NewSecretKey()
 	if err != nil {
-		return err
+		return ids.EmptyNodeID, err
 	}
 
 	nodeID := ids.GenerateTestNodeID()
@@ -189,24 +204,24 @@ func addPrimaryValidator(s state.State, startTime, endTime time.Time, nodeIDs *[
 		Priority:        txs.PrimaryNetworkValidatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), 1, nil)
+	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
-		return err
+		return ids.EmptyNodeID, err
 	}
 
 	s.AddStatelessBlock(blk)
-	s.SetHeight(*height + 1)
-	if err := s.Commit(); err != nil {
-		s.Abort()
-		return err
-	}
-
-	*nodeIDs = append(*nodeIDs, nodeID)
-	*height++
-	return nil
+	s.SetHeight(height)
+	return nodeID, s.Commit()
 }
 
-func addSubnetValidator(s state.State, subnetID ids.ID, startTime, endTime time.Time, nodeID ids.NodeID, height *uint64) error {
+func addSubnetValidator(
+	s state.State,
+	subnetID ids.ID,
+	startTime time.Time,
+	endTime time.Time,
+	nodeID ids.NodeID,
+	height uint64,
+) error {
 	s.PutCurrentValidator(&state.Staker{
 		TxID:            ids.GenerateTestID(),
 		NodeID:          nodeID,
@@ -219,23 +234,24 @@ func addSubnetValidator(s state.State, subnetID ids.ID, startTime, endTime time.
 		Priority:        txs.SubnetPermissionlessValidatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), 1, nil)
+	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
 		return err
 	}
 
 	s.AddStatelessBlock(blk)
-	s.SetHeight(*height + 1)
-	if err := s.Commit(); err != nil {
-		s.Abort()
-		return err
-	}
-
-	*height++
-	return nil
+	s.SetHeight(height)
+	return s.Commit()
 }
 
-func addSubnetDelegator(s state.State, subnetID ids.ID, startTime, endTime time.Time, nodeIDs []ids.NodeID, height *uint64) error {
+func addSubnetDelegator(
+	s state.State,
+	subnetID ids.ID,
+	startTime time.Time,
+	endTime time.Time,
+	nodeIDs []ids.NodeID,
+	height uint64,
+) error {
 	i := rand.Intn(len(nodeIDs)) //#nosec G404
 	nodeID := nodeIDs[i]
 	s.PutCurrentDelegator(&state.Staker{
@@ -250,19 +266,13 @@ func addSubnetDelegator(s state.State, subnetID ids.ID, startTime, endTime time.
 		Priority:        txs.SubnetPermissionlessDelegatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), *height+1, nil)
+	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
 		return err
 	}
 
 	s.AddStatelessBlock(blk)
 	s.SetLastAccepted(blk.ID())
-	s.SetHeight(*height + 1)
-	if err := s.Commit(); err != nil {
-		s.Abort()
-		return err
-	}
-
-	*height++
-	return nil
+	s.SetHeight(height)
+	return s.Commit()
 }

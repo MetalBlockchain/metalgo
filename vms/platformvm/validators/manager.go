@@ -11,19 +11,19 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/window"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/window"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/config"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
 )
 
 const (
@@ -61,11 +61,11 @@ type State interface {
 	ValidatorSet(subnetID ids.ID, vdrs validators.Set) error
 
 	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
-	// block until it has applied all of the diffs through [endHeight]. Applying
-	// the diffs results in modifying [validators].
+	// block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
 	//
 	// Invariant: If attempting to generate the validator set for
-	// [endHeight - 1], [validators] should initially contain the validator
+	// [endHeight - 1], [validators] must initially contain the validator
 	// weights for [startHeight].
 	//
 	// Note: Because this function iterates towards the genesis, [startHeight]
@@ -79,12 +79,12 @@ type State interface {
 	) error
 
 	// ApplyValidatorPublicKeyDiffs iterates from [startHeight] towards the
-	// genesis block until it has applied all of the diffs through [endHeight].
-	// Applying the diffs results in modifying [validators].
+	// genesis block until it has applied all of the diffs up to and including
+	// [endHeight]. Applying the diffs modifies [validators].
 	//
 	// Invariant: If attempting to generate the validator set for
-	// [endHeight - 1], [validators] should initially contain the validators for
-	// [endHeight - 1] and the public keys for [startHeight].
+	// [endHeight - 1], [validators] must initially contain the validator
+	// weights for [startHeight].
 	//
 	// Note: Because this function iterates towards the genesis, [startHeight]
 	// should normally be greater than or equal to [endHeight].
@@ -336,6 +336,9 @@ func (m *manager) makeSubnetValidatorSet(
 		return nil, 0, err
 	}
 
+	// Update the subnet validator set to include the public keys at
+	// [currentHeight]. When we apply the public key diffs, we will convert
+	// these keys to represent the public keys at [targetHeight].
 	for nodeID, vdr := range subnetValidatorSet {
 		primaryVdr, ok := primaryValidatorSet[nodeID]
 		if !ok {
