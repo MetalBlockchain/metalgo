@@ -8,13 +8,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
+
+const trackChecksum = false
 
 func TestUTXOState(t *testing.T) {
 	require := require.New(t)
@@ -50,7 +52,7 @@ func TestUTXOState(t *testing.T) {
 	require.NoError(manager.RegisterCodec(codecVersion, c))
 
 	db := memdb.New()
-	s, err := NewUTXOState(db, manager)
+	s, err := NewUTXOState(db, manager, trackChecksum)
 	require.NoError(err)
 
 	_, err = s.GetUTXO(utxoID)
@@ -78,7 +80,7 @@ func TestUTXOState(t *testing.T) {
 
 	require.NoError(s.PutUTXO(utxo))
 
-	s, err = NewUTXOState(db, manager)
+	s, err = NewUTXOState(db, manager, trackChecksum)
 	require.NoError(err)
 
 	readUTXO, err = s.GetUTXO(utxoID)

@@ -11,20 +11,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/getter"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/getter"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/engine/common/queue"
+	"github.com/ava-labs/avalanchego/snow/engine/common/tracker"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var (
@@ -32,6 +33,20 @@ var (
 	errParsedUnknownVertex = errors.New("parsed unknown vertex")
 	errUnknownTx           = errors.New("unknown tx")
 )
+
+type testTx struct {
+	snowstorm.Tx
+
+	tx *snowstorm.TestTx
+}
+
+func (t *testTx) Accept(ctx context.Context) error {
+	if err := t.Tx.Accept(ctx); err != nil {
+		return err
+	}
+	t.tx.DependenciesV = nil
+	return nil
+}
 
 func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.TestManager, *vertex.TestVM) {
 	require := require.New(t)
@@ -360,7 +375,7 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 	txBytes0 := []byte{0}
 	txBytes1 := []byte{1}
 
-	tx0 := &snowstorm.TestTx{
+	innerTx0 := &snowstorm.TestTx{
 		TestDecidable: choices.TestDecidable{
 			IDV:     txID0,
 			StatusV: choices.Processing,
@@ -374,8 +389,15 @@ func TestBootstrapperTxDependencies(t *testing.T) {
 			IDV:     txID1,
 			StatusV: choices.Processing,
 		},
-		DependenciesV: []snowstorm.Tx{tx0},
-		BytesV:        txBytes1,
+		DependenciesV: set.Set[ids.ID]{
+			innerTx0.IDV: struct{}{},
+		},
+		BytesV: txBytes1,
+	}
+
+	tx0 := &testTx{
+		Tx: innerTx0,
+		tx: tx1,
 	}
 
 	vtxID0 := ids.GenerateTestID()

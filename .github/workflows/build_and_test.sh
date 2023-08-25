@@ -15,5 +15,5 @@ if [[ -z $(git status -s) ]]; then
     # TODO: Revise this check once we can reliably build without changes
     # exit 1
 fi
+
 "$METAL_PATH"/scripts/build_test.sh
-"$METAL_PATH"/scripts/build_fuzz.sh

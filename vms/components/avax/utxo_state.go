@@ -6,13 +6,13 @@ package avax
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/cache/metercacher"
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/linkeddb"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/linkeddb"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 const (
@@ -30,6 +30,8 @@ var (
 type UTXOState interface {
 	UTXOReader
 	UTXOWriter
+
+	// Checksum returns the current UTXOChecksum.
 	Checksum() ids.ID
 }
 
@@ -78,10 +80,15 @@ type utxoState struct {
 	indexDB    database.Database
 	indexCache cache.Cacher[string, linkeddb.LinkedDB]
 
-	checksum ids.ID
+	trackChecksum bool
+	checksum      ids.ID
 }
 
-func NewUTXOState(db database.Database, codec codec.Manager) (UTXOState, error) {
+func NewUTXOState(
+	db database.Database,
+	codec codec.Manager,
+	trackChecksum bool,
+) (UTXOState, error) {
 	s := &utxoState{
 		codec: codec,
 
@@ -90,11 +97,18 @@ func NewUTXOState(db database.Database, codec codec.Manager) (UTXOState, error) 
 
 		indexDB:    prefixdb.New(indexPrefix, db),
 		indexCache: &cache.LRU[string, linkeddb.LinkedDB]{Size: indexCacheSize},
+
+		trackChecksum: trackChecksum,
 	}
 	return s, s.initChecksum()
 }
 
-func NewMeteredUTXOState(db database.Database, codec codec.Manager, metrics prometheus.Registerer) (UTXOState, error) {
+func NewMeteredUTXOState(
+	db database.Database,
+	codec codec.Manager,
+	metrics prometheus.Registerer,
+	trackChecksum bool,
+) (UTXOState, error) {
 	utxoCache, err := metercacher.New[ids.ID, *UTXO](
 		"utxo_cache",
 		metrics,
@@ -123,6 +137,8 @@ func NewMeteredUTXOState(db database.Database, codec codec.Manager, metrics prom
 
 		indexDB:    prefixdb.New(indexPrefix, db),
 		indexCache: indexCache,
+
+		trackChecksum: trackChecksum,
 	}
 	return s, s.initChecksum()
 }
@@ -161,8 +177,9 @@ func (s *utxoState) PutUTXO(utxo *UTXO) error {
 	}
 
 	utxoID := utxo.InputID()
-	s.utxoCache.Put(utxoID, utxo)
 	s.updateChecksum(utxoID)
+
+	s.utxoCache.Put(utxoID, utxo)
 	if err := s.utxoDB.Put(utxoID[:], utxoBytes); err != nil {
 		return err
 	}
@@ -191,8 +208,9 @@ func (s *utxoState) DeleteUTXO(utxoID ids.ID) error {
 		return err
 	}
 
-	s.utxoCache.Put(utxoID, nil)
 	s.updateChecksum(utxoID)
+
+	s.utxoCache.Put(utxoID, nil)
 	if err := s.utxoDB.Delete(utxoID[:]); err != nil {
 		return err
 	}
@@ -250,6 +268,10 @@ func (s *utxoState) getIndexDB(addr []byte) linkeddb.LinkedDB {
 }
 
 func (s *utxoState) initChecksum() error {
+	if !s.trackChecksum {
+		return nil
+	}
+
 	it := s.utxoDB.NewIterator()
 	defer it.Release()
 
@@ -264,7 +286,9 @@ func (s *utxoState) initChecksum() error {
 }
 
 func (s *utxoState) updateChecksum(modifiedID ids.ID) {
-	for i, b := range modifiedID {
-		s.checksum[i] ^= b
+	if !s.trackChecksum {
+		return
 	}
+
+	s.checksum = s.checksum.XOR(modifiedID)
 }

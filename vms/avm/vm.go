@@ -17,36 +17,35 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/pubsub"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/avm/config"
-	"github.com/MetalBlockchain/metalgo/vms/avm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/avm/network"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
-	"github.com/MetalBlockchain/metalgo/vms/avm/utxo"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/index"
-	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/pubsub"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowstorm"
+	"github.com/ava-labs/avalanchego/snow/engine/avalanche/vertex"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/linkedhashmap"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm/blocks"
+	"github.com/ava-labs/avalanchego/vms/avm/config"
+	"github.com/ava-labs/avalanchego/vms/avm/metrics"
+	"github.com/ava-labs/avalanchego/vms/avm/network"
+	"github.com/ava-labs/avalanchego/vms/avm/states"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/avm/txs/mempool"
+	"github.com/ava-labs/avalanchego/vms/avm/utxo"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/index"
+	"github.com/ava-labs/avalanchego/vms/components/keystore"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/blocks/builder"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
@@ -54,10 +53,7 @@ import (
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 )
 
-const (
-	assetToFxCacheSize = 1024
-	txDeduplicatorSize = 8192
-)
+const assetToFxCacheSize = 1024
 
 var (
 	errIncompatibleFx            = errors.New("incompatible feature extension")
@@ -116,8 +112,6 @@ type VM struct {
 
 	addressTxsIndexer index.AddressTxsIndexer
 
-	uniqueTxs cache.Deduplicator[ids.ID, *UniqueTx]
-
 	txBackend *txexecutor.Backend
 
 	// These values are only initialized after the chain has been linearized.
@@ -143,6 +137,7 @@ func (*VM) Disconnected(context.Context, ids.NodeID) error {
 type Config struct {
 	IndexTransactions    bool `json:"index-transactions"`
 	IndexAllowIncomplete bool `json:"index-allow-incomplete"`
+	ChecksumsEnabled     bool `json:"checksums-enabled"`
 }
 
 func (vm *VM) Initialize(
@@ -226,7 +221,12 @@ func (vm *VM) Initialize(
 	vm.AtomicUTXOManager = avax.NewAtomicUTXOManager(ctx.SharedMemory, codec)
 	vm.Spender = utxo.NewSpender(&vm.clock, codec)
 
-	state, err := states.New(vm.db, vm.parser, vm.registerer)
+	state, err := states.New(
+		vm.db,
+		vm.parser,
+		vm.registerer,
+		avmConfig.ChecksumsEnabled,
+	)
 	if err != nil {
 		return err
 	}
@@ -237,9 +237,6 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.uniqueTxs = &cache.EvictableLRU[ids.ID, *UniqueTx]{
-		Size: txDeduplicatorSize,
-	}
 	vm.walletService.vm = vm
 	vm.walletService.pendingTxs = linkedhashmap.New[ids.ID, *txs.Tx]()
 
@@ -411,9 +408,7 @@ func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- 
 	vm.chainManager = blockexecutor.NewManager(
 		mempool,
 		vm.metrics,
-		&chainState{
-			State: vm.state,
-		},
+		vm.state,
 		vm.txBackend,
 		&vm.clock,
 		vm.onAccept,
@@ -452,29 +447,23 @@ func (vm *VM) Linearize(_ context.Context, stopVertexID ids.ID, toEngine chan<- 
 }
 
 func (vm *VM) ParseTx(_ context.Context, bytes []byte) (snowstorm.Tx, error) {
-	rawTx, err := vm.parser.ParseTx(bytes)
+	tx, err := vm.parser.ParseTx(bytes)
 	if err != nil {
 		return nil, err
 	}
 
-	tx := &UniqueTx{
-		TxCachedState: &TxCachedState{
-			Tx: rawTx,
-		},
-		vm:   vm,
-		txID: rawTx.ID(),
-	}
-	if err := tx.SyntacticVerify(); err != nil {
+	err = tx.Unsigned.Visit(&txexecutor.SyntacticVerifier{
+		Backend: vm.txBackend,
+		Tx:      tx,
+	})
+	if err != nil {
 		return nil, err
 	}
 
-	if tx.Status() == choices.Unknown {
-		vm.state.AddTx(tx.Tx)
-		tx.setStatus(choices.Processing)
-		return tx, vm.state.Commit()
-	}
-
-	return tx, nil
+	return &Tx{
+		vm: vm,
+		tx: tx,
+	}, nil
 }
 
 /*
@@ -574,7 +563,6 @@ func (vm *VM) initState(tx *txs.Tx) {
 		zap.Stringer("txID", txID),
 	)
 	vm.state.AddTx(tx)
-	vm.state.AddStatus(txID, choices.Accepted)
 	for _, utxo := range tx.UTXOs() {
 		vm.state.AddUTXO(utxo)
 	}

@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/codec/linearcodec"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestFetchUTXOs(t *testing.T) {
@@ -47,7 +47,7 @@ func TestFetchUTXOs(t *testing.T) {
 	require.NoError(manager.RegisterCodec(codecVersion, c))
 
 	db := memdb.New()
-	s, err := NewUTXOState(db, manager)
+	s, err := NewUTXOState(db, manager, trackChecksum)
 	require.NoError(err)
 
 	require.NoError(s.PutUTXO(utxo))
@@ -81,7 +81,7 @@ func TestGetPaginatedUTXOs(t *testing.T) {
 	require.NoError(manager.RegisterCodec(codecVersion, c))
 
 	db := memdb.New()
-	s, err := NewUTXOState(db, manager)
+	s, err := NewUTXOState(db, manager, trackChecksum)
 	require.NoError(err)
 
 	// Create 1000 UTXOs each on addr0, addr1, and addr2.

@@ -16,20 +16,20 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
-	"github.com/MetalBlockchain/metalgo/cache/metercacher"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/prefixdb"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/cache/metercacher"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/avm/blocks"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
 )
 
 const (
@@ -40,6 +40,7 @@ const (
 
 	pruneCommitLimit           = 1024
 	pruneCommitSleepMultiplier = 5
+	pruneCommitSleepCap        = 10 * time.Second
 	pruneUpdateFrequency       = 30 * time.Second
 )
 
@@ -54,6 +55,8 @@ var (
 	isInitializedKey = []byte{0x00}
 	timestampKey     = []byte{0x01}
 	lastAcceptedKey  = []byte{0x02}
+
+	errStatusWithoutTx = errors.New("unexpected status without transactions")
 
 	_ State = (*state)(nil)
 )
@@ -96,12 +99,6 @@ type State interface {
 	// called during startup.
 	InitializeChainState(stopVertexID ids.ID, genesisTimestamp time.Time) error
 
-	// TODO: deprecate statuses. We should only persist accepted state
-	// Status returns a status from storage.
-	GetStatus(id ids.ID) (choices.Status, error)
-	// AddStatus saves a status in storage.
-	AddStatus(id ids.ID, status choices.Status)
-
 	// Discard uncommitted changes to the database.
 	Abort()
 
@@ -111,8 +108,6 @@ type State interface {
 	// Returns a batch of unwritten changes that, when written, will commit all
 	// pending changes to the base database.
 	CommitBatch() (database.Batch, error)
-
-	Checksums() (ids.ID, ids.ID)
 
 	// Asynchronously removes unneeded state from disk.
 	//
@@ -126,6 +121,9 @@ type State interface {
 	//
 	// TODO: remove after v1.11.x is activated
 	Prune(lock sync.Locker, log logging.Logger) error
+
+	// Checksums returns the current TxChecksum and UTXOChecksum.
+	Checksums() (txChecksum ids.ID, utxoChecksum ids.ID)
 
 	Close() error
 }
@@ -156,14 +154,12 @@ type state struct {
 	utxoState     avax.UTXOState
 
 	statusesPruned bool
-	addedStatuses  map[ids.ID]choices.Status
 	statusCache    cache.Cacher[ids.ID, *choices.Status] // cache of id -> choices.Status. If the entry is nil, it is not in the database
 	statusDB       database.Database
 
-	addedTxs   map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
-	txCache    cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
-	txDB       database.Database
-	txChecksum ids.ID
+	addedTxs map[ids.ID]*txs.Tx            // map of txID -> *txs.Tx
+	txCache  cache.Cacher[ids.ID, *txs.Tx] // cache of txID -> *txs.Tx. If the entry is nil, it is not in the database
+	txDB     database.Database
 
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
 	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID. If the entry is ids.Empty, it is not in the database
@@ -177,12 +173,16 @@ type state struct {
 	lastAccepted, persistedLastAccepted ids.ID
 	timestamp, persistedTimestamp       time.Time
 	singletonDB                         database.Database
+
+	trackChecksum bool
+	txChecksum    ids.ID
 }
 
 func New(
 	db *versiondb.Database,
 	parser blocks.Parser,
 	metrics prometheus.Registerer,
+	trackChecksums bool,
 ) (State, error) {
 	utxoDB := prefixdb.New(utxoPrefix, db)
 	statusDB := prefixdb.New(statusPrefix, db)
@@ -227,7 +227,7 @@ func New(
 		return nil, err
 	}
 
-	utxoState, err := avax.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics)
+	utxoState, err := avax.NewMeteredUTXOState(utxoDB, parser.Codec(), metrics, trackChecksums)
 	if err != nil {
 		return nil, err
 	}
@@ -240,9 +240,8 @@ func New(
 		utxoDB:        utxoDB,
 		utxoState:     utxoState,
 
-		addedStatuses: make(map[ids.ID]choices.Status),
-		statusCache:   statusCache,
-		statusDB:      statusDB,
+		statusCache: statusCache,
+		statusDB:    statusDB,
 
 		addedTxs: make(map[ids.ID]*txs.Tx),
 		txCache:  txCache,
@@ -257,6 +256,8 @@ func New(
 		blockDB:     blockDB,
 
 		singletonDB: singletonDB,
+
+		trackChecksum: trackChecksums,
 	}
 	return s, s.initTxChecksum()
 }
@@ -283,7 +284,69 @@ func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
 }
 
+// TODO: After v1.11.x has activated we can rename [getTx] to [GetTx] and delete
+// [getStatus].
 func (s *state) GetTx(txID ids.ID) (*txs.Tx, error) {
+	tx, err := s.getTx(txID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Before the linearization, transactions were persisted before they were
+	// marked as Accepted. However, this function aims to only return accepted
+	// transactions.
+	status, err := s.getStatus(txID)
+	if err == database.ErrNotFound {
+		// If the status wasn't persisted, then the transaction was written
+		// after the linearization, and is accepted.
+		return tx, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// If the status was persisted, then the transaction was written before the
+	// linearization. If it wasn't marked as accepted, then we treat it as if it
+	// doesn't exist.
+	if status != choices.Accepted {
+		return nil, database.ErrNotFound
+	}
+	return tx, nil
+}
+
+func (s *state) getStatus(id ids.ID) (choices.Status, error) {
+	if s.statusesPruned {
+		return choices.Unknown, database.ErrNotFound
+	}
+
+	if _, ok := s.addedTxs[id]; ok {
+		return choices.Unknown, database.ErrNotFound
+	}
+	if status, found := s.statusCache.Get(id); found {
+		if status == nil {
+			return choices.Unknown, database.ErrNotFound
+		}
+		return *status, nil
+	}
+
+	val, err := database.GetUInt32(s.statusDB, id[:])
+	if err == database.ErrNotFound {
+		s.statusCache.Put(id, nil)
+		return choices.Unknown, database.ErrNotFound
+	}
+	if err != nil {
+		return choices.Unknown, err
+	}
+
+	status := choices.Status(val)
+	if err := status.Valid(); err != nil {
+		return choices.Unknown, err
+	}
+	s.statusCache.Put(id, &status)
+	return status, nil
+}
+
+func (s *state) getTx(txID ids.ID) (*txs.Tx, error) {
 	if tx, exists := s.addedTxs[txID]; exists {
 		return tx, nil
 	}
@@ -314,7 +377,9 @@ func (s *state) GetTx(txID ids.ID) (*txs.Tx, error) {
 }
 
 func (s *state) AddTx(tx *txs.Tx) {
-	s.addedTxs[tx.ID()] = tx
+	txID := tx.ID()
+	s.updateTxChecksum(txID)
+	s.addedTxs[txID] = tx
 }
 
 func (s *state) GetBlockID(height uint64) (ids.ID, error) {
@@ -436,44 +501,6 @@ func (s *state) SetTimestamp(t time.Time) {
 	s.timestamp = t
 }
 
-// TODO: remove status support
-func (s *state) GetStatus(id ids.ID) (choices.Status, error) {
-	if s.statusesPruned {
-		return choices.Unknown, database.ErrNotFound
-	}
-
-	if status, exists := s.addedStatuses[id]; exists {
-		return status, nil
-	}
-	if status, found := s.statusCache.Get(id); found {
-		if status == nil {
-			return choices.Unknown, database.ErrNotFound
-		}
-		return *status, nil
-	}
-
-	val, err := database.GetUInt32(s.statusDB, id[:])
-	if err == database.ErrNotFound {
-		s.statusCache.Put(id, nil)
-		return choices.Unknown, database.ErrNotFound
-	}
-	if err != nil {
-		return choices.Unknown, err
-	}
-
-	status := choices.Status(val)
-	if err := status.Valid(); err != nil {
-		return choices.Unknown, err
-	}
-	s.statusCache.Put(id, &status)
-	return status, nil
-}
-
-// TODO: remove status support
-func (s *state) AddStatus(id ids.ID, status choices.Status) {
-	s.addedStatuses[id] = status
-}
-
 func (s *state) Commit() error {
 	defer s.Abort()
 	batch, err := s.CommitBatch()
@@ -516,7 +543,6 @@ func (s *state) write() error {
 		s.writeBlockIDs(),
 		s.writeBlocks(),
 		s.writeMetadata(),
-		s.writeStatuses(),
 	)
 	return errs.Err
 }
@@ -543,14 +569,14 @@ func (s *state) writeTxs() error {
 		txID := txID
 		txBytes := tx.Bytes()
 
-		if _, ok := s.addedStatuses[txID]; !ok {
-			s.updateTxChecksum(txID)
-		}
-
 		delete(s.addedTxs, txID)
 		s.txCache.Put(txID, tx)
+		s.statusCache.Put(txID, nil)
 		if err := s.txDB.Put(txID[:], txBytes); err != nil {
 			return fmt.Errorf("failed to add tx: %w", err)
+		}
+		if err := s.statusDB.Delete(txID[:]); err != nil {
+			return fmt.Errorf("failed to delete status: %w", err)
 		}
 	}
 	return nil
@@ -595,24 +621,6 @@ func (s *state) writeMetadata() error {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
 		s.persistedLastAccepted = s.lastAccepted
-	}
-	return nil
-}
-
-func (s *state) writeStatuses() error {
-	for id, status := range s.addedStatuses {
-		id := id
-		status := status
-
-		if status == choices.Accepted {
-			s.updateTxChecksum(id)
-		}
-
-		delete(s.addedStatuses, id)
-		s.statusCache.Put(id, &status)
-		if err := database.PutUInt32(s.statusDB, id[:], uint32(status)); err != nil {
-			return fmt.Errorf("failed to add status: %w", err)
-		}
 	}
 	return nil
 }
@@ -668,7 +676,7 @@ func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
 		return err
 	}
 
-	i := 1
+	numPruned := 1
 	for statusIter.Next() {
 		txIDBytes := statusIter.Key()
 		statusBytes := statusIter.Value()
@@ -676,9 +684,9 @@ func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
 			return err
 		}
 
-		i++
+		numPruned++
 
-		if i%pruneCommitLimit == 0 {
+		if numPruned%pruneCommitLimit == 0 {
 			// We must hold the lock during committing to make sure we don't
 			// attempt to commit to disk while a block is concurrently being
 			// accepted.
@@ -710,7 +718,7 @@ func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
 					stdmath.MaxUint64-startProgress,
 				)
 				log.Info("committing state pruning",
-					zap.Int("count", i),
+					zap.Int("numPruned", numPruned),
 					zap.Duration("eta", eta),
 				)
 			}
@@ -722,7 +730,7 @@ func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
 			pruneDuration := now.Sub(lastCommit)
 			sleepDuration := math.Min(
 				pruneCommitSleepMultiplier*pruneDuration,
-				10*time.Second,
+				pruneCommitSleepCap,
 			)
 			time.Sleep(sleepDuration)
 
@@ -757,7 +765,7 @@ func (s *state) Prune(lock sync.Locker, log logging.Logger) error {
 	s.txCache = oldTxCache
 
 	log.Info("finished state pruning",
-		zap.Int("count", i),
+		zap.Int("numPruned", numPruned),
 		zap.Duration("duration", time.Since(startTime)),
 	)
 
@@ -843,6 +851,10 @@ func (s *state) Checksums() (ids.ID, ids.ID) {
 }
 
 func (s *state) initTxChecksum() error {
+	if !s.trackChecksum {
+		return nil
+	}
+
 	txIt := s.txDB.NewIterator()
 	defer txIt.Release()
 	statusIt := s.statusDB.NewIterator()
@@ -876,7 +888,7 @@ func (s *state) initTxChecksum() error {
 	}
 
 	if statusHasNext {
-		return errors.New("dangling tx status")
+		return errStatusWithoutTx
 	}
 
 	errs := wrappers.Errs{}
@@ -888,7 +900,9 @@ func (s *state) initTxChecksum() error {
 }
 
 func (s *state) updateTxChecksum(modifiedID ids.ID) {
-	for i, b := range modifiedID {
-		s.txChecksum[i] ^= b
+	if !s.trackChecksum {
+		return
 	}
+
+	s.txChecksum = s.txChecksum.XOR(modifiedID)
 }

@@ -8,32 +8,25 @@ import (
 	"math"
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/chains/atomic"
-	"github.com/MetalBlockchain/metalgo/codec"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/database/versiondb"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/avm/config"
-	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
-	"github.com/MetalBlockchain/metalgo/vms/avm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/nftfx"
-	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/manager"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/avm/config"
+	"github.com/ava-labs/avalanchego/vms/avm/fxs"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/nftfx"
+	"github.com/ava-labs/avalanchego/vms/propertyfx"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestInvalidGenesis(t *testing.T) {
@@ -426,77 +419,6 @@ func TestVMFormat(t *testing.T) {
 	}
 }
 
-func TestTxCached(t *testing.T) {
-	require := require.New(t)
-
-	env := setup(t, &envConfig{
-		notLinearized: true,
-	})
-	defer func() {
-		require.NoError(env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
-
-	newTx := newTx(t, env.genesisBytes, env.vm, "AVAX")
-	txBytes := newTx.Bytes()
-
-	_, err := env.vm.ParseTx(context.Background(), txBytes)
-	require.NoError(err)
-
-	registerer := prometheus.NewRegistry()
-
-	env.vm.metrics, err = metrics.New("", registerer)
-	require.NoError(err)
-
-	db := memdb.New()
-	vdb := versiondb.New(db)
-	env.vm.state, err = states.New(vdb, env.vm.parser, registerer)
-	require.NoError(err)
-
-	_, err = env.vm.ParseTx(context.Background(), txBytes)
-	require.NoError(err)
-
-	count, err := database.Count(vdb)
-	require.NoError(err)
-	require.Zero(count)
-}
-
-func TestTxNotCached(t *testing.T) {
-	require := require.New(t)
-
-	env := setup(t, &envConfig{
-		notLinearized: true,
-	})
-	defer func() {
-		require.NoError(env.vm.Shutdown(context.Background()))
-		env.vm.ctx.Lock.Unlock()
-	}()
-
-	newTx := newTx(t, env.genesisBytes, env.vm, "AVAX")
-	txBytes := newTx.Bytes()
-
-	_, err := env.vm.ParseTx(context.Background(), txBytes)
-	require.NoError(err)
-
-	registerer := prometheus.NewRegistry()
-	env.vm.metrics, err = metrics.New("", registerer)
-	require.NoError(err)
-
-	db := memdb.New()
-	vdb := versiondb.New(db)
-	env.vm.state, err = states.New(vdb, env.vm.parser, registerer)
-	require.NoError(err)
-
-	env.vm.uniqueTxs.Flush()
-
-	_, err = env.vm.ParseTx(context.Background(), txBytes)
-	require.NoError(err)
-
-	count, err := database.Count(vdb)
-	require.NoError(err)
-	require.NotZero(count)
-}
-
 func TestTxAcceptAfterParseTx(t *testing.T) {
 	require := require.New(t)
 
@@ -577,13 +499,11 @@ func TestTxAcceptAfterParseTx(t *testing.T) {
 	require.NoError(parsedSecondTx.Verify(context.Background()))
 	require.NoError(parsedSecondTx.Accept(context.Background()))
 
-	firstTxStatus, err := env.vm.state.GetStatus(firstTx.ID())
+	_, err = env.vm.state.GetTx(firstTx.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, firstTxStatus)
 
-	secondTxStatus, err := env.vm.state.GetStatus(secondTx.ID())
+	_, err = env.vm.state.GetTx(secondTx.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, secondTxStatus)
 }
 
 // Test issuing an import transaction.

@@ -10,15 +10,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/avm/txs"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestSetsAndGets(t *testing.T) {
@@ -75,18 +74,14 @@ func TestSetsAndGets(t *testing.T) {
 
 	env.vm.state.AddUTXO(utxo)
 	env.vm.state.AddTx(tx)
-	env.vm.state.AddStatus(txID, choices.Accepted)
 
 	resultUTXO, err := env.vm.state.GetUTXO(utxoID)
 	require.NoError(err)
 	resultTx, err := env.vm.state.GetTx(txID)
 	require.NoError(err)
-	resultStatus, err := env.vm.state.GetStatus(txID)
-	require.NoError(err)
 
 	require.Equal(uint32(1), resultUTXO.OutputIndex)
 	require.Equal(tx.ID(), resultTx.ID())
-	require.Equal(choices.Accepted, resultStatus)
 }
 
 func TestFundingNoAddresses(t *testing.T) {
