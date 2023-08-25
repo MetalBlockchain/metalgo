@@ -11,13 +11,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/filesystem"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/resource"
-	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/filesystem"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/ava-labs/avalanchego/vms"
 )
 
 var (
@@ -144,19 +146,23 @@ func initVMGetterTest(t *testing.T) *vmGetterTestResources {
 
 	mockReader := filesystem.NewMockReader(ctrl)
 	mockManager := vms.NewMockManager(ctrl)
+	mockRegistry := prometheus.NewRegistry()
+	mockCPUTracker, err := resource.NewManager(
+		logging.NoLog{},
+		"",
+		time.Hour,
+		time.Hour,
+		time.Hour,
+		mockRegistry,
+	)
+	require.NoError(t, err)
 
 	getter := NewVMGetter(
 		VMGetterConfig{
 			FileReader:      mockReader,
 			Manager:         mockManager,
 			PluginDirectory: pluginDir,
-			CPUTracker: resource.NewManager(
-				logging.NoLog{},
-				"",
-				time.Hour,
-				time.Hour,
-				time.Hour,
-			),
+			CPUTracker:      mockCPUTracker,
 		},
 	)
 
