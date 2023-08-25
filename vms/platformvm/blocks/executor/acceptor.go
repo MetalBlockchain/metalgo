@@ -9,12 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validators"
 )
 
 var (
@@ -286,7 +285,7 @@ func (a *acceptor) commonAccept(b blocks.Block) error {
 	a.backend.lastAccepted = blkID
 	a.state.SetLastAccepted(blkID)
 	a.state.SetHeight(b.Height())
-	a.state.AddStatelessBlock(b, choices.Accepted)
+	a.state.AddStatelessBlock(b)
 	a.validators.OnAcceptedBlockID(blkID)
 	return nil
 }

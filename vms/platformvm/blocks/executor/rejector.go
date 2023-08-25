@@ -6,8 +6,7 @@ package executor
 import (
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
 )
 
 var _ blocks.Visitor = (*rejector)(nil)
@@ -78,6 +77,5 @@ func (r *rejector) rejectBlock(b blocks.Block, blockType string) error {
 		}
 	}
 
-	r.state.AddStatelessBlock(b, choices.Rejected)
-	return r.state.Commit()
+	return nil
 }

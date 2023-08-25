@@ -10,21 +10,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/chains/atomic"
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/metrics"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/validators"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestAcceptorVisitProposalBlock(t *testing.T) {
@@ -119,7 +118,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	// We should error after [commonAccept] is called.
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1)
+	s.EXPECT().AddStatelessBlock(blk).Times(1)
 
 	err = acceptor.ApricotAtomicBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
@@ -148,7 +147,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	// Set expected calls on dependencies.
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1)
+	s.EXPECT().AddStatelessBlock(blk).Times(1)
 	batch := database.NewMockBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
@@ -203,7 +202,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	// We should error after [commonAccept] is called.
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1)
+	s.EXPECT().AddStatelessBlock(blk).Times(1)
 
 	err = acceptor.BanffStandardBlock(blk)
 	require.ErrorIs(err, errMissingBlockState)
@@ -238,7 +237,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	// Set expected calls on dependencies.
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
-	s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1)
+	s.EXPECT().AddStatelessBlock(blk).Times(1)
 	batch := database.NewMockBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
@@ -304,11 +303,11 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
-		s.EXPECT().AddStatelessBlock(parentState.statelessBlock, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
 
 		s.EXPECT().SetLastAccepted(blkID).Times(1),
 		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotCommitBlock(blk)
@@ -328,11 +327,11 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
-		s.EXPECT().AddStatelessBlock(parentState.statelessBlock, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
 
 		s.EXPECT().SetLastAccepted(blkID).Times(1),
 		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
 
 		onAcceptState.EXPECT().Apply(s).Times(1),
 		s.EXPECT().Commit().Return(nil).Times(1),
@@ -396,11 +395,11 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
-		s.EXPECT().AddStatelessBlock(parentState.statelessBlock, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
 
 		s.EXPECT().SetLastAccepted(blkID).Times(1),
 		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
 	)
 
 	err = acceptor.ApricotAbortBlock(blk)
@@ -421,11 +420,11 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		s.EXPECT().SetLastAccepted(parentID).Times(1),
 		parentStatelessBlk.EXPECT().Height().Return(blk.Height()-1).Times(1),
 		s.EXPECT().SetHeight(blk.Height()-1).Times(1),
-		s.EXPECT().AddStatelessBlock(parentState.statelessBlock, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(parentState.statelessBlock).Times(1),
 
 		s.EXPECT().SetLastAccepted(blkID).Times(1),
 		s.EXPECT().SetHeight(blk.Height()).Times(1),
-		s.EXPECT().AddStatelessBlock(blk, choices.Accepted).Times(1),
+		s.EXPECT().AddStatelessBlock(blk).Times(1),
 
 		onAcceptState.EXPECT().Apply(s).Times(1),
 		s.EXPECT().Commit().Return(nil).Times(1),

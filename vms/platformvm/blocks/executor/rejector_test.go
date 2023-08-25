@@ -11,16 +11,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs/mempool"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 )
 
 func TestRejectBlock(t *testing.T) {
@@ -142,10 +141,6 @@ func TestRejectBlock(t *testing.T) {
 			for _, tx := range blk.Txs() {
 				mempool.EXPECT().Add(tx).Return(nil).Times(1)
 			}
-			gomock.InOrder(
-				state.EXPECT().AddStatelessBlock(blk, choices.Rejected).Times(1),
-				state.EXPECT().Commit().Return(nil).Times(1),
-			)
 
 			require.NoError(tt.rejectFunc(rejector, blk))
 			// Make sure block and its parent are removed from the state map.
