@@ -11,15 +11,14 @@ import (
 	reflect "reflect"
 	time "time"
 
-	database "github.com/MetalBlockchain/metalgo/database"
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	choices "github.com/MetalBlockchain/metalgo/snow/choices"
-	validators "github.com/MetalBlockchain/metalgo/snow/validators"
-	bls "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
-	blocks "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	status "github.com/MetalBlockchain/metalgo/vms/platformvm/status"
-	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	database "github.com/ava-labs/avalanchego/database"
+	ids "github.com/ava-labs/avalanchego/ids"
+	validators "github.com/ava-labs/avalanchego/snow/validators"
+	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
+	avax "github.com/ava-labs/avalanchego/vms/components/avax"
+	blocks "github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	status "github.com/ava-labs/avalanchego/vms/platformvm/status"
+	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -439,13 +438,12 @@ func (mr *MockStateMockRecorder) GetStartTime(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // GetStatelessBlock mocks base method.
-func (m *MockState) GetStatelessBlock(arg0 ids.ID) (blocks.Block, choices.Status, error) {
+func (m *MockState) GetStatelessBlock(arg0 ids.ID) (blocks.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatelessBlock", arg0)
 	ret0, _ := ret[0].(blocks.Block)
-	ret1, _ := ret[1].(choices.Status)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetStatelessBlock indicates an expected call of GetStatelessBlock.

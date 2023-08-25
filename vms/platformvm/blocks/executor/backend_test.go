@@ -11,11 +11,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/vms/platformvm/blocks"
+	"github.com/ava-labs/avalanchego/vms/platformvm/state"
 )
 
 func TestGetState(t *testing.T) {
@@ -98,7 +97,7 @@ func TestBackendGetBlock(t *testing.T) {
 	{
 		// Case: block isn't in the map or database.
 		blkID := ids.GenerateTestID()
-		state.EXPECT().GetStatelessBlock(blkID).Return(nil, choices.Unknown, database.ErrNotFound)
+		state.EXPECT().GetStatelessBlock(blkID).Return(nil, database.ErrNotFound)
 		_, err := b.GetBlock(blkID)
 		require.Equal(database.ErrNotFound, err)
 	}
@@ -106,7 +105,7 @@ func TestBackendGetBlock(t *testing.T) {
 	{
 		// Case: block isn't in the map and is in database.
 		blkID := ids.GenerateTestID()
-		state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, choices.Accepted, nil)
+		state.EXPECT().GetStatelessBlock(blkID).Return(statelessBlk, nil)
 		gotBlk, err := b.GetBlock(blkID)
 		require.NoError(err)
 		require.Equal(statelessBlk, gotBlk)

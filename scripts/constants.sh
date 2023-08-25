@@ -9,7 +9,7 @@ METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory 
 metalgo_path="$METAL_PATH/build/metalgo"
 plugin_dir=${PLUGIN_DIR:-$HOME/.metalgo/plugins}
 evm_path=${EVM_PATH:-$plugin_dir/evm}
-coreth_version=${CORETH_VERSION:-'v0.12.4-rc.0'}
+coreth_version=${CORETH_VERSION:-'v0.12.4-rc.4'}
 
 # Set the PATHS
 GOPATH="$(go env GOPATH)"
