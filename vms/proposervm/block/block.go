@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
@@ -92,10 +91,6 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 
 	cert, err := x509.ParseCertificate(b.StatelessBlock.Certificate)
 	if err != nil {
-		return err
-	}
-
-	if err := staking.VerifyCertificate(cert); err != nil {
 		return err
 	}
 
