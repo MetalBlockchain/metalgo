@@ -9,10 +9,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 	_ QueryHandler                = (*noOpQueryHandler)(nil)
 	_ ChitsHandler                = (*noOpChitsHandler)(nil)
 	_ AppHandler                  = (*noOpAppHandler)(nil)
+	_ InternalHandler             = (*noOpInternalHandler)(nil)
 )
 
 type noOpStateSummaryFrontierHandler struct {
@@ -333,6 +335,77 @@ func (nop *noOpAppHandler) AppGossip(_ context.Context, nodeID ids.NodeID, _ []b
 		zap.String("reason", "unhandled by this gear"),
 		zap.Stringer("messageOp", message.AppGossipOp),
 		zap.Stringer("nodeID", nodeID),
+	)
+	return nil
+}
+
+type noOpInternalHandler struct {
+	log logging.Logger
+}
+
+func NewNoOpInternalHandler(log logging.Logger) InternalHandler {
+	return &noOpInternalHandler{log: log}
+}
+
+func (nop *noOpInternalHandler) Connected(
+	_ context.Context,
+	nodeID ids.NodeID,
+	nodeVersion *version.Application,
+) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.ConnectedOp),
+		zap.Stringer("nodeID", nodeID),
+		zap.Stringer("version", nodeVersion),
+	)
+	return nil
+}
+
+func (nop *noOpInternalHandler) Disconnected(_ context.Context, nodeID ids.NodeID) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.DisconnectedOp),
+		zap.Stringer("nodeID", nodeID),
+	)
+	return nil
+}
+
+func (nop *noOpInternalHandler) Timeout(context.Context) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.TimeoutOp),
+	)
+	return nil
+}
+
+func (nop *noOpInternalHandler) Gossip(context.Context) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.GossipRequestOp),
+	)
+	return nil
+}
+
+func (nop *noOpInternalHandler) Halt(context.Context) {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.String("messageOp", "halt"),
+	)
+}
+
+func (nop *noOpInternalHandler) Shutdown(context.Context) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.String("messageOp", "shutdown"),
+	)
+	return nil
+}
+
+func (nop *noOpInternalHandler) Notify(_ context.Context, msg Message) error {
+	nop.log.Debug("dropping request",
+		zap.String("reason", "unhandled by this gear"),
+		zap.Stringer("messageOp", message.NotifyOp),
+		zap.Stringer("message", msg),
 	)
 	return nil
 }

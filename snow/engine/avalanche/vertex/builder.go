@@ -6,17 +6,14 @@ package vertex
 import (
 	"context"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/avalanche"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 // Builder builds a vertex given a set of parentIDs and transactions.
 type Builder interface {
-	// Build a new vertex from the contents of a vertex
-	BuildVtx(ctx context.Context, parentIDs []ids.ID, txs []snowstorm.Tx) (avalanche.Vertex, error)
 	// Build a new stop vertex from the parents
 	BuildStopVtx(ctx context.Context, parentIDs []ids.ID) (avalanche.Vertex, error)
 }

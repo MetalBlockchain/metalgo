@@ -20,39 +20,38 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/MetalBlockchain/metalgo/api/server"
-	"github.com/MetalBlockchain/metalgo/chains"
-	"github.com/MetalBlockchain/metalgo/genesis"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/ipcs"
-	"github.com/MetalBlockchain/metalgo/nat"
-	"github.com/MetalBlockchain/metalgo/network"
-	"github.com/MetalBlockchain/metalgo/network/dialer"
-	"github.com/MetalBlockchain/metalgo/network/throttling"
-	"github.com/MetalBlockchain/metalgo/node"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
-	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
-	"github.com/MetalBlockchain/metalgo/snow/networking/router"
-	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
-	"github.com/MetalBlockchain/metalgo/staking"
-	"github.com/MetalBlockchain/metalgo/subnets"
-	"github.com/MetalBlockchain/metalgo/trace"
-	"github.com/MetalBlockchain/metalgo/utils/compression"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/dynamicip"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/password"
-	"github.com/MetalBlockchain/metalgo/utils/perms"
-	"github.com/MetalBlockchain/metalgo/utils/profiler"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/storage"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
-	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm"
+	"github.com/ava-labs/avalanchego/api/server"
+	"github.com/ava-labs/avalanchego/chains"
+	"github.com/ava-labs/avalanchego/genesis"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/ipcs"
+	"github.com/ava-labs/avalanchego/nat"
+	"github.com/ava-labs/avalanchego/network"
+	"github.com/ava-labs/avalanchego/network/dialer"
+	"github.com/ava-labs/avalanchego/network/throttling"
+	"github.com/ava-labs/avalanchego/node"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/snow/networking/benchlist"
+	"github.com/ava-labs/avalanchego/snow/networking/router"
+	"github.com/ava-labs/avalanchego/snow/networking/tracker"
+	"github.com/ava-labs/avalanchego/staking"
+	"github.com/ava-labs/avalanchego/subnets"
+	"github.com/ava-labs/avalanchego/trace"
+	"github.com/ava-labs/avalanchego/utils/compression"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/bls"
+	"github.com/ava-labs/avalanchego/utils/dynamicip"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/password"
+	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/ava-labs/avalanchego/utils/profiler"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/storage"
+	"github.com/ava-labs/avalanchego/utils/timer"
+	"github.com/ava-labs/avalanchego/version"
+	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/ava-labs/avalanchego/vms/proposervm"
 )
 
 const (
@@ -91,28 +90,24 @@ var (
 	errFileDoesNotExist              = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
-	return avalanche.Parameters{
-		Parameters: snowball.Parameters{
-			K:     v.GetInt(SnowSampleSizeKey),
-			Alpha: v.GetInt(SnowQuorumSizeKey),
-			// During the X-chain linearization we require BetaVirtuous and
-			// BetaRogue to be equal. Therefore we use the more conservative
-			// BetaRogue value for both BetaVirtuous and BetaRogue.
-			//
-			// TODO: After the X-chain linearization use the
-			// SnowVirtuousCommitThresholdKey as before.
-			BetaVirtuous:            v.GetInt(SnowRogueCommitThresholdKey),
-			BetaRogue:               v.GetInt(SnowRogueCommitThresholdKey),
-			ConcurrentRepolls:       v.GetInt(SnowConcurrentRepollsKey),
-			OptimalProcessing:       v.GetInt(SnowOptimalProcessingKey),
-			MaxOutstandingItems:     v.GetInt(SnowMaxProcessingKey),
-			MaxItemProcessingTime:   v.GetDuration(SnowMaxTimeProcessingKey),
-			MixedQueryNumPushVdr:    int(v.GetUint(SnowMixedQueryNumPushVdrKey)),
-			MixedQueryNumPushNonVdr: int(v.GetUint(SnowMixedQueryNumPushNonVdrKey)),
-		},
-		BatchSize: v.GetInt(SnowAvalancheBatchSizeKey),
-		Parents:   v.GetInt(SnowAvalancheNumParentsKey),
+func getConsensusConfig(v *viper.Viper) snowball.Parameters {
+	return snowball.Parameters{
+		K:     v.GetInt(SnowSampleSizeKey),
+		Alpha: v.GetInt(SnowQuorumSizeKey),
+		// During the X-chain linearization we require BetaVirtuous and
+		// BetaRogue to be equal. Therefore we use the more conservative
+		// BetaRogue value for both BetaVirtuous and BetaRogue.
+		//
+		// TODO: After the X-chain linearization use the
+		// SnowVirtuousCommitThresholdKey as before.
+		BetaVirtuous:            v.GetInt(SnowRogueCommitThresholdKey),
+		BetaRogue:               v.GetInt(SnowRogueCommitThresholdKey),
+		ConcurrentRepolls:       v.GetInt(SnowConcurrentRepollsKey),
+		OptimalProcessing:       v.GetInt(SnowOptimalProcessingKey),
+		MaxOutstandingItems:     v.GetInt(SnowMaxProcessingKey),
+		MaxItemProcessingTime:   v.GetDuration(SnowMaxTimeProcessingKey),
+		MixedQueryNumPushVdr:    int(v.GetUint(SnowMixedQueryNumPushVdrKey)),
+		MixedQueryNumPushNonVdr: int(v.GetUint(SnowMixedQueryNumPushNonVdrKey)),
 	}
 }
 
@@ -467,7 +462,7 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters avalanche.Parameters) (benchlist.Config, error) {
+func getBenchlistConfig(v *viper.Viper, consensusParameters snowball.Parameters) (benchlist.Config, error) {
 	alpha := consensusParameters.Alpha
 	k := consensusParameters.K
 	config := benchlist.Config{
@@ -1443,11 +1438,11 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Node health
 	nodeConfig.MinPercentConnectedStakeHealthy = map[ids.ID]float64{
-		constants.PrimaryNetworkID: calcMinConnectedStake(primaryNetworkConfig.ConsensusParameters.Parameters),
+		constants.PrimaryNetworkID: calcMinConnectedStake(primaryNetworkConfig.ConsensusParameters),
 	}
 
 	for subnetID, config := range subnetConfigs {
-		nodeConfig.MinPercentConnectedStakeHealthy[subnetID] = calcMinConnectedStake(config.ConsensusParameters.Parameters)
+		nodeConfig.MinPercentConnectedStakeHealthy[subnetID] = calcMinConnectedStake(config.ConsensusParameters)
 	}
 
 	// Chain Configs

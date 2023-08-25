@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
-	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowball"
+	"github.com/ava-labs/avalanchego/utils/set"
 )
 
 var errAllowedNodesWhenNotValidatorOnly = errors.New("allowedNodes can only be set when ValidatorOnly is true")
@@ -37,8 +37,8 @@ type Config struct {
 	ValidatorOnly bool `json:"validatorOnly" yaml:"validatorOnly"`
 	// AllowedNodes is the set of node IDs that are explicitly allowed to connect to this Subnet when
 	// ValidatorOnly is enabled.
-	AllowedNodes        set.Set[ids.NodeID]  `json:"allowedNodes" yaml:"allowedNodes"`
-	ConsensusParameters avalanche.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
+	AllowedNodes        set.Set[ids.NodeID] `json:"allowedNodes" yaml:"allowedNodes"`
+	ConsensusParameters snowball.Parameters `json:"consensusParameters" yaml:"consensusParameters"`
 
 	// ProposerMinBlockDelay is the minimum delay this node will enforce when
 	// building a snowman++ block.
@@ -50,7 +50,7 @@ type Config struct {
 }
 
 func (c *Config) Valid() error {
-	if err := c.ConsensusParameters.Valid(); err != nil {
+	if err := c.ConsensusParameters.Verify(); err != nil {
 		return fmt.Errorf("consensus %w", err)
 	}
 	if !c.ValidatorOnly && c.AllowedNodes.Len() > 0 {
