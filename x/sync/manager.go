@@ -12,12 +12,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/maybe"
-	"github.com/ava-labs/avalanchego/x/merkledb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/maybe"
+	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/sync"
+	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
 
 const (

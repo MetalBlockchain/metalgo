@@ -14,17 +14,17 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/staking"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/bls"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
+	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 )
 
 const (
@@ -319,7 +319,7 @@ func NewTestGenesis(
 	// The eth address is only needed to link pre-mainnet assets. Until that capability
 	// becomes necessary for testing, use a bogus address.
 	//
-	// Reference: https://github.com/ava-labs/avalanchego/issues/1365#issuecomment-1511508767
+	// Reference: https://github.com/MetalBlockchain/metalgo/issues/1365#issuecomment-1511508767
 	ethAddress := "0x0000000000000000000000000000000000000000"
 
 	now := time.Now()

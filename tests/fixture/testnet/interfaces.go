@@ -4,8 +4,8 @@
 package testnet
 
 import (
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/node"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/node"
 )
 
 // Defines network capabilities supportable regardless of how a network is orchestrated.

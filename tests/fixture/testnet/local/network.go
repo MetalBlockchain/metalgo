@@ -14,14 +14,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/genesis"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 // This interval was chosen to avoid spamming node APIs during

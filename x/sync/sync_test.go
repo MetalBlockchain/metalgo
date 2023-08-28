@@ -16,15 +16,15 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/trace"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/maybe"
-	"github.com/ava-labs/avalanchego/x/merkledb"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/maybe"
+	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
-	pb "github.com/ava-labs/avalanchego/proto/pb/sync"
+	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
 
 var _ Client = (*mockClient)(nil)

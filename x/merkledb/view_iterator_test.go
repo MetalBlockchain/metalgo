@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/ava-labs/avalanchego/utils/maybe"
+	"github.com/MetalBlockchain/metalgo/utils/maybe"
 )
 
 func Test_TrieView_Iterator(t *testing.T) {

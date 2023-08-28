@@ -6,7 +6,7 @@ package sync
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/utils/maybe"
+	"github.com/MetalBlockchain/metalgo/utils/maybe"
 
 	"github.com/stretchr/testify/require"
 

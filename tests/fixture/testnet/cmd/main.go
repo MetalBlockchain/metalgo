@@ -13,9 +13,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet/local"
-	"github.com/ava-labs/avalanchego/version"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet/local"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 const cliVersion = "0.0.1"

@@ -19,12 +19,12 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/ava-labs/avalanchego/api/health"
-	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/node"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/utils/perms"
+	"github.com/MetalBlockchain/metalgo/api/health"
+	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/node"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/utils/perms"
 )
 
 var (

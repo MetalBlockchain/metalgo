@@ -6,8 +6,8 @@ package local
 import (
 	"time"
 
-	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
 )
 
 const (
@@ -45,7 +45,7 @@ func LocalFlags() testnet.FlagsMap {
 func LocalCChainConfig() testnet.FlagsMap {
 	// Supply only non-default configuration to ensure that default
 	// values will be used. Available C-Chain configuration options are
-	// defined in the `github.com/ava-labs/coreth/evm` package.
+	// defined in the `github.com/MetalBlockchain/coreth/evm` package.
 	return testnet.FlagsMap{
 		"log-level": "debug",
 	}
