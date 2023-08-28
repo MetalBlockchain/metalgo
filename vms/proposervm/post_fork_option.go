@@ -7,9 +7,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
+	"go.uber.org/zap"
+
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/ava-labs/avalanchego/vms/proposervm/block"
 )
 
 var _ PostForkBlock = (*postForkOption)(nil)
@@ -113,13 +115,19 @@ func (*postForkOption) verifyPostForkOption(context.Context, *postForkOption) er
 }
 
 func (b *postForkOption) buildChild(ctx context.Context) (Block, error) {
+	parentID := b.ID()
 	parentPChainHeight, err := b.pChainHeight(ctx)
 	if err != nil {
+		b.vm.ctx.Log.Error("unexpected build block failure",
+			zap.String("reason", "failed to fetch parent's P-chain height"),
+			zap.Stringer("parentID", parentID),
+			zap.Error(err),
+		)
 		return nil, err
 	}
 	return b.postForkCommonComponents.buildChild(
 		ctx,
-		b.ID(),
+		parentID,
 		b.Timestamp(),
 		parentPChainHeight,
 	)

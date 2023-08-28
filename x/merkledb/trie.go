@@ -7,8 +7,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/maybe"
 )
 
 var errNoNewRoot = errors.New("there was no updated root in change list")
@@ -44,7 +45,7 @@ type ReadOnlyTrie interface {
 	getEditableNode(key path) (*node, error)
 
 	// GetRangeProof generates a proof of up to maxLength smallest key/values with keys between start and end
-	GetRangeProof(ctx context.Context, start, end []byte, maxLength int) (*RangeProof, error)
+	GetRangeProof(ctx context.Context, start []byte, end maybe.Maybe[[]byte], maxLength int) (*RangeProof, error)
 
 	database.Iteratee
 }
