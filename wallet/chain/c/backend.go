@@ -11,14 +11,14 @@ import (
 
 	stdcontext "context"
 
-	"github.com/ava-labs/coreth/plugin/evm"
+	"github.com/MetalBlockchain/coreth/plugin/evm"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 var (

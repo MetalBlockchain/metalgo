@@ -9,17 +9,17 @@ import (
 
 	stdcontext "context"
 
-	"github.com/ava-labs/coreth/plugin/evm"
+	"github.com/MetalBlockchain/coreth/plugin/evm"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
-	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 const avaxConversionRateInt = 1_000_000_000

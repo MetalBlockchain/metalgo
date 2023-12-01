@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"container/heap"
 
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/maybe"
+	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/utils/maybe"
 
 	"github.com/google/btree"
 )

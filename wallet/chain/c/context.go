@@ -6,9 +6,9 @@ package c
 import (
 	stdcontext "context"
 
-	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/vms/avm"
+	"github.com/MetalBlockchain/metalgo/api/info"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/vms/avm"
 )
 
 var _ Context = (*context)(nil)
