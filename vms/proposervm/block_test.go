@@ -8,7 +8,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/x509"
 	"testing"
 	"time"
 
@@ -16,14 +15,15 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	"github.com/ava-labs/avalanchego/snow/engine/snowman/block/mocks"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/staking"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/vms/proposervm/proposer"
 )
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
@@ -65,7 +65,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			Log:            logging.NoLog{},
 		},
 		Windower:          windower,
-		stakingCertLeaf:   &x509.Certificate{},
+		stakingCertLeaf:   &staking.Certificate{},
 		stakingLeafSigner: pk,
 	}
 

@@ -6,7 +6,6 @@ package peer
 import (
 	"bufio"
 	"context"
-	"crypto/x509"
 	"errors"
 	"io"
 	"math"
@@ -17,16 +16,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
-	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
-	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/message"
+	"github.com/ava-labs/avalanchego/proto/pb/p2p"
+	"github.com/ava-labs/avalanchego/staking"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/ips"
+	"github.com/ava-labs/avalanchego/utils/json"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var (
@@ -43,7 +43,7 @@ type Peer interface {
 
 	// Cert returns the certificate that the remote peer is using to
 	// authenticate their messages.
-	Cert() *x509.Certificate
+	Cert() *staking.Certificate
 
 	// LastSent returns the last time a message was sent to the peer.
 	LastSent() time.Time
@@ -112,7 +112,7 @@ type peer struct {
 
 	// [cert] is this peer's certificate, specifically the leaf of the
 	// certificate chain they provided.
-	cert *x509.Certificate
+	cert *staking.Certificate
 
 	// node ID of this peer.
 	id ids.NodeID
@@ -176,7 +176,7 @@ type peer struct {
 func Start(
 	config *Config,
 	conn net.Conn,
-	cert *x509.Certificate,
+	cert *staking.Certificate,
 	id ids.NodeID,
 	messageQueue MessageQueue,
 ) Peer {
@@ -207,7 +207,7 @@ func (p *peer) ID() ids.NodeID {
 	return p.id
 }
 
-func (p *peer) Cert() *x509.Certificate {
+func (p *peer) Cert() *staking.Certificate {
 	return p.cert
 }
 
@@ -1009,7 +1009,7 @@ func (p *peer) handlePeerList(msg *p2p.PeerList) {
 	// the peers this peer told us about
 	discoveredIPs := make([]*ips.ClaimedIPPort, len(msg.ClaimedIpPorts))
 	for i, claimedIPPort := range msg.ClaimedIpPorts {
-		tlsCert, err := x509.ParseCertificate(claimedIPPort.X509Certificate)
+		tlsCert, err := staking.ParseCertificate(claimedIPPort.X509Certificate)
 		if err != nil {
 			p.Log.Debug("message with invalid field",
 				zap.Stringer("nodeID", p.id),
