@@ -43,7 +43,7 @@ All messaging functions in `OutboundMsgBuilder` can be categorized as follows:
 - **App**
   - VMs communicate application-specific messages to other nodes through app messages. A common example is mempool gossiping.
 
-Currently, metalgo implements its own message serialization to communicate. In the future, metalgo will use protocol buffers to communicate.
+Currently, Avalanchego implements its own message serialization to communicate. In the future, Avalanchego will use protocol buffers to communicate.
 
 ### [Network](https://github.com/ava-labs/avalanchego/blob/master/network/network.go)
 

@@ -21,6 +21,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -31,11 +32,12 @@ import (
 
 func newDefaultDBConfig() merkledb.Config {
 	return merkledb.Config{
-		EvictionBatchSize: 100,
-		HistoryLength:     defaultRequestKeyLimit,
-		NodeCacheSize:     defaultRequestKeyLimit,
-		Reg:               prometheus.NewRegistry(),
-		Tracer:            newNoopTracer(),
+		EvictionBatchSize:         100,
+		HistoryLength:             defaultRequestKeyLimit,
+		ValueNodeCacheSize:        defaultRequestKeyLimit,
+		IntermediateNodeCacheSize: defaultRequestKeyLimit,
+		Reg:                       prometheus.NewRegistry(),
+		Tracer:                    trace.Noop,
 	}
 }
 
@@ -548,7 +550,10 @@ func TestGetChangeProof(t *testing.T) {
 		require.NoError(t, it.Error())
 		it.Release()
 
-		view, err := serverDB.NewView(context.Background(), ops)
+		view, err := serverDB.NewView(
+			context.Background(),
+			merkledb.ViewChanges{BatchOps: ops},
+		)
 		require.NoError(t, err)
 		require.NoError(t, view.CommitToDB(context.Background()))
 	}
