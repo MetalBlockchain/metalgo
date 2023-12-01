@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/utils"
+	"github.com/MetalBlockchain/metalgo/utils"
 
 	"go.opentelemetry.io/otel/attribute"
 
