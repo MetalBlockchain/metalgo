@@ -12,8 +12,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	snow "github.com/ava-labs/avalanchego/snow"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	snow "github.com/MetalBlockchain/metalgo/snow"
 	gomock "go.uber.org/mock/gomock"
 )
 

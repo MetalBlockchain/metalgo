@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	version "github.com/ava-labs/avalanchego/version"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	version "github.com/MetalBlockchain/metalgo/version"
 	gomock "go.uber.org/mock/gomock"
 )
 

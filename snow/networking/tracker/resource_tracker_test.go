@@ -13,9 +13,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/math/meter"
-	"github.com/ava-labs/avalanchego/utils/resource"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/math/meter"
+	"github.com/MetalBlockchain/metalgo/utils/resource"
 )
 
 func TestNewCPUTracker(t *testing.T) {

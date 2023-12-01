@@ -11,10 +11,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	codec "github.com/ava-labs/avalanchego/codec"
-	ids "github.com/ava-labs/avalanchego/ids"
-	snow "github.com/ava-labs/avalanchego/snow"
-	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	codec "github.com/MetalBlockchain/metalgo/codec"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	snow "github.com/MetalBlockchain/metalgo/snow"
+	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

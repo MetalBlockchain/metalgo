@@ -10,7 +10,7 @@ package avax
 import (
 	reflect "reflect"
 
-	snow "github.com/ava-labs/avalanchego/snow"
+	snow "github.com/MetalBlockchain/metalgo/snow"
 	gomock "go.uber.org/mock/gomock"
 )
 

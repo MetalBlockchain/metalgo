@@ -11,8 +11,8 @@ import (
 	reflect "reflect"
 	sync "sync"
 
-	snow "github.com/ava-labs/avalanchego/snow"
-	common "github.com/ava-labs/avalanchego/snow/engine/common"
+	snow "github.com/MetalBlockchain/metalgo/snow"
+	common "github.com/MetalBlockchain/metalgo/snow/engine/common"
 	gomock "go.uber.org/mock/gomock"
 )
 

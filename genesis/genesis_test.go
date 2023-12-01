@@ -207,7 +207,7 @@ func TestGenesisFromFile(t *testing.T) {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
 			expectedErr:  nil,
-			expectedHash: "a1d1838586db85fe94ab1143560c3356df9ba2445794b796bba050be89f4fcb4",
+			expectedHash: "18dc0a7ab9b257b86ee65870649a0dabbb76c03d0ca9f5c44a43ce0d0a7f20c6",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -282,7 +282,7 @@ func TestGenesisFromFlag(t *testing.T) {
 			networkID:    9999,
 			customConfig: customGenesisConfigJSON,
 			expectedErr:  nil,
-			expectedHash: "a1d1838586db85fe94ab1143560c3356df9ba2445794b796bba050be89f4fcb4",
+			expectedHash: "18dc0a7ab9b257b86ee65870649a0dabbb76c03d0ca9f5c44a43ce0d0a7f20c6",
 		},
 		"custom (networkID mismatch)": {
 			networkID:    9999,
@@ -351,11 +351,11 @@ func TestGenesis(t *testing.T) {
 		},
 		{
 			networkID:  constants.TahoeID,
-			expectedID: "3pKmdq85ygWiRPvj6jjJhzrLrhygjdvefrP7awMUxcEGUH29s",
+			expectedID: "tZW9eSc1k8bMxQusjYSVucoJQhuRaWimezf5feGQFxiPgk85q",
 		},
 		{
 			networkID:  constants.LocalID,
-			expectedID: "4vzpz26oNFyGnMCeFFPSx41Ek4dBPpPPWe6Zq2bSxdCSGbkC2",
+			expectedID: "LSxVrtM25cDTLmMcjeZRXBYCrof6sAKyGh2SUfN7SezxsN62x",
 		},
 	}
 	for _, test := range tests {

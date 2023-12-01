@@ -10,7 +10,7 @@ package state
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
+	ids "github.com/MetalBlockchain/metalgo/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

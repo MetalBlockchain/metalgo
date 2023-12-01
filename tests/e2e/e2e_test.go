@@ -17,17 +17,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/tests"
-	"github.com/ava-labs/avalanchego/tests/e2e"
-	"github.com/ava-labs/avalanchego/tests/fixture"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet/local"
+	"github.com/MetalBlockchain/metalgo/tests"
+	"github.com/MetalBlockchain/metalgo/tests/e2e"
+	"github.com/MetalBlockchain/metalgo/tests/fixture"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet/local"
 
 	// ensure test packages are scanned by ginkgo
-	_ "github.com/ava-labs/avalanchego/tests/e2e/banff"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/p"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/static-handlers"
-	_ "github.com/ava-labs/avalanchego/tests/e2e/x/transfer"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/banff"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/p"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/static-handlers"
+	_ "github.com/MetalBlockchain/metalgo/tests/e2e/x/transfer"
 )
 
 func TestE2E(t *testing.T) {

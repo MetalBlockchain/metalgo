@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/tests/fixture"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet"
-	"github.com/ava-labs/avalanchego/tests/fixture/testnet/local"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/MetalBlockchain/metalgo/tests/fixture"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet/local"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 )
 
 const (

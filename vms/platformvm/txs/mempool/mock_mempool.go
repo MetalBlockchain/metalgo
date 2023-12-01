@@ -10,8 +10,8 @@ package mempool
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

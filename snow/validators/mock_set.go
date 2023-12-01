@@ -10,9 +10,9 @@ package validators
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	bls "github.com/ava-labs/avalanchego/utils/crypto/bls"
-	set "github.com/ava-labs/avalanchego/utils/set"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	bls "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	set "github.com/MetalBlockchain/metalgo/utils/set"
 	gomock "go.uber.org/mock/gomock"
 )
 

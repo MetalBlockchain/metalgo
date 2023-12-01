@@ -10,10 +10,10 @@ package sender
 import (
 	reflect "reflect"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	message "github.com/ava-labs/avalanchego/message"
-	subnets "github.com/ava-labs/avalanchego/subnets"
-	set "github.com/ava-labs/avalanchego/utils/set"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	message "github.com/MetalBlockchain/metalgo/message"
+	subnets "github.com/MetalBlockchain/metalgo/subnets"
+	set "github.com/MetalBlockchain/metalgo/utils/set"
 	gomock "go.uber.org/mock/gomock"
 )
 

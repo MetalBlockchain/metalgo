@@ -11,9 +11,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	secp256k1 "github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	secp256k1 "github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
+	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -10,8 +10,8 @@ package atomic
 import (
 	reflect "reflect"
 
-	database "github.com/ava-labs/avalanchego/database"
-	ids "github.com/ava-labs/avalanchego/ids"
+	database "github.com/MetalBlockchain/metalgo/database"
+	ids "github.com/MetalBlockchain/metalgo/ids"
 	gomock "go.uber.org/mock/gomock"
 )
 

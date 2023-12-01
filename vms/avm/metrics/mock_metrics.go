@@ -11,8 +11,8 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	blocks "github.com/ava-labs/avalanchego/vms/avm/blocks"
-	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	blocks "github.com/MetalBlockchain/metalgo/vms/avm/blocks"
+	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	rpc "github.com/gorilla/rpc/v2"
 	gomock "go.uber.org/mock/gomock"
 )

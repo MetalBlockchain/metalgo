@@ -11,10 +11,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	avax "github.com/ava-labs/avalanchego/vms/components/avax"
-	status "github.com/ava-labs/avalanchego/vms/platformvm/status"
-	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
+	status "github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -12,10 +12,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/ava-labs/avalanchego/ids"
-	choices "github.com/ava-labs/avalanchego/snow/choices"
-	snowman "github.com/ava-labs/avalanchego/snow/consensus/snowman"
-	block "github.com/ava-labs/avalanchego/vms/proposervm/block"
+	ids "github.com/MetalBlockchain/metalgo/ids"
+	choices "github.com/MetalBlockchain/metalgo/snow/choices"
+	snowman "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	block "github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 	gomock "go.uber.org/mock/gomock"
 )
 

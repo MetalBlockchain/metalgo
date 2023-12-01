@@ -11,7 +11,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	block "github.com/ava-labs/avalanchego/snow/engine/snowman/block"
+	block "github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -11,8 +11,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	sync "github.com/ava-labs/avalanchego/proto/pb/sync"
-	merkledb "github.com/ava-labs/avalanchego/x/merkledb"
+	sync "github.com/MetalBlockchain/metalgo/proto/pb/sync"
+	merkledb "github.com/MetalBlockchain/metalgo/x/merkledb"
 	gomock "go.uber.org/mock/gomock"
 )
 
