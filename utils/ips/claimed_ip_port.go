@@ -4,8 +4,9 @@
 package ips
 
 import (
+	"crypto/x509"
+
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/staking"
 )
 
 // Can't import these from wrappers package due to circular import.
@@ -22,7 +23,7 @@ const (
 // given time.
 type ClaimedIPPort struct {
 	// The peer's certificate.
-	Cert *staking.Certificate
+	Cert *x509.Certificate
 	// The peer's claimed IP and port.
 	IPPort IPPort
 	// The time the peer claimed to own this IP and port.

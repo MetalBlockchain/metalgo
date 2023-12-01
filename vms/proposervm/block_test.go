@@ -8,6 +8,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"testing"
 	"time"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
 )
@@ -65,7 +65,7 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 			Log:            logging.NoLog{},
 		},
 		Windower:          windower,
-		stakingCertLeaf:   &staking.Certificate{},
+		stakingCertLeaf:   &x509.Certificate{},
 		stakingLeafSigner: pk,
 	}
 

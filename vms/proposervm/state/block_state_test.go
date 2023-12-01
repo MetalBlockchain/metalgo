@@ -30,7 +30,7 @@ func testBlockState(a *require.Assertions, bs BlockState) {
 	tlsCert, err := staking.NewTLSCert()
 	a.NoError(err)
 
-	cert := staking.CertificateFromX509(tlsCert.Leaf)
+	cert := tlsCert.Leaf
 	key := tlsCert.PrivateKey.(crypto.Signer)
 
 	b, err := block.Build(

@@ -6,6 +6,7 @@ package proposervm
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"testing"
 	"time"
 
@@ -664,8 +665,8 @@ func TestOptionTimestampValidity(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	coreVM.InitializeF = func(

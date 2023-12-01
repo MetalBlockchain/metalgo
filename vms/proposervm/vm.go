@@ -6,6 +6,7 @@ package proposervm
 import (
 	"context"
 	"crypto"
+	"crypto/x509"
 	"fmt"
 	"time"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
@@ -91,7 +91,7 @@ type VM struct {
 	// block signer
 	stakingLeafSigner crypto.Signer
 	// block certificate
-	stakingCertLeaf *staking.Certificate
+	stakingCertLeaf *x509.Certificate
 
 	state.State
 	hIndexer indexer.HeightIndexer
@@ -136,7 +136,7 @@ func New(
 	minimumPChainHeight uint64,
 	minBlkDelay time.Duration,
 	stakingLeafSigner crypto.Signer,
-	stakingCertLeaf *staking.Certificate,
+	stakingCertLeaf *x509.Certificate,
 ) *VM {
 	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)

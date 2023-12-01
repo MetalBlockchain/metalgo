@@ -4,6 +4,7 @@
 package block
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"time"
@@ -55,7 +56,7 @@ type statelessBlock struct {
 
 	id        ids.ID
 	timestamp time.Time
-	cert      *staking.Certificate
+	cert      *x509.Certificate
 	proposer  ids.NodeID
 	bytes     []byte
 }
@@ -91,7 +92,7 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 		return nil
 	}
 
-	cert, err := staking.ParseCertificate(b.StatelessBlock.Certificate)
+	cert, err := x509.ParseCertificate(b.StatelessBlock.Certificate)
 	if err != nil {
 		return fmt.Errorf("%w: %s", errInvalidCertificate, err)
 	}

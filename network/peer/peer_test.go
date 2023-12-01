@@ -6,6 +6,7 @@ package peer
 import (
 	"context"
 	"crypto"
+	"crypto/x509"
 	"net"
 	"testing"
 	"time"
@@ -40,7 +41,7 @@ type testPeer struct {
 type rawTestPeer struct {
 	config         *Config
 	conn           net.Conn
-	cert           *staking.Certificate
+	cert           *x509.Certificate
 	nodeID         ids.NodeID
 	inboundMsgChan <-chan message.InboundMessage
 }
@@ -68,14 +69,12 @@ func makeRawTestPeers(t *testing.T, trackedSubnets set.Set[ids.ID]) (*rawTestPee
 
 	tlsCert0, err := staking.NewTLSCert()
 	require.NoError(err)
-	cert0 := staking.CertificateFromX509(tlsCert0.Leaf)
 
 	tlsCert1, err := staking.NewTLSCert()
 	require.NoError(err)
-	cert1 := staking.CertificateFromX509(tlsCert1.Leaf)
 
-	nodeID0 := ids.NodeIDFromCert(cert0)
-	nodeID1 := ids.NodeIDFromCert(cert1)
+	nodeID0 := ids.NodeIDFromCert(tlsCert0.Leaf)
+	nodeID1 := ids.NodeIDFromCert(tlsCert1.Leaf)
 
 	mc := newMessageCreator(t)
 
@@ -135,14 +134,14 @@ func makeRawTestPeers(t *testing.T, trackedSubnets set.Set[ids.ID]) (*rawTestPee
 	peer0 := &rawTestPeer{
 		config:         &peerConfig0,
 		conn:           conn0,
-		cert:           cert0,
+		cert:           tlsCert0.Leaf,
 		nodeID:         nodeID0,
 		inboundMsgChan: inboundMsgChan0,
 	}
 	peer1 := &rawTestPeer{
 		config:         &peerConfig1,
 		conn:           conn1,
-		cert:           cert1,
+		cert:           tlsCert1.Leaf,
 		nodeID:         nodeID1,
 		inboundMsgChan: inboundMsgChan1,
 	}

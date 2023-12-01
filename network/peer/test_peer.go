@@ -62,11 +62,7 @@ func StartTestPeer(
 	}
 
 	tlsConfg := TLSConfig(*tlsCert, nil)
-	clientUpgrader := NewTLSClientUpgrader(
-		tlsConfg,
-		prometheus.NewCounter(prometheus.CounterOpts{}),
-		logging.NoLog{},
-	)
+	clientUpgrader := NewTLSClientUpgrader(tlsConfg)
 
 	peerID, conn, cert, err := clientUpgrader.Upgrade(conn)
 	if err != nil {

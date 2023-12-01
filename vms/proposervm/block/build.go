@@ -6,10 +6,10 @@ package block
 import (
 	"crypto"
 	"crypto/rand"
+	"crypto/x509"
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
@@ -42,7 +42,7 @@ func Build(
 	parentID ids.ID,
 	timestamp time.Time,
 	pChainHeight uint64,
-	cert *staking.Certificate,
+	cert *x509.Certificate,
 	blockBytes []byte,
 	chainID ids.ID,
 	key crypto.Signer,

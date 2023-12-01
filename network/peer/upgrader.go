@@ -5,16 +5,11 @@ package peer
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"net"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	"go.uber.org/zap"
-
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/staking"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var (
@@ -26,66 +21,38 @@ var (
 
 type Upgrader interface {
 	// Must be thread safe
-	Upgrade(net.Conn) (ids.NodeID, net.Conn, *staking.Certificate, error)
+	Upgrade(net.Conn) (ids.NodeID, net.Conn, *x509.Certificate, error)
 }
 
 type tlsServerUpgrader struct {
-	config       *tls.Config
-	invalidCerts prometheus.Counter
-	log          logging.Logger
+	config *tls.Config
 }
 
-func NewTLSServerUpgrader(
-	config *tls.Config,
-	invalidCerts prometheus.Counter,
-	log logging.Logger,
-) Upgrader {
-	return &tlsServerUpgrader{
-		config:       config,
-		invalidCerts: invalidCerts,
-		log:          log,
+func NewTLSServerUpgrader(config *tls.Config) Upgrader {
+	return tlsServerUpgrader{
+		config: config,
 	}
 }
 
-func (t *tlsServerUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staking.Certificate, error) {
-	return connToIDAndCert(
-		tls.Server(conn, t.config),
-		t.invalidCerts,
-		t.log,
-	)
+func (t tlsServerUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *x509.Certificate, error) {
+	return connToIDAndCert(tls.Server(conn, t.config))
 }
 
 type tlsClientUpgrader struct {
-	config       *tls.Config
-	invalidCerts prometheus.Counter
-	log          logging.Logger
+	config *tls.Config
 }
 
-func NewTLSClientUpgrader(
-	config *tls.Config,
-	invalidCerts prometheus.Counter,
-	log logging.Logger,
-) Upgrader {
-	return &tlsClientUpgrader{
-		config:       config,
-		invalidCerts: invalidCerts,
-		log:          log,
+func NewTLSClientUpgrader(config *tls.Config) Upgrader {
+	return tlsClientUpgrader{
+		config: config,
 	}
 }
 
-func (t *tlsClientUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *staking.Certificate, error) {
-	return connToIDAndCert(
-		tls.Client(conn, t.config),
-		t.invalidCerts,
-		t.log,
-	)
+func (t tlsClientUpgrader) Upgrade(conn net.Conn) (ids.NodeID, net.Conn, *x509.Certificate, error) {
+	return connToIDAndCert(tls.Client(conn, t.config))
 }
 
-func connToIDAndCert(
-	conn *tls.Conn,
-	invalidCerts prometheus.Counter,
-	log logging.Logger,
-) (ids.NodeID, net.Conn, *staking.Certificate, error) {
+func connToIDAndCert(conn *tls.Conn) (ids.NodeID, net.Conn, *x509.Certificate, error) {
 	if err := conn.Handshake(); err != nil {
 		return ids.NodeID{}, nil, nil, err
 	}
@@ -94,38 +61,6 @@ func connToIDAndCert(
 	if len(state.PeerCertificates) == 0 {
 		return ids.NodeID{}, nil, nil, errNoCert
 	}
-
-	tlsCert := state.PeerCertificates[0]
-	// Invariant: ParseCertificate is used rather than CertificateFromX509 to
-	// ensure that signature verification can assume the certificate was
-	// parseable according the staking package's parser.
-	peerCert, err := staking.ParseCertificate(tlsCert.Raw)
-	if err != nil {
-		log.Warn("failed to parse TLS cert",
-			zap.Stringer("sigAlgo", tlsCert.SignatureAlgorithm),
-			zap.Stringer("pkAlgo", tlsCert.PublicKeyAlgorithm),
-			zap.Int("len", len(tlsCert.Raw)),
-			zap.Error(err),
-		)
-		invalidCerts.Inc()
-		return ids.NodeID{}, nil, nil, err
-	}
-
-	// We validate the certificate here to attempt to make the validity of the
-	// peer certificate as clear as possible. Specifically, a node running a
-	// prior version using an invalid certificate should not be able to report
-	// healthy.
-	if err := staking.ValidateCertificate(peerCert); err != nil {
-		log.Warn("failed to verify TLS cert",
-			zap.Stringer("sigAlgo", tlsCert.SignatureAlgorithm),
-			zap.Stringer("pkAlgo", tlsCert.PublicKeyAlgorithm),
-			zap.Int("len", len(tlsCert.Raw)),
-			zap.Error(err),
-		)
-		invalidCerts.Inc()
-		return ids.NodeID{}, nil, nil, err
-	}
-
-	nodeID := ids.NodeIDFromCert(peerCert)
-	return nodeID, conn, peerCert, nil
+	peerCert := state.PeerCertificates[0]
+	return ids.NodeIDFromCert(peerCert), conn, peerCert, nil
 }

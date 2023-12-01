@@ -6,6 +6,7 @@ package peer
 import (
 	"crypto"
 	"crypto/rand"
+	"crypto/x509"
 
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
@@ -49,7 +50,7 @@ type SignedIP struct {
 	Signature []byte
 }
 
-func (ip *SignedIP) Verify(cert *staking.Certificate) error {
+func (ip *SignedIP) Verify(cert *x509.Certificate) error {
 	return staking.CheckSignature(
 		cert,
 		ip.UnsignedIP.bytes(),

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"testing"
@@ -46,8 +47,7 @@ type fullVM struct {
 }
 
 var (
-	pTestSigner crypto.Signer
-	pTestCert   *staking.Certificate
+	pTestCert *tls.Certificate
 
 	genesisUnixTimestamp int64 = 1000
 	genesisTimestamp           = time.Unix(genesisUnixTimestamp, 0)
@@ -62,12 +62,11 @@ var (
 )
 
 func init() {
-	tlsCert, err := staking.NewTLSCert()
+	var err error
+	pTestCert, err = staking.NewTLSCert()
 	if err != nil {
 		panic(err)
 	}
-	pTestSigner = tlsCert.PrivateKey.(crypto.Signer)
-	pTestCert = staking.CertificateFromX509(tlsCert.Leaf)
 }
 
 func initTestProposerVM(
@@ -136,8 +135,8 @@ func initTestProposerVM(
 		proBlkStartTime,
 		minPChainHeight,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	valState := &validators.TestState{
@@ -172,7 +171,7 @@ func initTestProposerVM(
 
 	ctx := snow.DefaultContextTest()
 	ctx.ChainID = ids.ID{1}
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 	ctx.ValidatorState = valState
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -874,8 +873,8 @@ func TestExpiredBuildBlock(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	valState := &validators.TestState{
@@ -897,7 +896,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 	ctx.ValidatorState = valState
 
 	dbManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -1189,7 +1188,7 @@ func TestInnerVMRollback(t *testing.T) {
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 	ctx.ValidatorState = valState
 
 	coreVM.InitializeF = func(
@@ -1216,8 +1215,8 @@ func TestInnerVMRollback(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	require.NoError(proVM.Initialize(
@@ -1302,8 +1301,8 @@ func TestInnerVMRollback(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	require.NoError(proVM.Initialize(
@@ -1793,8 +1792,8 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	valState := &validators.TestState{
@@ -1828,7 +1827,7 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 	ctx.ValidatorState = valState
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -1996,8 +1995,8 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		time.Time{},
 		0,
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	valState := &validators.TestState{
@@ -2031,7 +2030,7 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 	ctx.ValidatorState = valState
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -2155,8 +2154,8 @@ func TestVMInnerBlkCache(t *testing.T) {
 		time.Time{}, // fork is active
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -2185,7 +2184,7 @@ func TestVMInnerBlkCache(t *testing.T) {
 	}
 
 	ctx := snow.DefaultContextTest()
-	ctx.NodeID = ids.NodeIDFromCert(pTestCert)
+	ctx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -2387,8 +2386,8 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 		time.Time{}, // fork is active
 		0,           // minimum P-Chain height
 		DefaultMinBlockDelay,
-		pTestSigner,
-		pTestCert,
+		pTestCert.PrivateKey.(crypto.Signer),
+		pTestCert.Leaf,
 	)
 
 	dummyDBManager := manager.NewMemDB(version.Semantic1_0_0)
@@ -2417,7 +2416,7 @@ func TestVM_VerifyBlockWithContext(t *testing.T) {
 	}
 
 	snowCtx := snow.DefaultContextTest()
-	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert)
+	snowCtx.NodeID = ids.NodeIDFromCert(pTestCert.Leaf)
 
 	require.NoError(vm.Initialize(
 		context.Background(),
