@@ -36,17 +36,17 @@ func TestE2E(t *testing.T) {
 }
 
 var (
-	avalancheGoExecPath  string
+	metalgoGoExecPath    string
 	persistentNetworkDir string
 	usePersistentNetwork bool
 )
 
 func init() {
 	flag.StringVar(
-		&avalancheGoExecPath,
-		"avalanchego-path",
-		os.Getenv(local.AvalancheGoPathEnvName),
-		fmt.Sprintf("avalanchego executable path (required if not using a persistent network). Also possible to configure via the %s env variable.", local.AvalancheGoPathEnvName),
+		&metalgoGoExecPath,
+		"metalgo-path",
+		os.Getenv(local.MetalGoPathEnvName),
+		fmt.Sprintf("metalgo executable path (required if not using a persistent network). Also possible to configure via the %s env variable.", local.MetalGoPathEnvName),
 	)
 	flag.StringVar(
 		&persistentNetworkDir,
@@ -80,7 +80,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		network, err = local.ReadNetwork(persistentNetworkDir)
 		require.NoError(err)
 	} else {
-		tests.Outf("{{magenta}}Starting network with %q{{/}}\n", avalancheGoExecPath)
+		tests.Outf("{{magenta}}Starting network with %q{{/}}\n", metalgoGoExecPath)
 
 		ctx, cancel := context.WithTimeout(context.Background(), local.DefaultNetworkStartTimeout)
 		defer cancel()
@@ -91,7 +91,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			ginkgo.GinkgoT().TempDir(),
 			&local.LocalNetwork{
 				LocalConfig: local.LocalConfig{
-					ExecPath: avalancheGoExecPath,
+					ExecPath: metalgoGoExecPath,
 				},
 			},
 			testnet.DefaultNodeCount,

@@ -26,6 +26,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
@@ -407,7 +408,7 @@ func TestTrackVerifiesSignatures(t *testing.T) {
 	require.NoError(validators.Add(network.config.Validators, constants.PrimaryNetworkID, nodeID, nil, ids.Empty, 1))
 
 	_, err := network.Track(ids.EmptyNodeID, []*ips.ClaimedIPPort{{
-		Cert: tlsCert.Leaf,
+		Cert: staking.CertificateFromX509(tlsCert.Leaf),
 		IPPort: ips.IPPort{
 			IP:   net.IPv4(123, 132, 123, 123),
 			Port: 10000,
@@ -589,7 +590,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 	for i, net := range networks {
 		if i != 0 {
 			peerAcks, err := net.Track(config.MyNodeID, []*ips.ClaimedIPPort{{
-				Cert:      config.TLSConfig.Certificates[0].Leaf,
+				Cert:      staking.CertificateFromX509(config.TLSConfig.Certificates[0].Leaf),
 				IPPort:    ip.IPPort,
 				Timestamp: ip.Timestamp,
 				Signature: ip.Signature,

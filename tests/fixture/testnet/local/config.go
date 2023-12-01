@@ -13,9 +13,9 @@ import (
 const (
 	// Constants defining the names of shell variables whose value can
 	// configure local network orchestration.
-	AvalancheGoPathEnvName = "AVALANCHEGO_PATH"
-	NetworkDirEnvName      = "TESTNETCTL_NETWORK_DIR"
-	RootDirEnvName         = "TESTNETCTL_ROOT_DIR"
+	MetalGoPathEnvName = "METALGO_PATH"
+	NetworkDirEnvName  = "TESTNETCTL_NETWORK_DIR"
+	RootDirEnvName     = "TESTNETCTL_ROOT_DIR"
 
 	DefaultNetworkStartTimeout = 2 * time.Minute
 	DefaultNodeInitTimeout     = 10 * time.Second

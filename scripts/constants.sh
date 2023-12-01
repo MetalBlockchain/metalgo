@@ -7,13 +7,6 @@ METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory 
 
 # Where MetalGo binary goes
 metalgo_path="$METAL_PATH/build/metalgo"
-plugin_dir=${PLUGIN_DIR:-$HOME/.metalgo/plugins}
-evm_path=${EVM_PATH:-$plugin_dir/evm}
-coreth_version=${CORETH_VERSION:-'v0.12.5-rc.1'}
-
-# Set the PATHS
-GOPATH="$(go env GOPATH)"
-coreth_path=${CORETH_PATH:-"$GOPATH/pkg/mod/github.com/!metal!blockchain/coreth@$coreth_version"}
 
 # Avalabs docker hub
 # avaplatform/metalgo - defaults to local as to avoid unintentional pushes

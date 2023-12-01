@@ -6,7 +6,6 @@ package proposervm
 import (
 	"context"
 	"crypto"
-	"crypto/x509"
 	"fmt"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
@@ -91,7 +91,7 @@ type VM struct {
 	// block signer
 	stakingLeafSigner crypto.Signer
 	// block certificate
-	stakingCertLeaf *x509.Certificate
+	stakingCertLeaf *staking.Certificate
 
 	state.State
 	hIndexer indexer.HeightIndexer
@@ -136,7 +136,7 @@ func New(
 	minimumPChainHeight uint64,
 	minBlkDelay time.Duration,
 	stakingLeafSigner crypto.Signer,
-	stakingCertLeaf *x509.Certificate,
+	stakingCertLeaf *staking.Certificate,
 ) *VM {
 	blockBuilderVM, _ := vm.(block.BuildBlockWithContextChainVM)
 	batchedVM, _ := vm.(block.BatchedChainVM)
@@ -767,12 +767,20 @@ func (vm *VM) getPreForkBlock(ctx context.Context, blkID ids.ID) (*preForkBlock,
 	}, err
 }
 
-func (vm *VM) storePostForkBlock(blk PostForkBlock) error {
-	if err := vm.State.PutBlock(blk.getStatelessBlk(), blk.Status()); err != nil {
-		return err
-	}
+func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	height := blk.Height()
 	blkID := blk.ID()
+
+	vm.lastAcceptedHeight = height
+	delete(vm.verifiedBlocks, blkID)
+
+	// Persist this block, its height index, and its status
+	if err := vm.State.SetLastAccepted(blkID); err != nil {
+		return err
+	}
+	if err := vm.State.PutBlock(blk.getStatelessBlk(), choices.Accepted); err != nil {
+		return err
+	}
 	if err := vm.updateHeightIndex(height, blkID); err != nil {
 		return err
 	}
