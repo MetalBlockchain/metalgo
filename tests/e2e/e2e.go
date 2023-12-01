@@ -58,8 +58,8 @@ type testEnvironmentConfig struct {
 	clusterType               ClusterType
 	logLevel                  string
 	networkRunnerGRPCEndpoint string
-	avalancheGoExecPath       string
-	avalancheGoLogLevel       string
+	metalGoExecPath           string
+	metalGoLogLevel           string
 	testKeysFile              string
 
 	// we snapshot initial state, right after starting cluster
@@ -90,13 +90,13 @@ type TestEnvironment struct {
 func (te *TestEnvironment) ConfigCluster(
 	logLevel string,
 	networkRunnerGRPCEp string,
-	avalancheGoExecPath string,
-	avalancheGoLogLevel string,
+	metalGoExecPath string,
+	metalGoLogLevel string,
 	uris string,
 	testKeysFile string,
 ) error {
-	if avalancheGoExecPath != "" {
-		if _, err := os.Stat(avalancheGoExecPath); err != nil {
+	if metalGoExecPath != "" {
+		if _, err := os.Stat(metalGoExecPath); err != nil {
 			return fmt.Errorf("could not find avalanchego binary: %w", err)
 		}
 	}
@@ -108,8 +108,8 @@ func (te *TestEnvironment) ConfigCluster(
 		te.clusterType = StandAlone
 		te.logLevel = logLevel
 		te.networkRunnerGRPCEndpoint = networkRunnerGRPCEp
-		te.avalancheGoExecPath = avalancheGoExecPath
-		te.avalancheGoLogLevel = avalancheGoLogLevel
+		te.metalGoExecPath = metalGoExecPath
+		te.metalGoLogLevel = metalGoLogLevel
 
 		err := te.setRunnerClient(te.logLevel, te.networkRunnerGRPCEndpoint)
 		if err != nil {
@@ -155,11 +155,11 @@ func (te *TestEnvironment) LoadKeys() error {
 func (te *TestEnvironment) StartCluster() error {
 	switch te.clusterType {
 	case StandAlone:
-		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.avalancheGoExecPath)
+		tests.Outf("{{magenta}}starting network-runner with %q{{/}}\n", te.metalGoExecPath)
 		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-		resp, err := te.GetRunnerClient().Start(ctx, te.avalancheGoExecPath,
+		resp, err := te.GetRunnerClient().Start(ctx, te.metalGoExecPath,
 			runner_sdk.WithNumNodes(5),
-			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.avalancheGoLogLevel)),
+			runner_sdk.WithGlobalNodeConfig(fmt.Sprintf(`{"log-level":"%s"}`, te.metalGoLogLevel)),
 		)
 		cancel()
 		if err != nil {

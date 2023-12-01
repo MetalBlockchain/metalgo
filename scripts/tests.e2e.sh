@@ -19,7 +19,7 @@ if [[ -z "${METALGO_PATH}" ]]; then
 fi
 
 #################################
-echo "installing avalanche-network-runner"
+echo "installing metal-network-runner"
 ANR_WORKDIR="/tmp"
 ./scripts/install_anr.sh
 
@@ -37,9 +37,9 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
 #################################
-# run "avalanche-network-runner" server
-echo "launch avalanche-network-runner in the background"
-$ANR_WORKDIR/avalanche-network-runner \
+# run "metal-network-runner" server
+echo "launch metal-network-runner in the background"
+$ANR_WORKDIR/metal-network-runner \
   server \
   --log-level debug \
   --port=":12342" \

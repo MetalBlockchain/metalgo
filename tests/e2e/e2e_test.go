@@ -30,9 +30,9 @@ var (
 	// helpers to parse test flags
 	logLevel string
 
-	networkRunnerGRPCEp              string
-	networkRunnerAvalancheGoExecPath string
-	networkRunnerAvalancheGoLogLevel string
+	networkRunnerGRPCEp          string
+	networkRunnerMetalGoExecPath string
+	networkRunnerMetalGoLogLevel string
 
 	uris string
 
@@ -54,14 +54,14 @@ func init() {
 		"[optional] gRPC server endpoint for network-runner (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerAvalancheGoExecPath,
-		"network-runner-avalanchego-path",
+		&networkRunnerMetalGoExecPath,
+		"network-runner-metalgo-path",
 		"",
 		"[optional] avalanchego executable path (only required for local network-runner tests)",
 	)
 	flag.StringVar(
-		&networkRunnerAvalancheGoLogLevel,
-		"network-runner-avalanchego-log-level",
+		&networkRunnerMetalGoLogLevel,
+		"network-runner-metalgo-log-level",
 		"INFO",
 		"[optional] avalanchego log-level (only required for local network-runner tests)",
 	)
@@ -87,8 +87,8 @@ var _ = ginkgo.BeforeSuite(func() {
 	err := e2e.Env.ConfigCluster(
 		logLevel,
 		networkRunnerGRPCEp,
-		networkRunnerAvalancheGoExecPath,
-		networkRunnerAvalancheGoLogLevel,
+		networkRunnerMetalGoExecPath,
+		networkRunnerMetalGoLogLevel,
 		uris,
 		testKeysFile,
 	)
