@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	version "github.com/MetalBlockchain/metalgo/version"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	version "github.com/ava-labs/avalanchego/version"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockNetworkClient is a mock of NetworkClient interface.

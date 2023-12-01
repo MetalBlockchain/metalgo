@@ -11,9 +11,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	logging "github.com/MetalBlockchain/metalgo/utils/logging"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	logging "github.com/ava-labs/avalanchego/utils/logging"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFactory is a mock of Factory interface.

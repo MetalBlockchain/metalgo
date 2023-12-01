@@ -10,9 +10,9 @@ package mempool
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockMempool is a mock of Mempool interface.

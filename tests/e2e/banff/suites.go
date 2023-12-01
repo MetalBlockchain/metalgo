@@ -11,16 +11,15 @@ import (
 
 	"github.com/onsi/gomega"
 
-	"github.com/MetalBlockchain/metalgo/genesis"
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/tests"
-	"github.com/MetalBlockchain/metalgo/tests/e2e"
-	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
-	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/tests"
+	"github.com/ava-labs/avalanchego/tests/e2e"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary"
 )
 
 var _ = ginkgo.Describe("[Banff]", func() {
@@ -28,28 +27,23 @@ var _ = ginkgo.Describe("[Banff]", func() {
 		// use this for filtering tests by labels
 		// ref. https://onsi.github.io/ginkgo/#spec-labels
 		ginkgo.Label(
-			"require-network-runner",
 			"xp",
 			"banff",
 		),
 		func() {
-			ginkgo.By("reload initial snapshot for test independence", func() {
-				err := e2e.Env.RestoreInitialState(true /*switchOffNetworkFirst*/)
-				gomega.Expect(err).Should(gomega.BeNil())
-			})
-
-			uris := e2e.Env.GetURIs()
-			gomega.Expect(uris).ShouldNot(gomega.BeEmpty())
-
-			kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
+			key := e2e.Env.AllocateFundedKey()
+			kc := secp256k1fx.NewKeychain(key)
 			var wallet primary.Wallet
 			ginkgo.By("initialize wallet", func() {
-				walletURI := uris[0]
+				walletURI := e2e.Env.GetRandomNodeURI()
 
 				// 5-second is enough to fetch initial UTXOs for test cluster in "primary.NewWallet"
 				ctx, cancel := context.WithTimeout(context.Background(), e2e.DefaultWalletCreationTimeout)
 				var err error
-				wallet, err = primary.NewWalletFromURI(ctx, walletURI, kc)
+				wallet, err = primary.MakeWallet(ctx, &primary.WalletConfig{
+					URI:      walletURI,
+					Keychain: kc,
+				})
 				cancel()
 				gomega.Expect(err).Should(gomega.BeNil())
 
@@ -65,7 +59,7 @@ var _ = ginkgo.Describe("[Banff]", func() {
 			owner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs: []ids.ShortID{
-					genesis.EWOQKey.PublicKey().Address(),
+					key.Address(),
 				},
 			}
 

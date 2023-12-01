@@ -10,8 +10,8 @@ package peer
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockGossipTracker is a mock of GossipTracker interface.

@@ -11,9 +11,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	vms "github.com/MetalBlockchain/metalgo/vms"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	vms "github.com/ava-labs/avalanchego/vms"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockVMRegisterer is a mock of VMRegisterer interface.

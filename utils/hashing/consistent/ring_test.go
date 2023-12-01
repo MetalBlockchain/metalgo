@@ -6,11 +6,11 @@ package consistent
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"go.uber.org/mock/gomock"
+
+	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
 var (

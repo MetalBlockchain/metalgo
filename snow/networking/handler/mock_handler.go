@@ -12,9 +12,9 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	snow "github.com/ava-labs/avalanchego/snow"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockHandler is a mock of Handler interface.

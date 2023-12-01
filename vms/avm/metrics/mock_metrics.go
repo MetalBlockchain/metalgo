@@ -11,10 +11,10 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	blocks "github.com/MetalBlockchain/metalgo/vms/avm/blocks"
-	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	gomock "github.com/golang/mock/gomock"
+	blocks "github.com/ava-labs/avalanchego/vms/avm/blocks"
+	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
 	rpc "github.com/gorilla/rpc/v2"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockMetrics is a mock of Metrics interface.

@@ -12,13 +12,13 @@ import (
 	reflect "reflect"
 	time "time"
 
-	manager "github.com/MetalBlockchain/metalgo/database/manager"
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	snowman "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	common "github.com/MetalBlockchain/metalgo/snow/engine/common"
-	version "github.com/MetalBlockchain/metalgo/version"
-	gomock "github.com/golang/mock/gomock"
+	manager "github.com/ava-labs/avalanchego/database/manager"
+	ids "github.com/ava-labs/avalanchego/ids"
+	snow "github.com/ava-labs/avalanchego/snow"
+	snowman "github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	common "github.com/ava-labs/avalanchego/snow/engine/common"
+	version "github.com/ava-labs/avalanchego/version"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockChainVM is a mock of ChainVM interface.

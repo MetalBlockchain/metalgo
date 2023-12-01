@@ -10,10 +10,10 @@ package blocks
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	snow "github.com/ava-labs/avalanchego/snow"
+	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockBlock is a mock of Block interface.

@@ -9,16 +9,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/x/merkledb"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/x/merkledb"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
@@ -155,10 +156,8 @@ func Test_Server_GetChangeProof(t *testing.T) {
 	require.NoError(t, err)
 
 	// create changes
+	ops := make([]database.BatchOp, 0, 600)
 	for x := 0; x < 600; x++ {
-		view, err := trieDB.NewView()
-		require.NoError(t, err)
-
 		key := make([]byte, r.Intn(100))
 		_, err = r.Read(key)
 		require.NoError(t, err)
@@ -167,7 +166,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 		_, err = r.Read(val)
 		require.NoError(t, err)
 
-		require.NoError(t, view.Insert(context.Background(), key, val))
+		ops = append(ops, database.BatchOp{Key: key, Value: val})
 
 		deleteKeyStart := make([]byte, r.Intn(10))
 		_, err = r.Read(deleteKeyStart)
@@ -175,16 +174,20 @@ func Test_Server_GetChangeProof(t *testing.T) {
 
 		it := trieDB.NewIteratorWithStart(deleteKeyStart)
 		if it.Next() {
-			require.NoError(t, view.Remove(context.Background(), it.Key()))
+			ops = append(ops, database.BatchOp{Key: it.Key(), Delete: true})
 		}
 		require.NoError(t, it.Error())
 		it.Release()
 
+		view, err := trieDB.NewView(ops)
+		require.NoError(t, err)
 		require.NoError(t, view.CommitToDB(context.Background()))
 	}
 
 	endRoot, err := trieDB.GetMerkleRoot(context.Background())
 	require.NoError(t, err)
+
+	fakeRootID := ids.GenerateTestID()
 
 	tests := map[string]struct {
 		request                  *pb.SyncGetChangeProofRequest
@@ -193,6 +196,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 		expectedMaxResponseBytes int
 		nodeID                   ids.NodeID
 		proofNil                 bool
+		expectRangeProof         bool // Otherwise expect change proof
 	}{
 		"byteslimit is 0": {
 			request: &pb.SyncGetChangeProofRequest{
@@ -241,14 +245,42 @@ func Test_Server_GetChangeProof(t *testing.T) {
 			},
 			expectedMaxResponseBytes: defaultRequestByteSizeLimit,
 		},
+		"insufficient history for change proof; return range proof": {
+			request: &pb.SyncGetChangeProofRequest{
+				// This root doesn't exist so server has insufficient history
+				// to serve a change proof
+				StartRootHash: ids.Empty[:],
+				EndRootHash:   endRoot[:],
+				KeyLimit:      defaultRequestKeyLimit,
+				BytesLimit:    defaultRequestByteSizeLimit,
+			},
+			expectedMaxResponseBytes: defaultRequestByteSizeLimit,
+			expectRangeProof:         true,
+		},
+		"insufficient history for change proof or range proof": {
+			request: &pb.SyncGetChangeProofRequest{
+				// These roots don't exist so server has insufficient history
+				// to serve a change proof
+				StartRootHash: ids.Empty[:],
+				EndRootHash:   fakeRootID[:],
+				KeyLimit:      defaultRequestKeyLimit,
+				BytesLimit:    defaultRequestByteSizeLimit,
+			},
+			expectedMaxResponseBytes: defaultRequestByteSizeLimit,
+			proofNil:                 true,
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			require := require.New(t)
 			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			// Store proof returned by server in [proofResult]
+			var proofResult *pb.SyncGetChangeProofResponse
+			var proofBytes []byte
 			sender := common.NewMockSender(ctrl)
-			var proofResult *merkledb.ChangeProof
 			sender.EXPECT().SendAppResponse(
 				gomock.Any(), // ctx
 				gomock.Any(), // nodeID
@@ -256,46 +288,51 @@ func Test_Server_GetChangeProof(t *testing.T) {
 				gomock.Any(), // responseBytes
 			).DoAndReturn(
 				func(_ context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
-					// grab a copy of the proof so we can inspect it later
-					if !test.proofNil {
-						var responseProto pb.SyncGetChangeProofResponse
-						require.NoError(proto.Unmarshal(responseBytes, &responseProto))
-
-						// TODO when the client/server support including range proofs in the response,
-						// this will need to be updated.
-						var p merkledb.ChangeProof
-						require.NoError(p.UnmarshalProto(responseProto.GetChangeProof()))
-						proofResult = &p
+					if test.proofNil {
+						return nil
 					}
+					proofBytes = responseBytes
+
+					// grab a copy of the proof so we can inspect it later
+					var responseProto pb.SyncGetChangeProofResponse
+					require.NoError(proto.Unmarshal(responseBytes, &responseProto))
+					proofResult = &responseProto
+
 					return nil
 				},
 			).AnyTimes()
+
 			handler := NewNetworkServer(sender, trieDB, logging.NoLog{})
 			err := handler.HandleChangeProofRequest(context.Background(), test.nodeID, 0, test.request)
 			require.ErrorIs(err, test.expectedErr)
 			if test.expectedErr != nil {
 				return
 			}
+
 			if test.proofNil {
 				require.Nil(proofResult)
 				return
 			}
 			require.NotNil(proofResult)
-			if test.expectedResponseLen > 0 {
-				require.LessOrEqual(len(proofResult.KeyChanges), test.expectedResponseLen)
+
+			if test.expectRangeProof {
+				require.NotNil(proofResult.GetRangeProof())
+			} else {
+				require.NotNil(proofResult.GetChangeProof())
 			}
 
-			// TODO when the client/server support including range proofs in the response,
-			// this will need to be updated.
-			bytes, err := proto.Marshal(&pb.SyncGetChangeProofResponse{
-				Response: &pb.SyncGetChangeProofResponse_ChangeProof{
-					ChangeProof: proofResult.ToProto(),
-				},
-			})
+			if test.expectedResponseLen > 0 {
+				if test.expectRangeProof {
+					require.LessOrEqual(len(proofResult.GetRangeProof().KeyValues), test.expectedResponseLen)
+				} else {
+					require.LessOrEqual(len(proofResult.GetChangeProof().KeyChanges), test.expectedResponseLen)
+				}
+			}
+
 			require.NoError(err)
-			require.LessOrEqual(len(bytes), int(test.request.BytesLimit))
+			require.LessOrEqual(len(proofBytes), int(test.request.BytesLimit))
 			if test.expectedMaxResponseBytes > 0 {
-				require.LessOrEqual(len(bytes), test.expectedMaxResponseBytes)
+				require.LessOrEqual(len(proofBytes), test.expectedMaxResponseBytes)
 			}
 		})
 	}

@@ -10,11 +10,11 @@ package sender
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	message "github.com/MetalBlockchain/metalgo/message"
-	subnets "github.com/MetalBlockchain/metalgo/subnets"
-	set "github.com/MetalBlockchain/metalgo/utils/set"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	message "github.com/ava-labs/avalanchego/message"
+	subnets "github.com/ava-labs/avalanchego/subnets"
+	set "github.com/ava-labs/avalanchego/utils/set"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockExternalSender is a mock of ExternalSender interface.

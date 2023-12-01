@@ -12,13 +12,13 @@ import (
 	sync "sync"
 	time "time"
 
-	database "github.com/MetalBlockchain/metalgo/database"
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	logging "github.com/MetalBlockchain/metalgo/utils/logging"
-	blocks "github.com/MetalBlockchain/metalgo/vms/avm/blocks"
-	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
-	gomock "github.com/golang/mock/gomock"
+	database "github.com/ava-labs/avalanchego/database"
+	ids "github.com/ava-labs/avalanchego/ids"
+	logging "github.com/ava-labs/avalanchego/utils/logging"
+	blocks "github.com/ava-labs/avalanchego/vms/avm/blocks"
+	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	avax "github.com/ava-labs/avalanchego/vms/components/avax"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockChain is a mock of Chain interface.

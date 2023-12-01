@@ -10,13 +10,13 @@ package executor
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	snowman "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	set "github.com/MetalBlockchain/metalgo/utils/set"
-	blocks "github.com/MetalBlockchain/metalgo/vms/avm/blocks"
-	states "github.com/MetalBlockchain/metalgo/vms/avm/states"
-	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	snowman "github.com/ava-labs/avalanchego/snow/consensus/snowman"
+	set "github.com/ava-labs/avalanchego/utils/set"
+	blocks "github.com/ava-labs/avalanchego/vms/avm/blocks"
+	states "github.com/ava-labs/avalanchego/vms/avm/states"
+	txs "github.com/ava-labs/avalanchego/vms/avm/txs"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

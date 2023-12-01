@@ -11,10 +11,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	set "github.com/MetalBlockchain/metalgo/utils/set"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	snow "github.com/ava-labs/avalanchego/snow"
+	set "github.com/ava-labs/avalanchego/utils/set"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSender is a mock of Sender interface.

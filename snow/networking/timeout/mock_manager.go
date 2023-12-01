@@ -11,10 +11,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	message "github.com/MetalBlockchain/metalgo/message"
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	message "github.com/ava-labs/avalanchego/message"
+	snow "github.com/ava-labs/avalanchego/snow"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

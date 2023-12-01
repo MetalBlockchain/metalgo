@@ -11,9 +11,9 @@ import (
 	reflect "reflect"
 	sync "sync"
 
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	common "github.com/MetalBlockchain/metalgo/snow/engine/common"
-	gomock "github.com/golang/mock/gomock"
+	snow "github.com/ava-labs/avalanchego/snow"
+	common "github.com/ava-labs/avalanchego/snow/engine/common"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockServer is a mock of Server interface.

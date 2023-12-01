@@ -11,8 +11,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCalculator is a mock of Calculator interface.

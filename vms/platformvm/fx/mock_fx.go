@@ -10,9 +10,9 @@ package fx
 import (
 	reflect "reflect"
 
-	snow "github.com/MetalBlockchain/metalgo/snow"
-	verify "github.com/MetalBlockchain/metalgo/vms/components/verify"
-	gomock "github.com/golang/mock/gomock"
+	snow "github.com/ava-labs/avalanchego/snow"
+	verify "github.com/ava-labs/avalanchego/vms/components/verify"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFx is a mock of Fx interface.

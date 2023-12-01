@@ -10,9 +10,9 @@ package registry
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	vms "github.com/MetalBlockchain/metalgo/vms"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	vms "github.com/ava-labs/avalanchego/vms"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockVMGetter is a mock of VMGetter interface.

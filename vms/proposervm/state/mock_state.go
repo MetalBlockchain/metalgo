@@ -10,10 +10,10 @@ package state
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	choices "github.com/MetalBlockchain/metalgo/snow/choices"
-	block "github.com/MetalBlockchain/metalgo/vms/proposervm/block"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	choices "github.com/ava-labs/avalanchego/snow/choices"
+	block "github.com/ava-labs/avalanchego/vms/proposervm/block"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockState is a mock of State interface.

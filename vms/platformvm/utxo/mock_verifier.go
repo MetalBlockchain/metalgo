@@ -10,11 +10,11 @@ package utxo
 import (
 	reflect "reflect"
 
-	ids "github.com/MetalBlockchain/metalgo/ids"
-	avax "github.com/MetalBlockchain/metalgo/vms/components/avax"
-	verify "github.com/MetalBlockchain/metalgo/vms/components/verify"
-	txs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	gomock "github.com/golang/mock/gomock"
+	ids "github.com/ava-labs/avalanchego/ids"
+	avax "github.com/ava-labs/avalanchego/vms/components/avax"
+	verify "github.com/ava-labs/avalanchego/vms/components/verify"
+	txs "github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockVerifier is a mock of Verifier interface.
