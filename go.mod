@@ -9,7 +9,7 @@ go 1.20
 
 require (
 	github.com/DataDog/zstd v1.5.2
-	github.com/MetalBlockchain/coreth v0.12.5-rc.3-202312012
+	github.com/MetalBlockchain/coreth v0.12.5-rc.6
 	github.com/MetalBlockchain/metal-network-runner-sdk v0.3.0
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/NYTimes/gziphandler v1.1.1

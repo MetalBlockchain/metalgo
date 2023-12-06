@@ -30,7 +30,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"

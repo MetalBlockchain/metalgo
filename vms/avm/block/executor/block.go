@@ -16,7 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/states"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 )
@@ -37,7 +37,7 @@ var (
 
 // Exported for testing in avm package.
 type Block struct {
-	blocks.Block
+	block.Block
 	manager  *manager
 	rejected bool
 }

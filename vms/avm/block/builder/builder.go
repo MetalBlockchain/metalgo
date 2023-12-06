@@ -12,12 +12,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/states"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 
-	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
+	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 )
 
@@ -153,7 +153,7 @@ func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 		return nil, ErrNoTransactions
 	}
 
-	statelessBlk, err := blocks.NewStandardBlock(
+	statelessBlk, err := block.NewStandardBlock(
 		preferredID,
 		nextHeight,
 		nextTimestamp,

@@ -34,7 +34,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/avm/network"
@@ -47,8 +47,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/blocks/builder"
-	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
+	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/block/builder"
+	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	extensions "github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 )
@@ -84,7 +84,7 @@ type VM struct {
 
 	registerer prometheus.Registerer
 
-	parser blocks.Parser
+	parser block.Parser
 
 	pubsub *pubsub.Server
 
@@ -207,7 +207,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.typeToFxIndex = map[reflect.Type]int{}
-	vm.parser, err = blocks.NewCustomParser(
+	vm.parser, err = block.NewCustomParser(
 		vm.typeToFxIndex,
 		&vm.clock,
 		ctx.Log,

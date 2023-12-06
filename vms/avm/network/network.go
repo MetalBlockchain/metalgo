@@ -13,7 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/components/message"
