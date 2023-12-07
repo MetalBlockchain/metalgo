@@ -11,10 +11,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/message"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 var (
@@ -204,15 +204,13 @@ func (m *outboundMsgThrottlerMetrics) initialize(namespace string, registerer pr
 		Name:      "throttler_outbound_awaiting_release",
 		Help:      "Number of messages waiting to be sent",
 	})
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		registerer.Register(m.acquireSuccesses),
 		registerer.Register(m.acquireFailures),
 		registerer.Register(m.remainingAtLargeBytes),
 		registerer.Register(m.remainingVdrBytes),
 		registerer.Register(m.awaitingRelease),
 	)
-	return errs.Err
 }
 
 func NewNoOutboundThrottler() OutboundMsgThrottler {

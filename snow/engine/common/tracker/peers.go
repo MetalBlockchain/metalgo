@@ -11,9 +11,9 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/version"
 )
 
@@ -139,8 +139,7 @@ func NewMeteredPeers(namespace string, reg prometheus.Registerer) (Peers, error)
 		Name:      "num_validators",
 		Help:      "Total number of validators",
 	})
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		reg.Register(percentConnected),
 		reg.Register(totalWeight),
 		reg.Register(numValidators),
@@ -154,7 +153,7 @@ func NewMeteredPeers(namespace string, reg prometheus.Registerer) (Peers, error)
 			totalWeight:      totalWeight,
 			numValidators:    numValidators,
 		},
-	}, errs.Err
+	}, err
 }
 
 func (p *meteredPeers) OnValidatorAdded(nodeID ids.NodeID, pk *bls.PublicKey, txID ids.ID, weight uint64) {

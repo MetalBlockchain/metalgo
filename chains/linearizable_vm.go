@@ -7,13 +7,12 @@ import (
 	"context"
 
 	"github.com/MetalBlockchain/metalgo/api/metrics"
+	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-
-	dbManager "github.com/MetalBlockchain/metalgo/database/manager"
 )
 
 var (
@@ -32,7 +31,7 @@ type initializeOnLinearizeVM struct {
 
 	registerer   metrics.OptionalGatherer
 	ctx          *snow.Context
-	dbManager    dbManager.Manager
+	db           database.Database
 	genesisBytes []byte
 	upgradeBytes []byte
 	configBytes  []byte
@@ -47,7 +46,7 @@ func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID i
 	return vm.vmToInitialize.Initialize(
 		ctx,
 		vm.ctx,
-		vm.dbManager,
+		vm.db,
 		vm.genesisBytes,
 		vm.upgradeBytes,
 		vm.configBytes,
@@ -74,7 +73,7 @@ func NewLinearizeOnInitializeVM(vm vertex.LinearizableVMWithEngine) *linearizeOn
 func (vm *linearizeOnInitializeVM) Initialize(
 	ctx context.Context,
 	_ *snow.Context,
-	_ dbManager.Manager,
+	_ database.Database,
 	_ []byte,
 	_ []byte,
 	_ []byte,

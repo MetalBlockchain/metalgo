@@ -8,9 +8,9 @@ import (
 	"reflect"
 
 	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 )
@@ -42,14 +42,13 @@ func NewParser(fxs []fxs.Fx) (Parser, error) {
 	c := p.CodecRegistry()
 	gc := p.GenesisCodecRegistry()
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err = utils.Err(
 		c.RegisterType(&StandardBlock{}),
 		gc.RegisterType(&StandardBlock{}),
 	)
 	return &parser{
 		Parser: p,
-	}, errs.Err
+	}, err
 }
 
 func NewCustomParser(
@@ -65,14 +64,13 @@ func NewCustomParser(
 	c := p.CodecRegistry()
 	gc := p.GenesisCodecRegistry()
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err = utils.Err(
 		c.RegisterType(&StandardBlock{}),
 		gc.RegisterType(&StandardBlock{}),
 	)
 	return &parser{
 		Parser: p,
-	}, errs.Err
+	}, err
 }
 
 func (p *parser) ParseBlock(bytes []byte) (Block, error) {

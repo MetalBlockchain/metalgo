@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/proto/pb/sdk"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 var (
@@ -52,13 +52,11 @@ func NewHandler[T Gossipable](
 		}),
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		metrics.Register(h.sentN),
 		metrics.Register(h.sentBytes),
 	)
-
-	return h, errs.Err
+	return h, err
 }
 
 type Handler[T Gossipable] struct {

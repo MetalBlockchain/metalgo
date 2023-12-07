@@ -11,9 +11,9 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/peer"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 type metrics struct {
@@ -147,8 +147,7 @@ func newMetrics(namespace string, registerer prometheus.Registerer, initialSubne
 		peerConnectedStartTimes: make(map[ids.NodeID]float64),
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		registerer.Register(m.numTracked),
 		registerer.Register(m.numPeers),
 		registerer.Register(m.numSubnetPeers),
@@ -182,7 +181,7 @@ func newMetrics(namespace string, registerer prometheus.Registerer, initialSubne
 		m.nodeSubnetUptimeRewardingStake.WithLabelValues(subnetIDStr).Set(0)
 	}
 
-	return m, errs.Err
+	return m, err
 }
 
 func (m *metrics) markConnected(peer peer.Peer) {

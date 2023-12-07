@@ -16,8 +16,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/proto/pb/sdk"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 var (
@@ -83,13 +83,11 @@ func NewPullGossiper[T any, U GossipableAny[T]](
 		}),
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		metrics.Register(p.receivedN),
 		metrics.Register(p.receivedBytes),
 	)
-
-	return p, errs.Err
+	return p, err
 }
 
 type PullGossiper[T any, U GossipableAny[T]] struct {

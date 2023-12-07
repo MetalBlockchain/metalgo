@@ -17,10 +17,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 // Maximum number of containers IDs that can be fetched at a time in a call to
@@ -114,14 +114,12 @@ func newIndex(
 
 // Close this index
 func (i *index) Close() error {
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		i.indexToContainer.Close(),
 		i.containerToIndex.Close(),
 		i.vDB.Close(),
 		i.baseDB.Close(),
 	)
-	return errs.Err
 }
 
 // Index that the given transaction is accepted

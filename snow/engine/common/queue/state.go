@@ -15,8 +15,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/linkeddb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 const (
@@ -152,14 +152,12 @@ func (s *state) Clear() error {
 		return err
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		runJobsIter.Error(),
 		jobsIter.Error(),
 		depsIter.Error(),
 		missJobsIter.Error(),
 	)
-	return errs.Err
 }
 
 // AddRunnableJob adds [jobID] to the runnable queue

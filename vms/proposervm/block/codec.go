@@ -8,7 +8,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 const codecVersion = 0
@@ -24,13 +24,12 @@ func init() {
 	linearCodec := linearcodec.NewCustomMaxLength(math.MaxUint32)
 	c = codec.NewManager(math.MaxInt)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		linearCodec.RegisterType(&statelessBlock{}),
 		linearCodec.RegisterType(&option{}),
 		c.RegisterCodec(codecVersion, linearCodec),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 }

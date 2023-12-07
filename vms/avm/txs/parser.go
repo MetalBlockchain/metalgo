@@ -11,9 +11,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 	"github.com/MetalBlockchain/metalgo/codec/reflectcodec"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 )
 
@@ -64,8 +64,7 @@ func NewCustomParser(
 	gcm := codec.NewManager(math.MaxInt32)
 	cm := codec.NewDefaultManager()
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		c.RegisterType(&BaseTx{}),
 		c.RegisterType(&CreateAssetTx{}),
 		c.RegisterType(&OperationTx{}),
@@ -80,8 +79,8 @@ func NewCustomParser(
 		gc.RegisterType(&ExportTx{}),
 		gcm.RegisterCodec(CodecVersion, gc),
 	)
-	if errs.Errored() {
-		return nil, errs.Err
+	if err != nil {
+		return nil, err
 	}
 
 	vm := &fxVM{

@@ -6,8 +6,8 @@ package payload
 import (
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
 const (
@@ -27,13 +27,12 @@ func init() {
 	c = codec.NewManager(MaxMessageSize)
 	lc := linearcodec.NewCustomMaxLength(MaxSliceLen)
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		lc.RegisterType(&Hash{}),
 		lc.RegisterType(&AddressedCall{}),
 		c.RegisterCodec(codecVersion, lc),
 	)
-	if errs.Errored() {
-		panic(errs.Err)
+	if err != nil {
+		panic(err)
 	}
 }

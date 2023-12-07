@@ -11,6 +11,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/ipcs/socket"
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
@@ -133,12 +134,10 @@ func newEventIPCSocket(
 		url:    url,
 		socket: socket.NewSocket(url, ctx.log),
 		unregisterFn: func() error {
-			errs := wrappers.Errs{}
-			errs.Add(
+			return utils.Err(
 				snowmanAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 				avalancheAcceptorGroup.DeregisterAcceptor(chainID, ipcName),
 			)
-			return errs.Err
 		},
 	}
 
@@ -175,9 +174,10 @@ func (eis *eventSocket) Accept(_ *snow.ConsensusContext, _ ids.ID, container []b
 // stop unregisters the event handler and closes the eventSocket
 func (eis *eventSocket) stop() error {
 	eis.log.Info("closing Chain IPC")
-	errs := wrappers.Errs{}
-	errs.Add(eis.unregisterFn(), eis.socket.Close())
-	return errs.Err
+	return utils.Err(
+		eis.unregisterFn(),
+		eis.socket.Close(),
+	)
 }
 
 // URL returns the URL of the socket

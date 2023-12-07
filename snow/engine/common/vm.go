@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/MetalBlockchain/metalgo/api/health"
-	"github.com/MetalBlockchain/metalgo/database/manager"
+	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
@@ -47,7 +47,7 @@ type VM interface {
 	Initialize(
 		ctx context.Context,
 		chainCtx *snow.Context,
-		dbManager manager.Manager,
+		db database.Database,
 		genesisBytes []byte,
 		upgradeBytes []byte,
 		configBytes []byte,

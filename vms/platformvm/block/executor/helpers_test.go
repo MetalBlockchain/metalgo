@@ -19,6 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -35,8 +36,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
-	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
@@ -51,7 +50,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	db_manager "github.com/MetalBlockchain/metalgo/database/manager"
 	p_tx_builder "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
 	pvalidators "github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
 )
@@ -135,8 +133,7 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller) *environment {
 	}
 	res.isBootstrapped.Set(true)
 
-	baseDBManager := db_manager.NewMemDB(version.Semantic1_0_0)
-	res.baseDB = versiondb.New(baseDBManager.Current().Database)
+	res.baseDB = versiondb.New(memdb.New())
 	res.ctx = defaultCtx(res.baseDB)
 	res.fx = defaultFx(res.clk, res.ctx.Log, res.isBootstrapped.Get())
 
@@ -470,12 +467,14 @@ func shutdownEnvironment(t *environment) error {
 		}
 	}
 
-	errs := wrappers.Errs{}
+	var err error
 	if t.state != nil {
-		errs.Add(t.state.Close())
+		err = t.state.Close()
 	}
-	errs.Add(t.baseDB.Close())
-	return errs.Err
+	return utils.Err(
+		err,
+		t.baseDB.Close(),
+	)
 }
 
 func addPendingValidator(

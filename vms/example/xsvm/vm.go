@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
@@ -52,7 +51,7 @@ type VM struct {
 func (vm *VM) Initialize(
 	_ context.Context,
 	chainContext *snow.Context,
-	dbManager manager.Manager,
+	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	_ []byte,
@@ -67,8 +66,7 @@ func (vm *VM) Initialize(
 	)
 
 	vm.chainContext = chainContext
-	vm.db = dbManager.Current().Database
-
+	vm.db = db
 	g, err := genesis.Parse(genesisBytes)
 	if err != nil {
 		return fmt.Errorf("failed to parse genesis bytes: %w", err)

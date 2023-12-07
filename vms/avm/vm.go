@@ -20,7 +20,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/pubsub"
@@ -29,11 +28,11 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
@@ -144,7 +143,7 @@ type Config struct {
 func (vm *VM) Initialize(
 	_ context.Context,
 	ctx *snow.Context,
-	dbManager manager.Manager,
+	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
 	configBytes []byte,
@@ -181,7 +180,6 @@ func (vm *VM) Initialize(
 	vm.AddressManager = avax.NewAddressManager(ctx)
 	vm.Aliaser = ids.NewAliaser()
 
-	db := dbManager.Current().Database
 	vm.ctx = ctx
 	vm.appSender = appSender
 	vm.baseDB = db
@@ -308,12 +306,10 @@ func (vm *VM) Shutdown(context.Context) error {
 		return nil
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		vm.state.Close(),
 		vm.baseDB.Close(),
 	)
-	return errs.Err
 }
 
 func (*VM) Version(context.Context) (string, error) {
@@ -536,7 +532,7 @@ func (vm *VM) initGenesis(genesisBytes []byte) error {
 		}
 
 		tx := &txs.Tx{
-			Unsigned: &genesisTx.CreateAssetTx, //nolint:gosec
+			Unsigned: &genesisTx.CreateAssetTx,
 		}
 		if err := vm.parser.InitializeGenesisTx(tx); err != nil {
 			return err

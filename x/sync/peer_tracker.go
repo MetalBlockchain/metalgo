@@ -14,10 +14,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/heap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/version"
 
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
@@ -101,13 +101,12 @@ func newPeerTracker(
 		),
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	err := utils.Err(
 		registerer.Register(t.numTrackedPeers),
 		registerer.Register(t.numResponsivePeers),
 		registerer.Register(t.averageBandwidthMetric),
 	)
-	return t, errs.Err
+	return t, err
 }
 
 // Returns true if we're not connected to enough peers.
