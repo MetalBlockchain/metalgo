@@ -6,8 +6,7 @@ package syncer
 import (
 	"context"
 	"fmt"
-
-	stdmath "math"
+	"math"
 
 	"go.uber.org/zap"
 
@@ -19,9 +18,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
+
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var _ common.StateSyncer = (*stateSyncer)(nil)
@@ -250,7 +250,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 			continue
 		}
 
-		newWeight, err := math.Add64(nodeWeight, ws.weight)
+		newWeight, err := safemath.Add64(nodeWeight, ws.weight)
 		if err != nil {
 			ss.Ctx.Log.Error("failed to calculate new summary weight",
 				zap.Stringer("nodeID", nodeID),
@@ -260,7 +260,7 @@ func (ss *stateSyncer) AcceptedStateSummary(ctx context.Context, nodeID ids.Node
 				zap.Uint64("previousWeight", ws.weight),
 				zap.Error(err),
 			)
-			newWeight = stdmath.MaxUint64
+			newWeight = math.MaxUint64
 		}
 
 		ss.Ctx.Log.Verbo("updating summary weight",

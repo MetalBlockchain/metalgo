@@ -8,7 +8,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
@@ -24,8 +23,7 @@ func main() {
 		log.Fatalf("failed to parse address: %s\n", err)
 	}
 
-	addresses := set.Set[ids.ShortID]{}
-	addresses.Add(addr)
+	addresses := set.Of(addr)
 
 	ctx := context.Background()
 

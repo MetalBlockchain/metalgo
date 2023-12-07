@@ -2227,11 +2227,11 @@ func TestServiceGetBlock(t *testing.T) {
 			if tt.expectedErr != nil {
 				return
 			}
+			require.Equal(tt.encoding, reply.Encoding)
 
 			expectedJSON, err := stdjson.Marshal(expected)
 			require.NoError(err)
 
-			require.Equal(tt.encoding, reply.Encoding)
 			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
 		})
 	}
@@ -2433,11 +2433,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			if tt.expectedErr != nil {
 				return
 			}
+			require.Equal(tt.encoding, reply.Encoding)
 
 			expectedJSON, err := stdjson.Marshal(expected)
 			require.NoError(err)
 
-			require.Equal(tt.encoding, reply.Encoding)
 			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
 		})
 	}

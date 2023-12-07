@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 var errUnknownVertex = errors.New("unknown vertex")
@@ -132,12 +131,7 @@ func TestFilterAccepted(t *testing.T) {
 
 	require.NoError(bs.GetAccepted(context.Background(), ids.EmptyNodeID, 0, vtxIDs))
 
-	acceptedSet := set.Set[ids.ID]{}
-	acceptedSet.Add(accepted...)
-
-	manager.GetVtxF = nil
-
-	require.Contains(acceptedSet, vtxID0)
-	require.Contains(acceptedSet, vtxID1)
-	require.NotContains(acceptedSet, vtxID2)
+	require.Contains(accepted, vtxID0)
+	require.Contains(accepted, vtxID1)
+	require.NotContains(accepted, vtxID2)
 }

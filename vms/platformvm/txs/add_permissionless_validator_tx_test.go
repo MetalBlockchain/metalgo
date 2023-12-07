@@ -5,9 +5,8 @@ package txs
 
 import (
 	"encoding/hex"
+	"math"
 	"testing"
-
-	stdmath "math"
 
 	"github.com/stretchr/testify/require"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
@@ -27,6 +25,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/vms/types"
+
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 func TestAddPermissionlessPrimaryValidator(t *testing.T) {
@@ -1604,7 +1604,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
-								Amt: stdmath.MaxUint64,
+								Amt: math.MaxUint64,
 							},
 						},
 						{
@@ -1621,7 +1621,7 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 					DelegationShares:      reward.PercentDenominator,
 				}
 			},
-			err: math.ErrOverflow,
+			err: safemath.ErrOverflow,
 		},
 		{
 			name: "multiple staked assets",

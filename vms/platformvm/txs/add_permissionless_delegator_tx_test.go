@@ -5,9 +5,8 @@ package txs
 
 import (
 	"errors"
+	"math"
 	"testing"
-
-	stdmath "math"
 
 	"github.com/stretchr/testify/require"
 
@@ -17,13 +16,14 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/vms/types"
+
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var errCustom = errors.New("custom error")
@@ -1443,7 +1443,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 								ID: assetID,
 							},
 							Out: &secp256k1fx.TransferOutput{
-								Amt: stdmath.MaxUint64,
+								Amt: math.MaxUint64,
 							},
 						},
 						{
@@ -1458,7 +1458,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 					DelegationRewardsOwner: rewardsOwner,
 				}
 			},
-			err: math.ErrOverflow,
+			err: safemath.ErrOverflow,
 		},
 		{
 			name: "weight mismatch",

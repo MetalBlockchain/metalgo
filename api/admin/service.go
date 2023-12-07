@@ -53,74 +53,74 @@ type Config struct {
 // Admin is the API service for node admin management
 type Admin struct {
 	Config
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	profiler profiler.Profiler
 }
 
 // NewService returns a new admin API service.
 // All of the fields in [config] must be set.
 func NewService(config Config) (http.Handler, error) {
-	newServer := rpc.NewServer()
+	server := rpc.NewServer()
 	codec := json.NewCodec()
-	newServer.RegisterCodec(codec, "application/json")
-	newServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-	if err := newServer.RegisterService(&Admin{
-		Config:   config,
-		profiler: profiler.New(config.ProfileDir),
-	}, "admin"); err != nil {
-		return nil, err
-	}
-	return newServer, nil
+	server.RegisterCodec(codec, "application/json")
+	server.RegisterCodec(codec, "application/json;charset=UTF-8")
+	return server, server.RegisterService(
+		&Admin{
+			Config:   config,
+			profiler: profiler.New(config.ProfileDir),
+		},
+		"admin",
+	)
 }
 
 // StartCPUProfiler starts a cpu profile writing to the specified file
 func (a *Admin) StartCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "startCPUProfiler"),
 	)
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	return a.profiler.StartCPUProfiler()
 }
 
 // StopCPUProfiler stops the cpu profile
 func (a *Admin) StopCPUProfiler(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "stopCPUProfiler"),
 	)
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	return a.profiler.StopCPUProfiler()
 }
 
 // MemoryProfile runs a memory profile writing to the specified file
 func (a *Admin) MemoryProfile(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "memoryProfile"),
 	)
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	return a.profiler.MemoryProfile()
 }
 
 // LockProfile runs a mutex profile writing to the specified file
 func (a *Admin) LockProfile(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "lockProfile"),
 	)
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	return a.profiler.LockProfile()
 }
@@ -133,9 +133,6 @@ type AliasArgs struct {
 
 // Alias attempts to alias an HTTP endpoint to a new name
 func (a *Admin) Alias(_ *http.Request, args *AliasArgs, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "alias"),
@@ -158,9 +155,6 @@ type AliasChainArgs struct {
 
 // AliasChain attempts to alias a chain to a new name
 func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "aliasChain"),
@@ -175,6 +169,9 @@ func (a *Admin) AliasChain(_ *http.Request, args *AliasChainArgs, _ *api.EmptyRe
 	if err != nil {
 		return err
 	}
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	if err := a.ChainManager.Alias(chainID, args.Alias); err != nil {
 		return err
@@ -197,9 +194,6 @@ type GetChainAliasesReply struct {
 
 // GetChainAliases returns the aliases of the chain
 func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, reply *GetChainAliasesReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getChainAliases"),
@@ -217,15 +211,16 @@ func (a *Admin) GetChainAliases(_ *http.Request, args *GetChainAliasesArgs, repl
 
 // Stacktrace returns the current global stacktrace
 func (a *Admin) Stacktrace(_ *http.Request, _ *struct{}, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "stacktrace"),
 	)
 
 	stacktrace := []byte(utils.GetStacktrace(true))
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
 	return perms.WriteFile(stacktraceFile, stacktrace, perms.ReadWrite)
 }
 
@@ -246,9 +241,6 @@ type SetLoggerLevelArgs struct {
 // If args.DisplayLevel == nil, doesn't set the display level of these loggers.
 // If args.DisplayLevel != nil, must be a valid string representation of a log level.
 func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, _ *api.EmptyReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "setLoggerLevel"),
@@ -260,6 +252,9 @@ func (a *Admin) SetLoggerLevel(_ *http.Request, args *SetLoggerLevelArgs, _ *api
 	if args.LogLevel == nil && args.DisplayLevel == nil {
 		return errNoLogLevel
 	}
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	var loggerNames []string
 	if len(args.LoggerName) > 0 {
@@ -301,14 +296,15 @@ type GetLoggerLevelReply struct {
 
 // GetLogLevel returns the log level and display level of all loggers.
 func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply *GetLoggerLevelReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getLoggerLevels"),
 		logging.UserString("loggerName", args.LoggerName),
 	)
+
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
 	reply.LoggerLevels = make(map[string]LogAndDisplayLevels)
 	var loggerNames []string
 	// Empty name means all loggers
@@ -337,9 +333,6 @@ func (a *Admin) GetLoggerLevel(_ *http.Request, args *GetLoggerLevelArgs, reply 
 
 // GetConfig returns the config that the node was started with.
 func (a *Admin) GetConfig(_ *http.Request, _ *struct{}, reply *interface{}) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "getConfig"),
@@ -358,13 +351,13 @@ type LoadVMsReply struct {
 
 // LoadVMs loads any new VMs available to the node and returns the added VMs.
 func (a *Admin) LoadVMs(r *http.Request, _ *struct{}, reply *LoadVMsReply) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	a.Log.Debug("API called",
 		zap.String("service", "admin"),
 		zap.String("method", "loadVMs"),
 	)
+
+	a.lock.Lock()
+	defer a.lock.Unlock()
 
 	ctx := r.Context()
 	loadedVMs, failedVMs, err := a.VMRegistry.ReloadWithReadLock(ctx)

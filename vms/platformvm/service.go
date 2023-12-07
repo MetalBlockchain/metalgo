@@ -7,11 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
 	stdjson "encoding/json"
-	stdmath "math"
 
 	"go.uber.org/zap"
 
@@ -29,7 +29,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
@@ -45,6 +44,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 	platformapi "github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 )
 
@@ -101,13 +101,13 @@ type stakerAttributes struct {
 
 // GetHeight returns the height of the last accepted block
 func (s *Service) GetHeight(r *http.Request, _ *struct{}, response *api.GetHeightResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getHeight"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	ctx := r.Context()
 	height, err := s.vm.GetCurrentHeight(ctx)
@@ -129,9 +129,6 @@ type ExportKeyReply struct {
 
 // ExportKey returns a private key from the provided user
 func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportKeyReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "exportKey"),
@@ -142,6 +139,9 @@ func (s *Service) ExportKey(_ *http.Request, args *ExportKeyArgs, reply *ExportK
 	if err != nil {
 		return fmt.Errorf("couldn't parse %s to address: %w", args.Address, err)
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -166,9 +166,6 @@ type ImportKeyArgs struct {
 
 // ImportKey adds a private key to the provided user
 func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSONAddress) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "importKey"),
@@ -184,6 +181,9 @@ func (s *Service) ImportKey(_ *http.Request, args *ImportKeyArgs, reply *api.JSO
 	if err != nil {
 		return fmt.Errorf("problem formatting address: %w", err)
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -224,20 +224,19 @@ type GetBalanceResponse struct {
 
 // GetBalance gets the balance of an address
 func (s *Service) GetBalance(_ *http.Request, args *GetBalanceRequest, response *GetBalanceResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBalance"),
 		logging.UserStrings("addresses", args.Addresses),
 	)
 
-	// Parse to address
 	addrs, err := avax.ParseServiceAddresses(s.addrManager, args.Addresses)
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	utxos, err := avax.GetAllUTXOs(s.vm.state, addrs)
 	if err != nil {
@@ -256,16 +255,16 @@ utxoFor:
 		switch out := utxo.Out.(type) {
 		case *secp256k1fx.TransferOutput:
 			if out.Locktime <= currentTime {
-				newBalance, err := math.Add64(unlockeds[assetID], out.Amount())
+				newBalance, err := safemath.Add64(unlockeds[assetID], out.Amount())
 				if err != nil {
-					unlockeds[assetID] = stdmath.MaxUint64
+					unlockeds[assetID] = math.MaxUint64
 				} else {
 					unlockeds[assetID] = newBalance
 				}
 			} else {
-				newBalance, err := math.Add64(lockedNotStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add64(lockedNotStakeables[assetID], out.Amount())
 				if err != nil {
-					lockedNotStakeables[assetID] = stdmath.MaxUint64
+					lockedNotStakeables[assetID] = math.MaxUint64
 				} else {
 					lockedNotStakeables[assetID] = newBalance
 				}
@@ -279,23 +278,23 @@ utxoFor:
 				)
 				continue utxoFor
 			case innerOut.Locktime > currentTime:
-				newBalance, err := math.Add64(lockedNotStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add64(lockedNotStakeables[assetID], out.Amount())
 				if err != nil {
-					lockedNotStakeables[assetID] = stdmath.MaxUint64
+					lockedNotStakeables[assetID] = math.MaxUint64
 				} else {
 					lockedNotStakeables[assetID] = newBalance
 				}
 			case out.Locktime <= currentTime:
-				newBalance, err := math.Add64(unlockeds[assetID], out.Amount())
+				newBalance, err := safemath.Add64(unlockeds[assetID], out.Amount())
 				if err != nil {
-					unlockeds[assetID] = stdmath.MaxUint64
+					unlockeds[assetID] = math.MaxUint64
 				} else {
 					unlockeds[assetID] = newBalance
 				}
 			default:
-				newBalance, err := math.Add64(lockedStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add64(lockedStakeables[assetID], out.Amount())
 				if err != nil {
-					lockedStakeables[assetID] = stdmath.MaxUint64
+					lockedStakeables[assetID] = math.MaxUint64
 				} else {
 					lockedStakeables[assetID] = newBalance
 				}
@@ -309,17 +308,17 @@ utxoFor:
 
 	balances := maps.Clone(lockedStakeables)
 	for assetID, amount := range lockedNotStakeables {
-		newBalance, err := math.Add64(balances[assetID], amount)
+		newBalance, err := safemath.Add64(balances[assetID], amount)
 		if err != nil {
-			balances[assetID] = stdmath.MaxUint64
+			balances[assetID] = math.MaxUint64
 		} else {
 			balances[assetID] = newBalance
 		}
 	}
 	for assetID, amount := range unlockeds {
-		newBalance, err := math.Add64(balances[assetID], amount)
+		newBalance, err := safemath.Add64(balances[assetID], amount)
 		if err != nil {
-			balances[assetID] = stdmath.MaxUint64
+			balances[assetID] = math.MaxUint64
 		} else {
 			balances[assetID] = newBalance
 		}
@@ -347,14 +346,14 @@ func newJSONBalanceMap(balanceMap map[ids.ID]uint64) map[ids.ID]json.Uint64 {
 // CreateAddress creates an address controlled by [args.Username]
 // Returns the newly created address
 func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, response *api.JSONAddress) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "createAddress"),
 		logging.UserString("username", args.Username),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -376,14 +375,14 @@ func (s *Service) CreateAddress(_ *http.Request, args *api.UserPass, response *a
 
 // ListAddresses returns the addresses controlled by [args.Username]
 func (s *Service) ListAddresses(_ *http.Request, args *api.UserPass, response *api.JSONAddresses) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "listAddresses"),
 		logging.UserString("username", args.Username),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -414,9 +413,6 @@ type Index struct {
 
 // GetUTXOs returns the UTXOs controlled by the given addresses
 func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *api.GetUTXOsReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getUTXOs"),
@@ -467,6 +463,10 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 	if limit <= 0 || builder.MaxPageSize < limit {
 		limit = builder.MaxPageSize
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
+
 	if sourceChain == s.vm.ctx.ChainID {
 		utxos, endAddr, endUTXOID, err = avax.GetPaginatedUTXOs(
 			s.vm.state,
@@ -547,13 +547,13 @@ type GetSubnetsResponse struct {
 // GetSubnets returns the subnets whose ID are in [args.IDs]
 // The response will include the primary network
 func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *GetSubnetsResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getSubnets"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	getAll := len(args.IDs) == 0
 	if getAll {
@@ -670,9 +670,6 @@ type GetStakingAssetIDResponse struct {
 // GetStakingAssetID returns the assetID of the token used to stake on the
 // provided subnet
 func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs, response *GetStakingAssetIDResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getStakingAssetID"),
@@ -682,6 +679,9 @@ func (s *Service) GetStakingAssetID(_ *http.Request, args *GetStakingAssetIDArgs
 		response.AssetID = s.vm.ctx.AVAXAssetID
 		return nil
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
 	if err != nil {
@@ -773,9 +773,6 @@ func (s *Service) loadStakerTxAttributes(txID ids.ID) (*stakerAttributes, error)
 // is provided, full delegators information is also returned. Otherwise only
 // delegators' number and total weight is returned.
 func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidatorsArgs, reply *GetCurrentValidatorsReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getCurrentValidators"),
@@ -787,8 +784,10 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 	vdrToDelegators := map[ids.NodeID][]platformapi.PrimaryDelegator{}
 
 	// Create set of nodeIDs
-	nodeIDs := set.Set[ids.NodeID]{}
-	nodeIDs.Add(args.NodeIDs...)
+	nodeIDs := set.Of(args.NodeIDs...)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	numNodeIDs := nodeIDs.Len()
 	targetStakers := make([]*state.Staker, 0, numNodeIDs)
@@ -993,9 +992,6 @@ type GetPendingValidatorsReply struct {
 
 // GetPendingValidators returns the lists of pending validators and delegators.
 func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidatorsArgs, reply *GetPendingValidatorsReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getPendingValidators"),
@@ -1005,8 +1001,10 @@ func (s *Service) GetPendingValidators(_ *http.Request, args *GetPendingValidato
 	reply.Delegators = []interface{}{}
 
 	// Create set of nodeIDs
-	nodeIDs := set.Set[ids.NodeID]{}
-	nodeIDs.Add(args.NodeIDs...)
+	nodeIDs := set.Of(args.NodeIDs...)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	numNodeIDs := nodeIDs.Len()
 	targetStakers := make([]*state.Staker, 0, numNodeIDs)
@@ -1109,13 +1107,13 @@ type GetCurrentSupplyReply struct {
 
 // GetCurrentSupply returns an upper bound on the supply of AVAX in the system
 func (s *Service) GetCurrentSupply(r *http.Request, args *GetCurrentSupplyArgs, reply *GetCurrentSupplyReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getCurrentSupply"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	supply, err := s.vm.state.GetCurrentSupply(args.SubnetID)
 	if err != nil {
@@ -1197,9 +1195,6 @@ type AddValidatorArgs struct {
 // AddValidator creates and signs and issues a transaction to add a validator to
 // the primary network
 func (s *Service) AddValidator(_ *http.Request, args *AddValidatorArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "addValidator"),
@@ -1245,6 +1240,9 @@ func (s *Service) AddValidator(_ *http.Request, args *AddValidatorArgs, reply *a
 	if err != nil {
 		return fmt.Errorf("problem while parsing reward address: %w", err)
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1313,9 +1311,6 @@ type AddDelegatorArgs struct {
 // AddDelegator creates and signs and issues a transaction to add a delegator to
 // the primary network
 func (s *Service) AddDelegator(_ *http.Request, args *AddDelegatorArgs, reply *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "addDelegator"),
@@ -1358,6 +1353,9 @@ func (s *Service) AddDelegator(_ *http.Request, args *AddDelegatorArgs, reply *a
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1426,9 +1424,6 @@ type AddSubnetValidatorArgs struct {
 // AddSubnetValidator creates and signs and issues a transaction to add a
 // validator to a subnet other than the primary network
 func (s *Service) AddSubnetValidator(_ *http.Request, args *AddSubnetValidatorArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "addSubnetValidator"),
@@ -1467,6 +1462,9 @@ func (s *Service) AddSubnetValidator(_ *http.Request, args *AddSubnetValidatorAr
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1533,9 +1531,6 @@ type CreateSubnetArgs struct {
 // CreateSubnet creates and signs and issues a transaction to create a new
 // subnet
 func (s *Service) CreateSubnet(_ *http.Request, args *CreateSubnetArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "createSubnet"),
@@ -1552,6 +1547,9 @@ func (s *Service) CreateSubnet(_ *http.Request, args *CreateSubnetArgs, response
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1619,9 +1617,6 @@ type ExportAVAXArgs struct {
 // ExportAVAX exports AVAX from the P-Chain to the X-Chain
 // It must be imported on the X-Chain to complete the transfer
 func (s *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "exportAVAX"),
@@ -1649,6 +1644,9 @@ func (s *Service) ExportAVAX(_ *http.Request, args *ExportAVAXArgs, response *ap
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1713,9 +1711,6 @@ type ImportAVAXArgs struct {
 // ImportAVAX issues a transaction to import AVAX from the X-chain. The AVAX
 // must have already been exported from the X-Chain.
 func (s *Service) ImportAVAX(_ *http.Request, args *ImportAVAXArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "importAVAX"),
@@ -1738,6 +1733,9 @@ func (s *Service) ImportAVAX(_ *http.Request, args *ImportAVAXArgs, response *ap
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1811,9 +1809,6 @@ type CreateBlockchainArgs struct {
 
 // CreateBlockchain issues a transaction to create a new blockchain
 func (s *Service) CreateBlockchain(_ *http.Request, args *CreateBlockchainArgs, response *api.JSONTxIDChangeAddr) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Warn("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "createBlockchain"),
@@ -1846,8 +1841,7 @@ func (s *Service) CreateBlockchain(_ *http.Request, args *CreateBlockchainArgs, 
 	}
 	// If creating AVM instance, use secp256k1fx
 	// TODO: Document FXs and have user specify them in API call
-	fxIDsSet := set.Set[ids.ID]{}
-	fxIDsSet.Add(fxIDs...)
+	fxIDsSet := set.Of(fxIDs...)
 	if vmID == constants.AVMID && !fxIDsSet.Contains(secp256k1fx.ID) {
 		fxIDs = append(fxIDs, secp256k1fx.ID)
 	}
@@ -1861,6 +1855,9 @@ func (s *Service) CreateBlockchain(_ *http.Request, args *CreateBlockchainArgs, 
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	user, err := keystore.NewUserFromKeystore(s.vm.ctx.Keystore, args.Username, args.Password)
 	if err != nil {
@@ -1926,9 +1923,6 @@ type GetBlockchainStatusReply struct {
 
 // GetBlockchainStatus gets the status of a blockchain with the ID [args.BlockchainID].
 func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatusArgs, reply *GetBlockchainStatusReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBlockchainStatus"),
@@ -1937,6 +1931,9 @@ func (s *Service) GetBlockchainStatus(r *http.Request, args *GetBlockchainStatus
 	if args.BlockchainID == "" {
 		return errMissingBlockchainID
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	// if its aliased then vm created this chain.
 	if aliasedID, err := s.vm.Chains.Lookup(args.BlockchainID); err == nil {
@@ -2042,13 +2039,13 @@ type ValidatedByResponse struct {
 
 // ValidatedBy returns the ID of the Subnet that validates [args.BlockchainID]
 func (s *Service) ValidatedBy(r *http.Request, args *ValidatedByArgs, response *ValidatedByResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "validatedBy"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	var err error
 	ctx := r.Context()
@@ -2068,13 +2065,13 @@ type ValidatesResponse struct {
 
 // Validates returns the IDs of the blockchains validated by [args.SubnetID]
 func (s *Service) Validates(_ *http.Request, args *ValidatesArgs, response *ValidatesResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "validates"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	if args.SubnetID != constants.PrimaryNetworkID {
 		subnetTx, _, err := s.vm.state.GetTx(args.SubnetID)
@@ -2127,13 +2124,13 @@ type GetBlockchainsResponse struct {
 
 // GetBlockchains returns all of the blockchains that exist
 func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBlockchainsResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBlockchains"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	subnets, err := s.vm.state.GetSubnets()
 	if err != nil {
@@ -2189,9 +2186,6 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 }
 
 func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "issueTx"),
@@ -2205,6 +2199,10 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.
 	if err != nil {
 		return fmt.Errorf("couldn't parse tx: %w", err)
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
+
 	if err := s.vm.Builder.AddUnverifiedTx(tx); err != nil {
 		return fmt.Errorf("couldn't issue tx: %w", err)
 	}
@@ -2214,13 +2212,13 @@ func (s *Service) IssueTx(_ *http.Request, args *api.FormattedTx, response *api.
 }
 
 func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetTxReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getTx"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	tx, _, err := s.vm.state.GetTx(args.TxID)
 	if err != nil {
@@ -2233,8 +2231,7 @@ func (s *Service) GetTx(_ *http.Request, args *api.GetTxArgs, response *api.GetT
 		tx.Unsigned.InitCtx(s.vm.ctx)
 		result = tx
 	} else {
-		txBytes := tx.Bytes()
-		result, err = formatting.Encode(args.Encoding, txBytes)
+		result, err = formatting.Encode(args.Encoding, tx.Bytes())
 		if err != nil {
 			return fmt.Errorf("couldn't encode tx as %s: %w", args.Encoding, err)
 		}
@@ -2257,13 +2254,13 @@ type GetTxStatusResponse struct {
 
 // GetTxStatus gets a tx's status
 func (s *Service) GetTxStatus(_ *http.Request, args *GetTxStatusArgs, response *GetTxStatusResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getTxStatus"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	_, txStatus, err := s.vm.state.GetTx(args.TxID)
 	if err == nil { // Found the status. Report it.
@@ -2344,9 +2341,6 @@ type GetStakeReply struct {
 // TODO: Improve the performance of this method by maintaining this data
 // in a data structure rather than re-calculating it by iterating over stakers
 func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetStakeReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getStake"),
@@ -2360,6 +2354,9 @@ func (s *Service) GetStake(_ *http.Request, args *GetStakeArgs, response *GetSta
 	if err != nil {
 		return err
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	currentStakerIterator, err := s.vm.state.GetCurrentStakerIterator()
 	if err != nil {
@@ -2440,9 +2437,6 @@ type GetMinStakeReply struct {
 
 // GetMinStake returns the minimum staking amount in nAVAX.
 func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *GetMinStakeReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getMinStake"),
@@ -2453,6 +2447,9 @@ func (s *Service) GetMinStake(_ *http.Request, args *GetMinStakeArgs, reply *Get
 		reply.MinDelegatorStake = json.Uint64(s.vm.MinDelegatorStake)
 		return nil
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	transformSubnetIntf, err := s.vm.state.GetSubnetTransformation(args.SubnetID)
 	if err != nil {
@@ -2524,9 +2521,6 @@ type GetMaxStakeAmountReply struct {
 // GetMaxStakeAmount returns the maximum amount of nAVAX staking to the named
 // node during the time period.
 func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs, reply *GetMaxStakeAmountReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getMaxStakeAmount"),
@@ -2538,6 +2532,10 @@ func (s *Service) GetMaxStakeAmount(_ *http.Request, args *GetMaxStakeAmountArgs
 	if startTime.After(endTime) {
 		return errStartAfterEndTime
 	}
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
+
 	now := s.vm.state.GetTimestamp()
 	if startTime.Before(now) {
 		return errStartTimeInThePast
@@ -2576,13 +2574,13 @@ type GetRewardUTXOsReply struct {
 // GetRewardUTXOs returns the UTXOs that were rewarded after the provided
 // transaction's staking period ended.
 func (s *Service) GetRewardUTXOs(_ *http.Request, args *api.GetTxArgs, reply *GetRewardUTXOsReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("deprecated API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getRewardUTXOs"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	utxos, err := s.vm.state.GetRewardUTXOs(args.TxID)
 	if err != nil {
@@ -2615,13 +2613,13 @@ type GetTimestampReply struct {
 
 // GetTimestamp returns the current timestamp on chain.
 func (s *Service) GetTimestamp(_ *http.Request, _ *struct{}, reply *GetTimestampReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getTimestamp"),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	reply.Timestamp = s.vm.state.GetTimestamp()
 	return nil
@@ -2700,9 +2698,6 @@ type GetValidatorsAtReply struct {
 // GetValidatorsAt returns the weights of the validator set of a provided subnet
 // at the specified height.
 func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, reply *GetValidatorsAtReply) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	height := uint64(args.Height)
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
@@ -2710,6 +2705,9 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 		zap.Uint64("height", height),
 		zap.Stringer("subnetID", args.SubnetID),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	ctx := r.Context()
 	var err error
@@ -2721,15 +2719,15 @@ func (s *Service) GetValidatorsAt(r *http.Request, args *GetValidatorsAtArgs, re
 }
 
 func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *api.GetBlockResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBlock"),
 		zap.Stringer("blkID", args.BlockID),
 		zap.Stringer("encoding", args.Encoding),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	block, err := s.vm.manager.GetStatelessBlock(args.BlockID)
 	if err != nil {
@@ -2754,15 +2752,15 @@ func (s *Service) GetBlock(_ *http.Request, args *api.GetBlockArgs, response *ap
 
 // GetBlockByHeight returns the block at the given height.
 func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightArgs, response *api.GetBlockResponse) error {
-	s.vm.ctx.Lock.Lock()
-	defer s.vm.ctx.Lock.Unlock()
-
 	s.vm.ctx.Log.Debug("API called",
 		zap.String("service", "platform"),
 		zap.String("method", "getBlockByHeight"),
 		zap.Uint64("height", uint64(args.Height)),
 		zap.Stringer("encoding", args.Encoding),
 	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
 
 	blockID, err := s.vm.state.GetBlockIDAtHeight(uint64(args.Height))
 	if err != nil {
@@ -2864,9 +2862,9 @@ func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked ma
 		}
 
 		assetID := output.AssetID()
-		newAmount, err := math.Add64(totalAmountStaked[assetID], secpOut.Amt)
+		newAmount, err := safemath.Add64(totalAmountStaked[assetID], secpOut.Amt)
 		if err != nil {
-			newAmount = stdmath.MaxUint64
+			newAmount = math.MaxUint64
 		}
 		totalAmountStaked[assetID] = newAmount
 

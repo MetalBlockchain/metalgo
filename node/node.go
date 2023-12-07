@@ -723,11 +723,11 @@ func (n *Node) initAPIServer() error {
 
 	// only create auth service if token authorization is required
 	n.Log.Info("API authorization is enabled. Auth tokens must be passed in the header of API requests, except requests to the auth service.")
-	authService, err := a.CreateHandler()
+	handler, err := a.CreateHandler()
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(authService, "auth", "")
+	return n.APIServer.AddRoute(handler, "auth", "")
 }
 
 // Add the default VM aliases
@@ -762,8 +762,7 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 	cChainID := createEVMTx.ID()
 
 	// If any of these chains die, the node shuts down
-	criticalChains := set.Set[ids.ID]{}
-	criticalChains.Add(
+	criticalChains := set.Of(
 		constants.PlatformChainID,
 		xChainID,
 		cChainID,
@@ -1035,7 +1034,11 @@ func (n *Node) initAdminAPI() error {
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, "admin", "")
+	return n.APIServer.AddRoute(
+		service,
+		"admin",
+		"",
+	)
 }
 
 // initProfiler initializes the continuous profiling
@@ -1099,7 +1102,11 @@ func (n *Node) initInfoAPI() error {
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, "info", "")
+	return n.APIServer.AddRoute(
+		service,
+		"info",
+		"",
+	)
 }
 
 // initHealthAPI initializes the Health API service
@@ -1165,7 +1172,11 @@ func (n *Node) initHealthAPI() error {
 		return err
 	}
 
-	err = n.APIServer.AddRoute(handler, "health", "")
+	err = n.APIServer.AddRoute(
+		handler,
+		"health",
+		"",
+	)
 	if err != nil {
 		return err
 	}
@@ -1203,11 +1214,15 @@ func (n *Node) initIPCAPI() error {
 		return nil
 	}
 	n.Log.Warn("initializing deprecated ipc API")
-	service, err := ipcsapi.NewService(n.Log, n.chainManager, n.APIServer, n.IPCs)
+	service, err := ipcsapi.NewService(n.Log, n.chainManager, n.IPCs)
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, "ipcs", "")
+	return n.APIServer.AddRoute(
+		service,
+		"ipcs",
+		"",
+	)
 }
 
 // Give chains aliases as specified by the genesis information

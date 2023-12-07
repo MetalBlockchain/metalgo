@@ -349,16 +349,14 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 }
 
 func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
-	newServer := rpc.NewServer()
+	server := rpc.NewServer()
 	codec := json.NewCodec()
-	newServer.RegisterCodec(codec, "application/json")
-	newServer.RegisterCodec(codec, "application/json;charset=UTF-8")
-
-	// name this service "avm"
+	server.RegisterCodec(codec, "application/json")
+	server.RegisterCodec(codec, "application/json;charset=UTF-8")
 	staticService := CreateStaticService()
 	return map[string]http.Handler{
-		"": newServer,
-	}, newServer.RegisterService(staticService, "avm")
+		"": server,
+	}, server.RegisterService(staticService, "avm")
 }
 
 /*

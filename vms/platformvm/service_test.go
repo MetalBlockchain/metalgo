@@ -169,13 +169,12 @@ func TestGetTxStatus(t *testing.T) {
 	require := require.New(t)
 	service, mutableSharedMemory := defaultService(t)
 	defaultAddress(t, service)
+	service.vm.ctx.Lock.Lock()
 	defer func() {
 		service.vm.ctx.Lock.Lock()
 		require.NoError(service.vm.Shutdown(context.Background()))
 		service.vm.ctx.Lock.Unlock()
 	}()
-
-	service.vm.ctx.Lock.Lock()
 
 	factory := secp256k1.Factory{}
 	recipientKey, err := factory.NewPrivateKey()
@@ -367,8 +366,6 @@ func TestGetTx(t *testing.T) {
 
 				require.NoError(service.GetTx(nil, arg, &response))
 
-				service.vm.ctx.Lock.Lock()
-
 				switch encoding {
 				case formatting.Hex:
 					// we're always guaranteed a string for hex encodings.
@@ -385,6 +382,7 @@ func TestGetTx(t *testing.T) {
 					require.Equal(expectedTxJSON, []byte(response.Tx))
 				}
 
+				service.vm.ctx.Lock.Lock()
 				require.NoError(service.vm.Shutdown(context.Background()))
 				service.vm.ctx.Lock.Unlock()
 			})
@@ -594,7 +592,6 @@ func TestGetStake(t *testing.T) {
 	require.Equal(stakeAmount+oldStake, outputs[0].Out.Amount()+outputs[1].Out.Amount()+outputs[2].Out.Amount())
 }
 
-// Test method GetCurrentValidators
 func TestGetCurrentValidators(t *testing.T) {
 	require := require.New(t)
 	service, _ := defaultService(t)
@@ -629,13 +626,13 @@ func TestGetCurrentValidators(t *testing.T) {
 		require.True(found, "expected validators to contain %s but didn't", vdr.NodeID)
 	}
 
-	service.vm.ctx.Lock.Lock()
-
 	// Add a delegator
 	stakeAmount := service.vm.MinDelegatorStake + 12345
 	validatorNodeID := ids.NodeID(keys[1].PublicKey().Address())
 	delegatorStartTime := uint64(defaultValidateStartTime.Unix())
 	delegatorEndTime := uint64(defaultValidateStartTime.Add(defaultMinStakingDuration).Unix())
+
+	service.vm.ctx.Lock.Lock()
 
 	delTx, err := service.vm.txBuilder.NewAddDelegatorTx(
 		stakeAmount,
@@ -735,9 +732,10 @@ func TestGetTimestamp(t *testing.T) {
 
 	reply := GetTimestampReply{}
 	require.NoError(service.GetTimestamp(nil, nil, &reply))
-	require.Equal(service.vm.state.GetTimestamp(), reply.Timestamp)
 
 	service.vm.ctx.Lock.Lock()
+
+	require.Equal(service.vm.state.GetTimestamp(), reply.Timestamp)
 
 	newTimestamp := reply.Timestamp.Add(time.Second)
 	service.vm.state.SetTimestamp(newTimestamp)
@@ -1041,11 +1039,11 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			if tt.expectedErr != nil {
 				return
 			}
+			require.Equal(tt.encoding, reply.Encoding)
 
 			expectedJSON, err := stdjson.Marshal(expected)
 			require.NoError(err)
 
-			require.Equal(tt.encoding, reply.Encoding)
 			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
 		})
 	}

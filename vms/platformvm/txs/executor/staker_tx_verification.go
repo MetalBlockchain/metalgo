@@ -6,16 +6,16 @@ package executor
 import (
 	"errors"
 	"fmt"
-
-	stdmath "math"
+	"math"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+
+	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 var (
@@ -272,7 +272,7 @@ func verifyAddSubnetValidatorTx(
 // * [sTx]'s creds authorize it to spend the stated inputs.
 // * [sTx]'s creds authorize it to remove a validator from [tx.Subnet].
 // * The flow checker passes.
-func removeSubnetValidatorValidation(
+func verifyRemoveSubnetValidatorTx(
 	backend *Backend,
 	chainState state.Chain,
 	sTx *txs.Tx,
@@ -392,13 +392,13 @@ func verifyAddDelegatorTx(
 		)
 	}
 
-	maximumWeight, err := math.Mul64(MaxValidatorWeightFactor, primaryNetworkValidator.Weight)
+	maximumWeight, err := safemath.Mul64(MaxValidatorWeightFactor, primaryNetworkValidator.Weight)
 	if err != nil {
 		return nil, ErrStakeOverflow
 	}
 
 	if backend.Config.IsApricotPhase3Activated(currentTimestamp) {
-		maximumWeight = math.Min(maximumWeight, backend.Config.MaxValidatorStake)
+		maximumWeight = safemath.Min(maximumWeight, backend.Config.MaxValidatorStake)
 	}
 
 	txID := sTx.ID()
@@ -639,14 +639,14 @@ func verifyAddPermissionlessDelegatorTx(
 		)
 	}
 
-	maximumWeight, err := math.Mul64(
+	maximumWeight, err := safemath.Mul64(
 		uint64(delegatorRules.maxValidatorWeightFactor),
 		validator.Weight,
 	)
 	if err != nil {
-		maximumWeight = stdmath.MaxUint64
+		maximumWeight = math.MaxUint64
 	}
-	maximumWeight = math.Min(maximumWeight, delegatorRules.maxValidatorStake)
+	maximumWeight = safemath.Min(maximumWeight, delegatorRules.maxValidatorStake)
 
 	txID := sTx.ID()
 	newStaker, err := state.NewPendingStaker(txID, tx)

@@ -5,7 +5,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -21,6 +20,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"golang.org/x/net/http2"
+
 	"github.com/MetalBlockchain/metalgo/api"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
@@ -30,11 +31,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
-const baseURL = "/ext"
+const (
+	baseURL              = "/ext"
+	maxConcurrentStreams = 64
+)
 
 var (
-	errUnknownLockOption = errors.New("invalid lock options")
-
 	_ PathAdder = readPathAdder{}
 	_ Server    = (*server)(nil)
 )
@@ -140,6 +142,20 @@ func New(
 		handler = wrapper.WrapHandler(handler)
 	}
 
+	httpServer := &http.Server{
+		Handler:           handler,
+		ReadTimeout:       httpConfig.ReadTimeout,
+		ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
+		WriteTimeout:      httpConfig.WriteTimeout,
+		IdleTimeout:       httpConfig.IdleTimeout,
+	}
+	err = http2.ConfigureServer(httpServer, &http2.Server{
+		MaxConcurrentStreams: maxConcurrentStreams,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	log.Info("API created",
 		zap.Strings("allowedOrigins", allowedOrigins),
 	)
@@ -152,14 +168,8 @@ func New(
 		tracer:          tracer,
 		metrics:         m,
 		router:          router,
-		srv: &http.Server{
-			Handler:           handler,
-			ReadTimeout:       httpConfig.ReadTimeout,
-			ReadHeaderTimeout: httpConfig.ReadHeaderTimeout,
-			WriteTimeout:      httpConfig.WriteTimeout,
-			IdleTimeout:       httpConfig.IdleTimeout,
-		},
-		listener: listener,
+		srv:             httpServer,
+		listener:        listener,
 	}, nil
 }
 
@@ -227,7 +237,6 @@ func (s *server) AddRoute(handler http.Handler, base, endpoint string) error {
 func (s *server) AddRouteWithReadLock(handler http.Handler, base, endpoint string) error {
 	s.router.lock.RUnlock()
 	defer s.router.lock.RLock()
-
 	return s.addRoute(handler, base, endpoint)
 }
 

@@ -135,7 +135,6 @@ func (s *server) IssueTx(r *http.Request, args *IssueTxArgs, reply *IssueTxReply
 	}
 
 	ctx := r.Context()
-
 	s.ctx.Lock.Lock()
 	err = s.builder.AddTx(ctx, newTx)
 	s.ctx.Lock.Unlock()
@@ -157,7 +156,6 @@ func (s *server) LastAccepted(_ *http.Request, _ *struct{}, reply *LastAcceptedR
 	s.ctx.Lock.RLock()
 	reply.BlockID = s.chain.LastAccepted()
 	s.ctx.Lock.RUnlock()
-
 	blkBytes, err := state.GetBlock(s.state, reply.BlockID)
 	if err != nil {
 		return err
