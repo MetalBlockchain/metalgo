@@ -25,8 +25,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime/subprocess"
-
-	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 )
 
 var (
@@ -295,7 +293,7 @@ func buildClientHelper(require *require.Assertions, testKey string) (*VMClient, 
 	clientConn, err := grpcutils.Dial(status.Addr)
 	require.NoError(err)
 
-	return NewClient(vmpb.NewVMClient(clientConn)), stopper
+	return NewClient(clientConn), stopper
 }
 
 func TestStateSyncEnabled(t *testing.T) {

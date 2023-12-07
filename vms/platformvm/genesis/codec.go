@@ -3,8 +3,8 @@
 
 package genesis
 
-import "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+import "github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 
-const Version = blocks.Version
+const Version = block.Version
 
-var Codec = blocks.GenesisCodec
+var Codec = block.GenesisCodec

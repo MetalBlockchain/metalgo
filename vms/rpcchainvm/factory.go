@@ -13,8 +13,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime/subprocess"
-
-	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 )
 
 var _ vms.Factory = (*factory)(nil)
@@ -61,7 +59,7 @@ func (f *factory) New(log logging.Logger) (interface{}, error) {
 		return nil, err
 	}
 
-	vm := NewClient(vmpb.NewVMClient(clientConn))
+	vm := NewClient(clientConn)
 	vm.SetProcess(stopper, status.Pid, f.processTracker)
 
 	f.runtimeTracker.TrackRuntime(stopper)

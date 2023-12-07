@@ -27,7 +27,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
@@ -204,7 +204,7 @@ func addPrimaryValidator(
 		Priority:        txs.PrimaryNetworkValidatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
+	blk, err := block.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
 		return ids.EmptyNodeID, err
 	}
@@ -234,7 +234,7 @@ func addSubnetValidator(
 		Priority:        txs.SubnetPermissionlessValidatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
+	blk, err := block.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func addSubnetDelegator(
 		Priority:        txs.SubnetPermissionlessDelegatorCurrentPriority,
 	})
 
-	blk, err := blocks.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
+	blk, err := block.NewBanffStandardBlock(startTime, ids.GenerateTestID(), height, nil)
 	if err != nil {
 		return err
 	}

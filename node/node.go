@@ -50,7 +50,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/network/throttling"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
 	"github.com/MetalBlockchain/metalgo/snow/networking/timeout"
@@ -414,7 +413,7 @@ func (n *Node) writeProcessContext() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal process context: %w", err)
 	}
-	if err := os.WriteFile(n.Config.ProcessContextFilePath, bytes, perms.ReadWrite); err != nil {
+	if err := perms.WriteFile(n.Config.ProcessContextFilePath, bytes, perms.ReadWrite); err != nil {
 		return fmt.Errorf("failed to write process context: %w", err)
 	}
 	return nil
@@ -728,11 +727,7 @@ func (n *Node) initAPIServer() error {
 	if err != nil {
 		return err
 	}
-	handler := &common.HTTPHandler{
-		LockOptions: common.NoLock,
-		Handler:     authService,
-	}
-	return n.APIServer.AddRoute(handler, &sync.RWMutex{}, "auth", "")
+	return n.APIServer.AddRoute(authService, "auth", "")
 }
 
 // Add the default VM aliases
@@ -911,6 +906,7 @@ func (n *Node) initVMs() error {
 				ApricotPhase5Time:             version.GetApricotPhase5Time(n.Config.NetworkID),
 				BanffTime:                     version.GetBanffTime(n.Config.NetworkID),
 				CortinaTime:                   version.GetCortinaTime(n.Config.NetworkID),
+				DTime:                         version.GetDTime(n.Config.NetworkID),
 				UseCurrentHeight:              n.Config.UseCurrentHeight,
 			},
 		}),
@@ -968,7 +964,7 @@ func (n *Node) initKeystoreAPI() error {
 	n.Log.Info("initializing keystore")
 	keystoreDB := n.DBManager.NewPrefixDBManager([]byte("keystore"))
 	n.keystore = keystore.New(n.Log, keystoreDB)
-	keystoreHandler, err := n.keystore.CreateHandler()
+	handler, err := n.keystore.CreateHandler()
 	if err != nil {
 		return err
 	}
@@ -977,11 +973,7 @@ func (n *Node) initKeystoreAPI() error {
 		return nil
 	}
 	n.Log.Warn("initializing deprecated keystore API")
-	handler := &common.HTTPHandler{
-		LockOptions: common.NoLock,
-		Handler:     keystoreHandler,
-	}
-	return n.APIServer.AddRoute(handler, &sync.RWMutex{}, "keystore", "")
+	return n.APIServer.AddRoute(handler, "keystore", "")
 }
 
 // initMetricsAPI initializes the Metrics API
@@ -1011,14 +1003,10 @@ func (n *Node) initMetricsAPI() error {
 	n.Log.Info("initializing metrics API")
 
 	return n.APIServer.AddRoute(
-		&common.HTTPHandler{
-			LockOptions: common.NoLock,
-			Handler: promhttp.HandlerFor(
-				n.MetricsGatherer,
-				promhttp.HandlerOpts{},
-			),
-		},
-		&sync.RWMutex{},
+		promhttp.HandlerFor(
+			n.MetricsGatherer,
+			promhttp.HandlerOpts{},
+		),
 		"metrics",
 		"",
 	)
@@ -1047,7 +1035,7 @@ func (n *Node) initAdminAPI() error {
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, &sync.RWMutex{}, "admin", "")
+	return n.APIServer.AddRoute(service, "admin", "")
 }
 
 // initProfiler initializes the continuous profiling
@@ -1111,7 +1099,7 @@ func (n *Node) initInfoAPI() error {
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, &sync.RWMutex{}, "info", "")
+	return n.APIServer.AddRoute(service, "info", "")
 }
 
 // initHealthAPI initializes the Health API service
@@ -1177,25 +1165,13 @@ func (n *Node) initHealthAPI() error {
 		return err
 	}
 
-	err = n.APIServer.AddRoute(
-		&common.HTTPHandler{
-			LockOptions: common.NoLock,
-			Handler:     handler,
-		},
-		&sync.RWMutex{},
-		"health",
-		"",
-	)
+	err = n.APIServer.AddRoute(handler, "health", "")
 	if err != nil {
 		return err
 	}
 
 	err = n.APIServer.AddRoute(
-		&common.HTTPHandler{
-			LockOptions: common.NoLock,
-			Handler:     health.NewGetHandler(healthChecker.Readiness),
-		},
-		&sync.RWMutex{},
+		health.NewGetHandler(healthChecker.Readiness),
 		"health",
 		"/readiness",
 	)
@@ -1204,11 +1180,7 @@ func (n *Node) initHealthAPI() error {
 	}
 
 	err = n.APIServer.AddRoute(
-		&common.HTTPHandler{
-			LockOptions: common.NoLock,
-			Handler:     health.NewGetHandler(healthChecker.Health),
-		},
-		&sync.RWMutex{},
+		health.NewGetHandler(healthChecker.Health),
 		"health",
 		"/health",
 	)
@@ -1217,11 +1189,7 @@ func (n *Node) initHealthAPI() error {
 	}
 
 	return n.APIServer.AddRoute(
-		&common.HTTPHandler{
-			LockOptions: common.NoLock,
-			Handler:     health.NewGetHandler(healthChecker.Liveness),
-		},
-		&sync.RWMutex{},
+		health.NewGetHandler(healthChecker.Liveness),
 		"health",
 		"/liveness",
 	)
@@ -1239,7 +1207,7 @@ func (n *Node) initIPCAPI() error {
 	if err != nil {
 		return err
 	}
-	return n.APIServer.AddRoute(service, &sync.RWMutex{}, "ipcs", "")
+	return n.APIServer.AddRoute(service, "ipcs", "")
 }
 
 // Give chains aliases as specified by the genesis information

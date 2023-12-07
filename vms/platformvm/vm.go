@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/gorilla/rpc/v2"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils"
@@ -34,7 +34,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
@@ -45,15 +45,16 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks/builder"
-	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks/executor"
+	snowmanblock "github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/block/builder"
+	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 	pvalidators "github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
 )
 
 var (
-	_ block.ChainVM              = (*VM)(nil)
+	_ snowmanblock.ChainVM       = (*VM)(nil)
 	_ secp256k1fx.VM             = (*VM)(nil)
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
@@ -155,7 +156,7 @@ func (vm *VM) Initialize(
 	vm.State = validatorManager
 	vm.atomicUtxosManager = avax.NewAtomicUTXOManager(chainCtx.SharedMemory, txs.Codec)
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.clock, vm.fx)
-	vm.uptimeManager = uptime.NewManager(vm.state)
+	vm.uptimeManager = uptime.NewManager(vm.state, &vm.clock)
 	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrapped, &chainCtx.Lock, vm.uptimeManager)
 
 	vm.txBuilder = txbuilder.New(
@@ -387,7 +388,7 @@ func (vm *VM) Shutdown(context.Context) error {
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
-	statelessBlk, err := blocks.Parse(blocks.Codec, b)
+	statelessBlk, err := block.Parse(block.Codec, b)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +417,7 @@ func (*VM) Version(context.Context) (string, error) {
 // CreateHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
-func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
@@ -435,17 +436,15 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, e
 		return nil, err
 	}
 
-	return map[string]*common.HTTPHandler{
-		"": {
-			Handler: server,
-		},
+	return map[string]http.Handler{
+		"": server,
 	}, nil
 }
 
 // CreateStaticHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
-func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
@@ -453,11 +452,8 @@ func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler
 		return nil, err
 	}
 
-	return map[string]*common.HTTPHandler{
-		"": {
-			LockOptions: common.NoLock,
-			Handler:     server,
-		},
+	return map[string]http.Handler{
+		"": server,
 	}, nil
 }
 
@@ -493,7 +489,7 @@ func (vm *VM) VerifyHeightIndex(_ context.Context) error {
 		return nil
 	}
 
-	return block.ErrIndexIncomplete
+	return snowmanblock.ErrIndexIncomplete
 }
 
 func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {

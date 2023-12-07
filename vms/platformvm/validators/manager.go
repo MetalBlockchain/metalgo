@@ -19,7 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/window"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
@@ -53,7 +53,7 @@ type State interface {
 	GetTx(txID ids.ID) (*txs.Tx, status.Status, error)
 
 	GetLastAccepted() ids.ID
-	GetStatelessBlock(blockID ids.ID) (blocks.Block, error)
+	GetStatelessBlock(blockID ids.ID) (block.Block, error)
 
 	// ValidatorSet adds all the validators and delegators of [subnetID] into
 	// [vdrs].

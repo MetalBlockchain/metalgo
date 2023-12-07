@@ -16,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/peer"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
@@ -69,7 +68,7 @@ func NewService(
 	network network.Network,
 	validators validators.Set,
 	benchlist benchlist.Manager,
-) (*common.HTTPHandler, error) {
+) (http.Handler, error) {
 	newServer := rpc.NewServer()
 	codec := json.NewCodec()
 	newServer.RegisterCodec(codec, "application/json")
@@ -86,10 +85,7 @@ func NewService(
 	}, "info"); err != nil {
 		return nil, err
 	}
-	return &common.HTTPHandler{
-		LockOptions: common.NoLock,
-		Handler:     newServer,
-	}, nil
+	return newServer, nil
 }
 
 // GetNodeVersionReply are the results from calling GetNodeVersion
