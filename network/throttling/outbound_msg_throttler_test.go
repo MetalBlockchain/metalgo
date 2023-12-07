@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/message"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
@@ -26,11 +27,11 @@ func TestSybilOutboundMsgThrottler(t *testing.T) {
 		AtLargeAllocSize:    1024,
 		NodeMaxAtLargeBytes: 1024,
 	}
-	vdrs := validators.NewSet()
+	vdrs := validators.NewManager()
 	vdr1ID := ids.GenerateTestNodeID()
 	vdr2ID := ids.GenerateTestNodeID()
-	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
-	require.NoError(vdrs.Add(vdr2ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr2ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
 		"",
@@ -170,9 +171,9 @@ func TestSybilOutboundMsgThrottlerMaxNonVdr(t *testing.T) {
 		AtLargeAllocSize:    100,
 		NodeMaxAtLargeBytes: 10,
 	}
-	vdrs := validators.NewSet()
+	vdrs := validators.NewManager()
 	vdr1ID := ids.GenerateTestNodeID()
-	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
 		"",
@@ -217,9 +218,9 @@ func TestBypassThrottling(t *testing.T) {
 		AtLargeAllocSize:    100,
 		NodeMaxAtLargeBytes: 10,
 	}
-	vdrs := validators.NewSet()
+	vdrs := validators.NewManager()
 	vdr1ID := ids.GenerateTestNodeID()
-	require.NoError(vdrs.Add(vdr1ID, nil, ids.Empty, 1))
+	require.NoError(vdrs.AddStaker(constants.PrimaryNetworkID, vdr1ID, nil, ids.Empty, 1))
 	throttlerIntf, err := NewSybilOutboundMsgThrottler(
 		logging.NoLog{},
 		"",

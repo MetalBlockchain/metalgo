@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/json"
@@ -37,7 +36,6 @@ type Info struct {
 	networking   network.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
-	validators   validators.Set
 	benchlist    benchlist.Manager
 }
 
@@ -65,7 +63,6 @@ func NewService(
 	vmManager vms.Manager,
 	myIP ips.DynamicIPPort,
 	network network.Network,
-	validators validators.Set,
 	benchlist benchlist.Manager,
 ) (http.Handler, error) {
 	server := rpc.NewServer()
@@ -80,7 +77,6 @@ func NewService(
 			vmManager:    vmManager,
 			myIP:         myIP,
 			networking:   network,
-			validators:   validators,
 			benchlist:    benchlist,
 		},
 		"info",

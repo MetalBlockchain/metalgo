@@ -8,6 +8,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 // DefaultConfigTest returns a test configuration
@@ -22,11 +23,11 @@ func DefaultConfigTest() Config {
 		},
 	}
 
-	beacons := validators.NewSet()
+	beacons := validators.NewManager()
 
 	connectedPeers := tracker.NewPeers()
 	startupTracker := tracker.NewStartup(connectedPeers, 0)
-	beacons.RegisterCallbackListener(startupTracker)
+	beacons.RegisterCallbackListener(constants.PrimaryNetworkID, startupTracker)
 
 	return Config{
 		Ctx:                            snow.DefaultConsensusContextTest(),
