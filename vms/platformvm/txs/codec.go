@@ -8,6 +8,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
@@ -103,5 +104,8 @@ func RegisterUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
 }
 
 func RegisterDUnsignedTxsTypes(targetCodec linearcodec.Codec) error {
-	return targetCodec.RegisterType(&TransferSubnetOwnershipTx{})
+	return utils.Err(
+		targetCodec.RegisterType(&TransferSubnetOwnershipTx{}),
+		targetCodec.RegisterType(&BaseTx{}),
+	)
 }

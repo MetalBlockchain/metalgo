@@ -58,6 +58,7 @@ message Message {
     AppGossip app_gossip = 32;
 
     PeerListAck peer_list_ack = 33;
+    AppRequestFailed app_request_failed = 34;
   }
 }
 

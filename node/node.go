@@ -40,6 +40,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/leveldb"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/meterdb"
+	"github.com/MetalBlockchain/metalgo/database/pebble"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -92,7 +93,8 @@ var (
 	genesisHashKey     = []byte("genesisID")
 	ungracefulShutdown = []byte("ungracefulShutdown")
 
-	indexerDBPrefix = []byte{0x00}
+	indexerDBPrefix  = []byte{0x00}
+	keystoreDBPrefix = []byte("keystore")
 
 	errInvalidTLSKey = errors.New("invalid TLS key")
 	errShuttingDown  = errors.New("server shutting down")
@@ -502,20 +504,30 @@ func (n *Node) initDatabase() error {
 	// start the db
 	switch n.Config.DatabaseConfig.Name {
 	case leveldb.Name:
+		// Prior to v1.10.15, the only on-disk database was leveldb, and its
+		// files went to [dbPath]/[networkID]/v1.4.5.
 		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, version.CurrentDatabase.String())
 		var err error
 		n.DB, err = leveldb.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, "db_internal", n.MetricsRegisterer)
 		if err != nil {
-			return fmt.Errorf("couldn't create db at %s: %w", dbPath, err)
+			return fmt.Errorf("couldn't create leveldb at %s: %w", dbPath, err)
 		}
 	case memdb.Name:
 		n.DB = memdb.New()
+	case pebble.Name:
+		dbPath := filepath.Join(n.Config.DatabaseConfig.Path, pebble.Name)
+		var err error
+		n.DB, err = pebble.New(dbPath, n.Config.DatabaseConfig.Config, n.Log, "db_internal", n.MetricsRegisterer)
+		if err != nil {
+			return fmt.Errorf("couldn't create pebbledb at %s: %w", dbPath, err)
+		}
 	default:
 		return fmt.Errorf(
-			"db-type was %q but should have been one of {%s, %s}",
+			"db-type was %q but should have been one of {%s, %s, %s}",
 			n.Config.DatabaseConfig.Name,
 			leveldb.Name,
 			memdb.Name,
+			pebble.Name,
 		)
 	}
 
@@ -524,10 +536,6 @@ func (n *Node) initDatabase() error {
 	if err != nil {
 		return err
 	}
-
-	n.Log.Info("initializing database",
-		zap.Stringer("dbVersion", version.CurrentDatabase),
-	)
 
 	rawExpectedGenesisHash := hashing.ComputeHash256(n.Config.GenesisBytes)
 
@@ -552,6 +560,10 @@ func (n *Node) initDatabase() error {
 	if genesisHash != expectedGenesisHash {
 		return fmt.Errorf("db contains invalid genesis hash. DB Genesis: %s Generated Genesis: %s", genesisHash, expectedGenesisHash)
 	}
+
+	n.Log.Info("initializing database",
+		zap.Stringer("genesisHash", genesisHash),
+	)
 
 	ok, err := n.DB.Has(ungracefulShutdown)
 	if err != nil {
@@ -974,7 +986,7 @@ func (n *Node) initSharedMemory() {
 // Assumes n.APIServer is already set
 func (n *Node) initKeystoreAPI() error {
 	n.Log.Info("initializing keystore")
-	n.keystore = keystore.New(n.Log, prefixdb.New([]byte("keystore"), n.DB))
+	n.keystore = keystore.New(n.Log, prefixdb.New(keystoreDBPrefix, n.DB))
 	handler, err := n.keystore.CreateHandler()
 	if err != nil {
 		return err
