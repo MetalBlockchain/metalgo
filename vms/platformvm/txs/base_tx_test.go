@@ -398,7 +398,7 @@ func TestBaseTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-avax1g32kvaugnx4tk3z4vemc3xd2hdz92enh972wxr"
+						"P-metal1g32kvaugnx4tk3z4vemc3xd2hdz92enhqaj6ex"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,

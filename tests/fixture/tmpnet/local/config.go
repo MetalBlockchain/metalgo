@@ -13,7 +13,7 @@ import (
 const (
 	// Constants defining the names of shell variables whose value can
 	// configure local network orchestration.
-	AvalancheGoPathEnvName = "AVALANCHEGO_PATH"
+	AvalancheGoPathEnvName = "METALGO_PATH"
 	NetworkDirEnvName      = "TMPNET_NETWORK_DIR"
 	RootDirEnvName         = "TMPNET_ROOT_DIR"
 

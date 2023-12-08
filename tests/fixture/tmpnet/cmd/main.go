@@ -21,7 +21,7 @@ import (
 const cliVersion = "0.0.1"
 
 var (
-	errAvalancheGoRequired = fmt.Errorf("--avalanchego-path or %s are required", local.AvalancheGoPathEnvName)
+	errAvalancheGoRequired = fmt.Errorf("--metalgo-path or %s are required", local.AvalancheGoPathEnvName)
 	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", local.NetworkDirEnvName)
 )
 
@@ -93,7 +93,7 @@ func main() {
 		},
 	}
 	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(local.RootDirEnvName), "The path to the root directory for local networks")
-	startNetworkCmd.PersistentFlags().StringVar(&execPath, "avalanchego-path", os.Getenv(local.AvalancheGoPathEnvName), "The path to an avalanchego binary")
+	startNetworkCmd.PersistentFlags().StringVar(&execPath, "metalgo-path", os.Getenv(local.AvalancheGoPathEnvName), "The path to an avalanchego binary")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
 	startNetworkCmd.PersistentFlags().Uint8Var(&fundedKeyCount, "funded-key-count", tmpnet.DefaultFundedKeyCount, "Number of funded keys the network should start with")
 	rootCmd.AddCommand(startNetworkCmd)
