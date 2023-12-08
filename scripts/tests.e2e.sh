@@ -34,8 +34,8 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 if [[ -n "${E2E_USE_EXISTING_NETWORK:-}" && -n "${TMPNET_NETWORK_DIR:-}" ]]; then
   E2E_ARGS="--use-existing-network"
 else
-  AVALANCHEGO_PATH="$(realpath ${AVALANCHEGO_PATH:-./build/avalanchego})"
-  E2E_ARGS="--avalanchego-path=${AVALANCHEGO_PATH}"
+  METALGO_PATH="$(realpath ${METALGO_PATH:-./build/metalgo})"
+  E2E_ARGS="--metalgo-path=${METALGO_PATH}"
 fi
 
 #################################

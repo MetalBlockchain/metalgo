@@ -39,7 +39,7 @@ func RegisterFlags() *FlagVars {
 	vars := FlagVars{}
 	flag.StringVar(
 		&vars.avalancheGoExecPath,
-		"avalanchego-path",
+		"metalgo-path",
 		os.Getenv(local.AvalancheGoPathEnvName),
 		fmt.Sprintf("avalanchego executable path (required if not using an existing network). Also possible to configure via the %s env variable.", local.AvalancheGoPathEnvName),
 	)
