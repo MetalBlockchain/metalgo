@@ -9,6 +9,7 @@ import (
 
 	_ "embed"
 
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
@@ -21,7 +22,7 @@ var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 10,
-		Patch: 15,
+		Patch: 16,
 	}
 	CurrentApp = &Application{
 		Major: Current.Major,
@@ -75,7 +76,6 @@ var (
 		constants.MainnetID: 0,
 		constants.TahoeID:   0,
 	}
-	ApricotPhase4DefaultMinPChainHeight uint64
 
 	ApricotPhase5Times = map[uint32]time.Time{
 		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
@@ -96,6 +96,7 @@ var (
 		constants.MainnetID: time.Date(2023, time.August, 17, 10, 0, 0, 0, time.UTC),
 		constants.TahoeID:   time.Date(2023, time.June, 28, 15, 0, 0, 0, time.UTC),
 	}
+	CortinaXChainStopVertexID map[uint32]ids.ID
 
 	// TODO: update this before release
 	DTimes = map[uint32]time.Time{
@@ -123,6 +124,29 @@ func init() {
 		}
 		RPCChainVMProtocolCompatibility[rpcChainVMProtocol] = versions
 	}
+
+	// The mainnet stop vertex is well known. It can be verified on any fully
+	// synced node by looking at the parentID of the genesis block.
+	//
+	// Ref: https://subnets.avax.network/x-chain/block/0
+	mainnetXChainStopVertexID, err := ids.FromString("2wGJmLRWQSpraRHvHA5Ly61kv4fqjqdsjfDF4sRid4sSviXzMh")
+	if err != nil {
+		panic(err)
+	}
+
+	// The fuji stop vertex is well known. It can be verified on any fully
+	// synced node by looking at the parentID of the genesis block.
+	//
+	// Ref: https://subnets-test.avax.network/x-chain/block/0
+	tahoeXChainStopVertexID, err := ids.FromString("212NENynWBENWq9441S23B7o9qxNgCgXSoYRjmfi1ktvfpbYjV")
+	if err != nil {
+		panic(err)
+	}
+
+	CortinaXChainStopVertexID = map[uint32]ids.ID{
+		constants.MainnetID: mainnetXChainStopVertexID,
+		constants.TahoeID:    tahoeXChainStopVertexID,
+	}
 }
 
 func GetApricotPhase3Time(networkID uint32) time.Time {
@@ -137,13 +161,6 @@ func GetApricotPhase4Time(networkID uint32) time.Time {
 		return upgradeTime
 	}
 	return DefaultUpgradeTime
-}
-
-func GetApricotPhase4MinPChainHeight(networkID uint32) uint64 {
-	if minHeight, exists := ApricotPhase4MinPChainHeight[networkID]; exists {
-		return minHeight
-	}
-	return ApricotPhase4DefaultMinPChainHeight
 }
 
 func GetApricotPhase5Time(networkID uint32) time.Time {

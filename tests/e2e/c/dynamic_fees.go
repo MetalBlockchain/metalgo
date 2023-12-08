@@ -19,7 +19,7 @@ import (
 	"github.com/MetalBlockchain/coreth/plugin/evm"
 
 	"github.com/MetalBlockchain/metalgo/tests"
-	"github.com/MetalBlockchain/metalgo/tests/e2e"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 )

@@ -31,6 +31,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 
 	commontracker "github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
@@ -454,7 +455,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		h.ctx.Log.Verbo("forwarding sync message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("messageOp", op),
-			zap.Any("message", body),
+			zap.Stringer("message", body),
 		)
 	} else {
 		h.ctx.Log.Debug("forwarding sync message to consensus",
@@ -487,7 +488,7 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 				zap.Duration("msgHandlingTime", msgHandlingTime),
 				zap.Stringer("nodeID", nodeID),
 				zap.Stringer("messageOp", op),
-				zap.Any("message", body),
+				zap.Stringer("message", body),
 			)
 		}
 	}()
@@ -556,23 +557,11 @@ func (h *handler) handleSyncMsg(ctx context.Context, msg Message) error {
 		return engine.GetStateSummaryFrontierFailed(ctx, nodeID, msg.RequestID)
 
 	case *p2p.GetAcceptedStateSummary:
-		// TODO: Enforce that the numbers are sorted to make this verification
-		//       more efficient.
-		if !utils.IsUnique(msg.Heights) {
-			h.ctx.Log.Debug("message with invalid field",
-				zap.Stringer("nodeID", nodeID),
-				zap.Stringer("messageOp", message.GetAcceptedStateSummaryOp),
-				zap.Uint32("requestID", msg.RequestId),
-				zap.String("field", "Heights"),
-			)
-			return engine.GetAcceptedStateSummaryFailed(ctx, nodeID, msg.RequestId)
-		}
-
 		return engine.GetAcceptedStateSummary(
 			ctx,
 			nodeID,
 			msg.RequestId,
-			msg.Heights,
+			set.Of(msg.Heights...),
 		)
 
 	case *p2p.AcceptedStateSummary:
@@ -804,7 +793,7 @@ func (h *handler) executeAsyncMsg(ctx context.Context, msg Message) error {
 		h.ctx.Log.Verbo("forwarding async message to consensus",
 			zap.Stringer("nodeID", nodeID),
 			zap.Stringer("messageOp", op),
-			zap.Any("message", body),
+			zap.Stringer("message", body),
 		)
 	} else {
 		h.ctx.Log.Debug("forwarding async message to consensus",
@@ -904,7 +893,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 	if h.ctx.Log.Enabled(logging.Verbo) {
 		h.ctx.Log.Verbo("forwarding chan message to consensus",
 			zap.Stringer("messageOp", op),
-			zap.Any("message", body),
+			zap.Stringer("message", body),
 		)
 	} else {
 		h.ctx.Log.Debug("forwarding chan message to consensus",
@@ -933,7 +922,7 @@ func (h *handler) handleChanMsg(msg message.InboundMessage) error {
 				zap.Duration("processingTime", processingTime),
 				zap.Duration("msgHandlingTime", msgHandlingTime),
 				zap.Stringer("messageOp", op),
-				zap.Any("message", body),
+				zap.Stringer("message", body),
 			)
 		}
 	}()

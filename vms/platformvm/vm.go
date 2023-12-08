@@ -36,6 +36,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/network"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
@@ -61,6 +62,7 @@ var (
 type VM struct {
 	config.Config
 	blockbuilder.Builder
+	network.Network
 	validators.State
 
 	metrics            metrics.Metrics
@@ -137,7 +139,7 @@ func (vm *VM) Initialize(
 		vm.db,
 		genesisBytes,
 		registerer,
-		&vm.Config,
+		vm.Config.Validators,
 		execConfig,
 		vm.ctx,
 		vm.metrics,
@@ -177,7 +179,7 @@ func (vm *VM) Initialize(
 
 	// Note: There is a circular dependency between the mempool and block
 	//       builder which is broken by passing in the vm.
-	mempool, err := mempool.NewMempool("mempool", registerer, vm)
+	mempool, err := mempool.New("mempool", registerer, vm)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -189,13 +191,19 @@ func (vm *VM) Initialize(
 		txExecutorBackend,
 		validatorManager,
 	)
+	vm.Network = network.New(
+		txExecutorBackend.Ctx,
+		vm.manager,
+		mempool,
+		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
+		appSender,
+	)
 	vm.Builder = blockbuilder.New(
 		mempool,
 		vm.txBuilder,
 		txExecutorBackend,
 		vm.manager,
 		toEngine,
-		appSender,
 	)
 
 	// Create all of the chains that the database says exist
@@ -393,7 +401,9 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 
 // SetPreference sets the preferred block to be the one with ID [blkID]
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
-	vm.Builder.SetPreference(blkID)
+	if vm.manager.SetPreference(blkID) {
+		vm.Builder.ResetBlockTimer()
+	}
 	return nil
 }
 

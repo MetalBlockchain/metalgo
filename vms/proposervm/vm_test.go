@@ -152,21 +152,27 @@ func initTestProposerVM(
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		var (
+			thisNode = proVM.ctx.NodeID
+			nodeID1  = ids.BuildTestNodeID([]byte{1})
+			nodeID2  = ids.BuildTestNodeID([]byte{2})
+			nodeID3  = ids.BuildTestNodeID([]byte{3})
+		)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			thisNode: {
+				NodeID: thisNode,
 				Weight: 10,
 			},
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID1: {
+				NodeID: nodeID1,
 				Weight: 5,
 			},
-			{2}: {
-				NodeID: ids.NodeID{2},
+			nodeID2: {
+				NodeID: nodeID2,
 				Weight: 6,
 			},
-			{3}: {
-				NodeID: ids.NodeID{3},
+			nodeID3: {
+				NodeID: nodeID3,
 				Weight: 7,
 			},
 		}, nil
@@ -227,7 +233,7 @@ func TestBuildBlockTimestampAreRoundedToSeconds(t *testing.T) {
 		BytesV:     []byte{1},
 		ParentV:    coreGenBlk.ID(),
 		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
@@ -257,7 +263,7 @@ func TestBuildBlockIsIdempotent(t *testing.T) {
 		BytesV:     []byte{1},
 		ParentV:    coreGenBlk.ID(),
 		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
@@ -292,7 +298,7 @@ func TestFirstProposerBlockIsBuiltOnTopOfGenesis(t *testing.T) {
 		BytesV:     []byte{1},
 		ParentV:    coreGenBlk.ID(),
 		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
@@ -397,7 +403,7 @@ func TestProposerBlocksAreBuiltOnPreferredProBlock(t *testing.T) {
 		return coreBlk3, nil
 	}
 
-	proVM.Set(proVM.Time().Add(proposer.MaxDelay))
+	proVM.Set(proVM.Time().Add(proposer.MaxBuildDelay))
 	builtBlk, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
@@ -492,7 +498,7 @@ func TestCoreBlocksMustBeBuiltOnPreferredCoreBlock(t *testing.T) {
 		return coreBlk3, nil
 	}
 
-	proVM.Set(proVM.Time().Add(proposer.MaxDelay))
+	proVM.Set(proVM.Time().Add(proposer.MaxBuildDelay))
 	blk, err := proVM.BuildBlock(context.Background())
 	require.NoError(err)
 
@@ -714,7 +720,7 @@ func TestPreFork_BuildBlock(t *testing.T) {
 		BytesV:     []byte{3},
 		ParentV:    coreGenBlk.ID(),
 		HeightV:    coreGenBlk.Height() + 1,
-		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxDelay),
+		TimestampV: coreGenBlk.Timestamp().Add(proposer.MaxVerifyDelay),
 	}
 	coreVM.BuildBlockF = func(context.Context) (snowman.Block, error) {
 		return coreBlk, nil
@@ -892,9 +898,10 @@ func TestExpiredBuildBlock(t *testing.T) {
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		nodeID := ids.BuildTestNodeID([]byte{1})
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID: {
+				NodeID: nodeID,
 				Weight: 100,
 			},
 		}, nil
@@ -1014,7 +1021,7 @@ func TestExpiredBuildBlock(t *testing.T) {
 	_, err = proVM.BuildBlock(context.Background())
 	require.ErrorIs(err, errProposerWindowNotStarted)
 
-	proVM.Set(statelessBlock.Timestamp().Add(proposer.MaxDelay))
+	proVM.Set(statelessBlock.Timestamp().Add(proposer.MaxVerifyDelay))
 	proVM.Scheduler.SetBuildBlockTime(time.Now())
 
 	// The engine should have been notified to attempt to build a block now that
@@ -1160,9 +1167,10 @@ func TestInnerVMRollback(t *testing.T) {
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		nodeID := ids.BuildTestNodeID([]byte{1})
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID: {
+				NodeID: nodeID,
 				Weight: 100,
 			},
 		}, nil
@@ -1596,7 +1604,7 @@ func TestTooFarAdvanced(t *testing.T) {
 
 	ySlb, err = statelessblock.BuildUnsigned(
 		aBlock.ID(),
-		aBlock.Timestamp().Add(proposer.MaxDelay),
+		aBlock.Timestamp().Add(proposer.MaxVerifyDelay),
 		defaultPChainHeight,
 		yBlock.Bytes(),
 	)
@@ -1813,21 +1821,27 @@ func TestRejectedHeightNotIndexed(t *testing.T) {
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		var (
+			thisNode = proVM.ctx.NodeID
+			nodeID1  = ids.BuildTestNodeID([]byte{1})
+			nodeID2  = ids.BuildTestNodeID([]byte{2})
+			nodeID3  = ids.BuildTestNodeID([]byte{3})
+		)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			thisNode: {
+				NodeID: thisNode,
 				Weight: 10,
 			},
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID1: {
+				NodeID: nodeID1,
 				Weight: 5,
 			},
-			{2}: {
-				NodeID: ids.NodeID{2},
+			nodeID2: {
+				NodeID: nodeID2,
 				Weight: 6,
 			},
-			{3}: {
-				NodeID: ids.NodeID{3},
+			nodeID3: {
+				NodeID: nodeID3,
 				Weight: 7,
 			},
 		}, nil
@@ -2014,21 +2028,27 @@ func TestRejectedOptionHeightNotIndexed(t *testing.T) {
 		return defaultPChainHeight, nil
 	}
 	valState.GetValidatorSetF = func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+		var (
+			thisNode = proVM.ctx.NodeID
+			nodeID1  = ids.BuildTestNodeID([]byte{1})
+			nodeID2  = ids.BuildTestNodeID([]byte{2})
+			nodeID3  = ids.BuildTestNodeID([]byte{3})
+		)
 		return map[ids.NodeID]*validators.GetValidatorOutput{
-			proVM.ctx.NodeID: {
-				NodeID: proVM.ctx.NodeID,
+			thisNode: {
+				NodeID: thisNode,
 				Weight: 10,
 			},
-			{1}: {
-				NodeID: ids.NodeID{1},
+			nodeID1: {
+				NodeID: nodeID1,
 				Weight: 5,
 			},
-			{2}: {
-				NodeID: ids.NodeID{2},
+			nodeID2: {
+				NodeID: nodeID2,
 				Weight: 6,
 			},
-			{3}: {
-				NodeID: ids.NodeID{3},
+			nodeID3: {
+				NodeID: nodeID3,
 				Weight: 7,
 			},
 		}, nil

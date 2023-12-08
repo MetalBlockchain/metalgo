@@ -6,6 +6,7 @@ package sync
 import "github.com/MetalBlockchain/metalgo/x/merkledb"
 
 type DB interface {
+	merkledb.Clearer
 	merkledb.MerkleRootGetter
 	merkledb.ProofGetter
 	merkledb.ChangeProofer
