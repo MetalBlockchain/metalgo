@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
@@ -129,7 +128,6 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 			MintingPeriod:      365 * 24 * time.Hour,
 			SupplyCap:          720 * units.MegaAvax,
 		}),
-		new(utils.Atomic[bool]),
 	)
 	require.NoError(err)
 

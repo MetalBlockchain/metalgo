@@ -21,7 +21,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -178,7 +177,6 @@ func newStateFromDB(require *require.Assertions, db database.Database) State {
 			MintingPeriod:      365 * 24 * time.Hour,
 			SupplyCap:          720 * units.MegaAvax,
 		}),
-		&utils.Atomic[bool]{},
 	)
 	require.NoError(err)
 	require.NotNil(state)

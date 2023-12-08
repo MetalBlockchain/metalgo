@@ -25,7 +25,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
@@ -659,7 +658,6 @@ func TestRejectedStateRegressionInvalidValidatorTimestamp(t *testing.T) {
 		vm.ctx,
 		metrics.Noop,
 		reward.NewCalculator(vm.Config.RewardConfig),
-		&utils.Atomic[bool]{},
 	)
 	require.NoError(err)
 
@@ -968,7 +966,6 @@ func TestRejectedStateRegressionInvalidValidatorReward(t *testing.T) {
 		vm.ctx,
 		metrics.Noop,
 		reward.NewCalculator(vm.Config.RewardConfig),
-		&utils.Atomic[bool]{},
 	)
 	require.NoError(err)
 
@@ -1396,9 +1393,6 @@ func TestRemovePermissionedValidatorDuringPendingToCurrentTransitionTracked(t *t
 	require.NoError(createSubnetBlock.Verify(context.Background()))
 	require.NoError(createSubnetBlock.Accept(context.Background()))
 	require.NoError(vm.SetPreference(context.Background(), vm.manager.LastAccepted()))
-
-	vm.TrackedSubnets.Add(createSubnetTx.ID())
-	require.NoError(vm.state.ApplyCurrentValidators(createSubnetTx.ID(), vm.Validators))
 
 	addSubnetValidatorTx, err := vm.txBuilder.NewAddSubnetValidatorTx(
 		defaultMaxValidatorStake,
