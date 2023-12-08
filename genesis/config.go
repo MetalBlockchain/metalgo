@@ -17,6 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 )
 
 var (
@@ -58,9 +59,10 @@ func (a Allocation) Less(other Allocation) bool {
 }
 
 type Staker struct {
-	NodeID        ids.NodeID  `json:"nodeID"`
-	RewardAddress ids.ShortID `json:"rewardAddress"`
-	DelegationFee uint32      `json:"delegationFee"`
+	NodeID        ids.NodeID                `json:"nodeID"`
+	RewardAddress ids.ShortID               `json:"rewardAddress"`
+	DelegationFee uint32                    `json:"delegationFee"`
+	Signer        *signer.ProofOfPossession `json:"signer,omitempty"`
 }
 
 func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
@@ -73,6 +75,7 @@ func (s Staker) Unparse(networkID uint32) (UnparsedStaker, error) {
 		NodeID:        s.NodeID,
 		RewardAddress: avaxAddr,
 		DelegationFee: s.DelegationFee,
+		Signer:        s.Signer,
 	}, err
 }
 

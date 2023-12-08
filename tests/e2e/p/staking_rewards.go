@@ -20,7 +20,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
-	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -43,13 +43,13 @@ var _ = ginkgo.Describe("[Staking Rewards]", func() {
 
 		ginkgo.By("checking that the network has a compatible minimum stake duration", func() {
 			minStakeDuration := cast.ToDuration(network.GetConfig().DefaultFlags[config.MinStakeDurationKey])
-			require.Equal(testnet.DefaultMinStakeDuration, minStakeDuration)
+			require.Equal(tmpnet.DefaultMinStakeDuration, minStakeDuration)
 		})
 
 		ginkgo.By("adding alpha node, whose uptime should result in a staking reward")
-		alphaNode := e2e.AddEphemeralNode(network, testnet.FlagsMap{})
+		alphaNode := e2e.AddEphemeralNode(network, tmpnet.FlagsMap{})
 		ginkgo.By("adding beta node, whose uptime should not result in a staking reward")
-		betaNode := e2e.AddEphemeralNode(network, testnet.FlagsMap{})
+		betaNode := e2e.AddEphemeralNode(network, tmpnet.FlagsMap{})
 
 		// Wait to check health until both nodes have started to minimize the duration
 		// required for both nodes to report healthy.

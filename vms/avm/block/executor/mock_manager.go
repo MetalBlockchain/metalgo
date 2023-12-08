@@ -14,7 +14,7 @@ import (
 	snowman "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	set "github.com/MetalBlockchain/metalgo/utils/set"
 	block "github.com/MetalBlockchain/metalgo/vms/avm/block"
-	states "github.com/MetalBlockchain/metalgo/vms/avm/states"
+	state "github.com/MetalBlockchain/metalgo/vms/avm/state"
 	txs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -58,10 +58,10 @@ func (mr *MockManagerMockRecorder) GetBlock(arg0 interface{}) *gomock.Call {
 }
 
 // GetState mocks base method.
-func (m *MockManager) GetState(arg0 ids.ID) (states.Chain, bool) {
+func (m *MockManager) GetState(arg0 ids.ID) (state.Chain, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetState", arg0)
-	ret0, _ := ret[0].(states.Chain)
+	ret0, _ := ret[0].(state.Chain)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }

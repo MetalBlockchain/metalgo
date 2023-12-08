@@ -1,7 +1,7 @@
 // Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package testnet
+package tmpnet
 
 import (
 	"encoding/base64"
@@ -316,7 +316,7 @@ func NewTestGenesis(
 ) (*genesis.UnparsedConfig, error) {
 	// Validate inputs
 	switch networkID {
-	case constants.TahoeID, constants.MainnetID, constants.LocalID:
+	case constants.TestnetID, constants.MainnetID, constants.LocalID:
 		return nil, errInvalidNetworkIDForGenesis
 	}
 	if len(validatorIDs) == 0 {

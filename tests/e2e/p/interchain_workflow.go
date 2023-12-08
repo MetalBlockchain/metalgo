@@ -19,7 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
-	"github.com/MetalBlockchain/metalgo/tests/fixture/testnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -44,7 +44,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 
 		ginkgo.By("checking that the network has a compatible minimum stake duration", func() {
 			minStakeDuration := cast.ToDuration(network.GetConfig().DefaultFlags[config.MinStakeDurationKey])
-			require.Equal(testnet.DefaultMinStakeDuration, minStakeDuration)
+			require.Equal(tmpnet.DefaultMinStakeDuration, minStakeDuration)
 		})
 
 		ginkgo.By("creating wallet with a funded key to send from and recipient key to deliver to")
@@ -87,7 +87,7 @@ var _ = e2e.DescribePChain("[Interchain Workflow]", ginkgo.Label(e2e.UsesCChainL
 		}
 
 		ginkgo.By("adding new node and waiting for it to report healthy")
-		node := e2e.AddEphemeralNode(network, testnet.FlagsMap{})
+		node := e2e.AddEphemeralNode(network, tmpnet.FlagsMap{})
 		e2e.WaitForHealthy(node)
 
 		ginkgo.By("retrieving new node's id and pop")

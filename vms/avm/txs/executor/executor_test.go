@@ -19,7 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
+	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
@@ -44,7 +44,7 @@ func TestBaseTxExecutor(t *testing.T) {
 	db := memdb.New()
 	vdb := versiondb.New(db)
 	registerer := prometheus.NewRegistry()
-	state, err := states.New(vdb, parser, registerer, trackChecksums)
+	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
 	utxoID := avax.UTXOID{
@@ -149,7 +149,7 @@ func TestCreateAssetTxExecutor(t *testing.T) {
 	db := memdb.New()
 	vdb := versiondb.New(db)
 	registerer := prometheus.NewRegistry()
-	state, err := states.New(vdb, parser, registerer, trackChecksums)
+	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
 	utxoID := avax.UTXOID{
@@ -292,7 +292,7 @@ func TestOperationTxExecutor(t *testing.T) {
 	db := memdb.New()
 	vdb := versiondb.New(db)
 	registerer := prometheus.NewRegistry()
-	state, err := states.New(vdb, parser, registerer, trackChecksums)
+	state, err := state.New(vdb, parser, registerer, trackChecksums)
 	require.NoError(err)
 
 	outputOwners := secp256k1fx.OutputOwners{

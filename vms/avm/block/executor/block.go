@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
+	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 )
 
@@ -106,7 +106,7 @@ func (b *Block) Verify(context.Context) error {
 		)
 	}
 
-	stateDiff, err := states.NewDiff(parentID, b.manager)
+	stateDiff, err := state.NewDiff(parentID, b.manager)
 	if err != nil {
 		return err
 	}

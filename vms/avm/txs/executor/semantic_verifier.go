@@ -9,7 +9,7 @@ import (
 	"reflect"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
+	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
@@ -26,7 +26,7 @@ var (
 
 type SemanticVerifier struct {
 	*Backend
-	State states.ReadOnlyChain
+	State state.ReadOnlyChain
 	Tx    *txs.Tx
 }
 
