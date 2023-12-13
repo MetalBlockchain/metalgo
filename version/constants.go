@@ -129,7 +129,7 @@ func init() {
 	// synced node by looking at the parentID of the genesis block.
 	//
 	// Ref: https://subnets.avax.network/x-chain/block/0
-	mainnetXChainStopVertexID, err := ids.FromString("2wGJmLRWQSpraRHvHA5Ly61kv4fqjqdsjfDF4sRid4sSviXzMh")
+	mainnetXChainStopVertexID, err := ids.FromString("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY")
 	if err != nil {
 		panic(err)
 	}
@@ -138,7 +138,7 @@ func init() {
 	// synced node by looking at the parentID of the genesis block.
 	//
 	// Ref: https://subnets-test.avax.network/x-chain/block/0
-	tahoeXChainStopVertexID, err := ids.FromString("212NENynWBENWq9441S23B7o9qxNgCgXSoYRjmfi1ktvfpbYjV")
+	tahoeXChainStopVertexID, err := ids.FromString("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk")
 	if err != nil {
 		panic(err)
 	}
