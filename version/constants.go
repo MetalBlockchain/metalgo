@@ -101,7 +101,7 @@ var (
 	// TODO: update this before release
 	DurangoTimes = map[uint32]time.Time{
 		constants.MainnetID: time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
-		constants.TahoeID:    time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
 	}
 )
 
@@ -145,7 +145,7 @@ func init() {
 
 	CortinaXChainStopVertexID = map[uint32]ids.ID{
 		constants.MainnetID: mainnetXChainStopVertexID,
-		constants.TahoeID:    tahoeXChainStopVertexID,
+		constants.TahoeID:   tahoeXChainStopVertexID,
 	}
 }
 
