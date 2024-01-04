@@ -8,15 +8,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
 func TestUnsignedMessage(t *testing.T) {
 	require := require.New(t)
 
 	msg, err := NewUnsignedMessage(
-		ids.GenerateTestID(),
+		constants.UnitTestID,
 		ids.GenerateTestID(),
 		[]byte("payload"),
 	)
@@ -29,6 +30,9 @@ func TestUnsignedMessage(t *testing.T) {
 }
 
 func TestParseUnsignedMessageJunk(t *testing.T) {
-	_, err := ParseUnsignedMessage(utils.RandomBytes(1024))
-	require.Error(t, err)
+	require := require.New(t)
+
+	bytes := []byte{0, 1, 2, 3, 4, 5, 6, 7}
+	_, err := ParseUnsignedMessage(bytes)
+	require.ErrorIs(err, codec.ErrUnknownVersion)
 }

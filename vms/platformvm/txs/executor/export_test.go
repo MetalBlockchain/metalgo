@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -17,7 +15,7 @@ import (
 )
 
 func TestNewExportTx(t *testing.T) {
-	env := newEnvironment(true /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, true /*=postBanff*/, false /*=postCortina*/)
 	env.ctx.Lock.Lock()
 	defer func() {
 		require.NoError(t, shutdownEnvironment(env))
@@ -28,8 +26,6 @@ func TestNewExportTx(t *testing.T) {
 		destinationChainID ids.ID
 		sourceKeys         []*secp256k1.PrivateKey
 		timestamp          time.Time
-		shouldErr          bool
-		shouldVerify       bool
 	}
 
 	sourceKey := preFundedKeys[0]
@@ -40,16 +36,12 @@ func TestNewExportTx(t *testing.T) {
 			destinationChainID: xChainID,
 			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          defaultValidateStartTime,
-			shouldErr:          false,
-			shouldVerify:       true,
 		},
 		{
 			description:        "P->C export",
 			destinationChainID: cChainID,
 			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
 			timestamp:          env.config.ApricotPhase5Time,
-			shouldErr:          false,
-			shouldVerify:       true,
 		},
 	}
 
@@ -57,8 +49,6 @@ func TestNewExportTx(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			tx, err := env.txBuilder.NewExportTx(
 				defaultBalance-defaultTxFee, // Amount of tokens to export
@@ -67,10 +57,6 @@ func TestNewExportTx(t *testing.T) {
 				tt.sourceKeys,
 				ids.ShortEmpty, // Change address
 			)
-			if tt.shouldErr {
-				require.Error(err)
-				return
-			}
 			require.NoError(err)
 
 			fakedState, err := state.NewDiff(lastAcceptedID, env)
@@ -87,12 +73,7 @@ func TestNewExportTx(t *testing.T) {
 				StateVersions: env,
 				Tx:            tx,
 			}
-			err = tx.Unsigned.Visit(&verifier)
-			if tt.shouldVerify {
-				require.NoError(err)
-			} else {
-				require.Error(err)
-			}
+			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }

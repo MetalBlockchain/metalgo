@@ -10,11 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/api"
-	"github.com/MetalBlockchain/metalgo/database/manager"
-	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/version"
 )
 
 type service struct {
@@ -114,18 +111,4 @@ func (s *service) ExportUser(_ *http.Request, args *ExportUserArgs, reply *Expor
 	}
 	reply.Encoding = args.Encoding
 	return nil
-}
-
-// CreateTestKeystore returns a new keystore that can be utilized for testing
-func CreateTestKeystore() (Keystore, error) {
-	dbManager, err := manager.NewManagerFromDBs([]*manager.VersionedDatabase{
-		{
-			Database: memdb.New(),
-			Version:  version.Semantic1_0_0,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return New(logging.NoLog{}, dbManager), nil
 }

@@ -6,6 +6,7 @@ package atomic
 import (
 	"bytes"
 	"errors"
+	"fmt"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/linkeddb"
@@ -16,7 +17,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
-var errDuplicatedOperation = errors.New("duplicated operation on provided value")
+var (
+	errDuplicatePut    = errors.New("duplicate put")
+	errDuplicateRemove = errors.New("duplicate remove")
+)
 
 type dbElement struct {
 	// Present indicates the value was removed before existing.
@@ -86,7 +90,7 @@ func (s *state) SetValue(e *Element) error {
 		}
 
 		// This key was written twice, which is invalid
-		return errDuplicatedOperation
+		return fmt.Errorf("%w: Key=0x%x Value=0x%x", errDuplicatePut, e.Key, e.Value)
 	}
 	if err != database.ErrNotFound {
 		// An unexpected error occurred, so we should propagate that error
@@ -137,7 +141,7 @@ func (s *state) SetValue(e *Element) error {
 //
 // This implies that chains interacting with shared memory must be able to
 // generate their chain state without actually performing the read of shared
-// memory. Shared memory should only be used to verify that the the transition
+// memory. Shared memory should only be used to verify that the transition
 // being performed is valid. That ensures that such verification can be skipped
 // during bootstrapping. It is up to the chain to ensure this based on the
 // current engine state.
@@ -160,7 +164,7 @@ func (s *state) RemoveValue(key []byte) error {
 
 	// Don't allow the removal of something that was already removed.
 	if !value.Present {
-		return errDuplicatedOperation
+		return fmt.Errorf("%w: Key=0x%x", errDuplicateRemove, key)
 	}
 
 	// Remove [key] from the indexDB for each trait that has indexed this key.

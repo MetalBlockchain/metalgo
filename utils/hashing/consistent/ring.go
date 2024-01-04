@@ -7,8 +7,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/google/btree"
+
+	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
 var (

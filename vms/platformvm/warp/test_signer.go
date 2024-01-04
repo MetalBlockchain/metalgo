@@ -9,37 +9,55 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 )
 
 // SignerTests is a list of all signer tests
-var SignerTests = []func(t *testing.T, s Signer, sk *bls.SecretKey, chainID ids.ID){
+var SignerTests = []func(t *testing.T, s Signer, sk *bls.SecretKey, networkID uint32, chainID ids.ID){
 	TestSignerWrongChainID,
 	TestSignerVerifies,
 }
 
 // Test that using a random SourceChainID results in an error
-func TestSignerWrongChainID(t *testing.T, s Signer, _ *bls.SecretKey, _ ids.ID) {
+func TestSignerWrongChainID(t *testing.T, s Signer, _ *bls.SecretKey, _ uint32, _ ids.ID) {
 	require := require.New(t)
 
 	msg, err := NewUnsignedMessage(
-		ids.GenerateTestID(),
+		constants.UnitTestID,
 		ids.GenerateTestID(),
 		[]byte("payload"),
 	)
 	require.NoError(err)
 
 	_, err = s.Sign(msg)
-	require.Error(err)
+	// TODO: require error to be ErrWrongSourceChainID
+	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
 }
 
-// Test that a signature generated with the signer verifies correctly
-func TestSignerVerifies(t *testing.T, s Signer, sk *bls.SecretKey, chainID ids.ID) {
+// Test that using a different networkID results in an error
+func TestSignerWrongNetworkID(t *testing.T, s Signer, _ *bls.SecretKey, networkID uint32, blockchainID ids.ID) {
 	require := require.New(t)
 
 	msg, err := NewUnsignedMessage(
+		networkID+1,
+		blockchainID,
+		[]byte("payload"),
+	)
+	require.NoError(err)
+
+	_, err = s.Sign(msg)
+	// TODO: require error to be ErrWrongNetworkID
+	require.Error(err) //nolint:forbidigo // currently returns grpc errors too
+}
+
+// Test that a signature generated with the signer verifies correctly
+func TestSignerVerifies(t *testing.T, s Signer, sk *bls.SecretKey, networkID uint32, chainID ids.ID) {
+	require := require.New(t)
+
+	msg, err := NewUnsignedMessage(
+		networkID,
 		chainID,
-		ids.GenerateTestID(),
 		[]byte("payload"),
 	)
 	require.NoError(err)
@@ -52,6 +70,5 @@ func TestSignerVerifies(t *testing.T, s Signer, sk *bls.SecretKey, chainID ids.I
 
 	pk := bls.PublicFromSecretKey(sk)
 	msgBytes := msg.Bytes()
-	valid := bls.Verify(pk, sig, msgBytes)
-	require.True(valid)
+	require.True(bls.Verify(pk, sig, msgBytes))
 }

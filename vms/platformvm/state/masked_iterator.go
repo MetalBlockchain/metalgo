@@ -3,9 +3,7 @@
 
 package state
 
-import (
-	"github.com/MetalBlockchain/metalgo/ids"
-)
+import "github.com/MetalBlockchain/metalgo/ids"
 
 var _ StakerIterator = (*maskedIterator)(nil)
 

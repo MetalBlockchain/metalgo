@@ -54,14 +54,14 @@ In Avalanche, nodes connect to an initial set of bootstrapper nodes known as **b
 
 Upon connection to any peer, a handshake is performed between the node attempting to establish the outbound connection to the peer and the peer receiving the inbound connection.
 
-When attempting to establish the connection, the first message that the node attempting to connect to the peer in the network is a `Version` message describing compatibility of the candidate node with the peer. As an example, nodes that are attempting to connect with an incompatible version of MetalGo or a significantly skewed local clock are rejected by the peer.
+When attempting to establish the connection, the first message that the node attempting to connect to the peer in the network is a `Version` message describing compatibility of the candidate node with the peer. As an example, nodes that are attempting to connect with an incompatible version of AvalancheGo or a significantly skewed local clock are rejected by the peer.
 
 ```mermaid
 sequenceDiagram
 Note over Node,Peer: Initiate Handshake
 Note left of Node: I want to connect to you!
 Note over Node,Peer: Version message
-Node->>Peer: MetalGo v1.0.0
+Node->>Peer: AvalancheGo v1.0.0
 Note right of Peer: My version v1.9.4 is incompatible with your version v1.0.0.
 Peer-xNode: Connection dropped
 Note over Node,Peer: Handshake Failed
@@ -74,7 +74,7 @@ sequenceDiagram
 Note over Node,Peer: Initiate Handshake
 Note left of Node: I want to connect to you!
 Note over Node,Peer: Version message
-Node->>Peer: MetalGo v1.9.4
+Node->>Peer: AvalancheGo v1.9.4
 Note right of Peer: LGTM!
 Note over Node,Peer: PeerList message
 Peer->>Node: Peer-X, Peer-Y, Peer-Z

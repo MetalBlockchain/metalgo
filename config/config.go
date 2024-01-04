@@ -30,7 +30,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/dialer"
 	"github.com/MetalBlockchain/metalgo/network/throttling"
 	"github.com/MetalBlockchain/metalgo/node"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
@@ -60,57 +59,73 @@ const (
 	chainUpgradeFileName = "upgrade"
 	subnetConfigFileExt  = ".json"
 	ipResolutionTimeout  = 30 * time.Second
+
+	ipcDeprecationMsg                    = "IPC API is deprecated"
+	keystoreDeprecationMsg               = "keystore API is deprecated"
+	acceptedFrontierGossipDeprecationMsg = "push-based accepted frontier gossip is deprecated"
 )
 
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
+	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	deprecatedKeys = map[string]string{
-		NetworkCompressionEnabledKey: fmt.Sprintf("use --%s instead", NetworkCompressionTypeKey),
+		IpcAPIEnabledKey:      ipcDeprecationMsg,
+		IpcsChainIDsKey:       ipcDeprecationMsg,
+		IpcsPathKey:           ipcDeprecationMsg,
+		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
+		ConsensusGossipAcceptedFrontierValidatorSizeKey:    acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipAcceptedFrontierNonValidatorSizeKey: acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipAcceptedFrontierPeerSizeKey:         acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptValidatorSizeKey:            acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptNonValidatorSizeKey:         acceptedFrontierGossipDeprecationMsg,
+		ConsensusGossipOnAcceptPeerSizeKey:                 acceptedFrontierGossipDeprecationMsg,
 	}
 
-	errInvalidStakerWeights          = errors.New("staking weights must be positive")
-	errStakingDisableOnPublicNetwork = errors.New("staking disabled on public network")
-	errAuthPasswordTooWeak           = errors.New("API auth password is not strong enough")
-	errInvalidUptimeRequirement      = errors.New("uptime requirement must be in the range [0, 1]")
-	errMinValidatorStakeAboveMax     = errors.New("minimum validator stake can't be greater than maximum validator stake")
-	errInvalidDelegationFee          = errors.New("delegation fee must be in the range [0, 1,000,000]")
-	errInvalidMinStakeDuration       = errors.New("min stake duration must be > 0")
-	errMinStakeDurationAboveMax      = errors.New("max stake duration can't be less than min stake duration")
-	errStakeMaxConsumptionTooLarge   = fmt.Errorf("max stake consumption must be less than or equal to %d", reward.PercentDenominator)
-	errStakeMaxConsumptionBelowMin   = errors.New("stake max consumption can't be less than min stake consumption")
-	errStakeMintingPeriodBelowMin    = errors.New("stake minting period can't be less than max stake duration")
-	errCannotTrackPrimaryNetwork     = errors.New("cannot track primary network")
-	errStakingKeyContentUnset        = fmt.Errorf("%s key not set but %s set", StakingTLSKeyContentKey, StakingCertContentKey)
-	errStakingCertContentUnset       = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
-	errMissingStakingSigningKeyFile  = errors.New("missing staking signing key file")
-	errTracingEndpointEmpty          = fmt.Errorf("%s cannot be empty", TracingEndpointKey)
-	errPluginDirNotADirectory        = errors.New("plugin dir is not a directory")
-	errZstdNotSupported              = errors.New("zstd compression not supported until v1.10")
+	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
+	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
+	errAuthPasswordTooWeak                    = errors.New("API auth password is not strong enough")
+	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
+	errMinValidatorStakeAboveMax              = errors.New("minimum validator stake can't be greater than maximum validator stake")
+	errInvalidDelegationFee                   = errors.New("delegation fee must be in the range [0, 1,000,000]")
+	errInvalidMinStakeDuration                = errors.New("min stake duration must be > 0")
+	errMinStakeDurationAboveMax               = errors.New("max stake duration can't be less than min stake duration")
+	errStakeMaxConsumptionTooLarge            = fmt.Errorf("max stake consumption must be less than or equal to %d", reward.PercentDenominator)
+	errStakeMaxConsumptionBelowMin            = errors.New("stake max consumption can't be less than min stake consumption")
+	errStakeMintingPeriodBelowMin             = errors.New("stake minting period can't be less than max stake duration")
+	errCannotTrackPrimaryNetwork              = errors.New("cannot track primary network")
+	errStakingKeyContentUnset                 = fmt.Errorf("%s key not set but %s set", StakingTLSKeyContentKey, StakingCertContentKey)
+	errStakingCertContentUnset                = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
+	errMissingStakingSigningKeyFile           = errors.New("missing staking signing key file")
+	errTracingEndpointEmpty                   = fmt.Errorf("%s cannot be empty", TracingEndpointKey)
+	errPluginDirNotADirectory                 = errors.New("plugin dir is not a directory")
+	errCannotReadDirectory                    = errors.New("cannot read directory")
+	errUnmarshalling                          = errors.New("unmarshalling failed")
+	errFileDoesNotExist                       = errors.New("file does not exist")
 )
 
-func getConsensusConfig(v *viper.Viper) avalanche.Parameters {
-	return avalanche.Parameters{
-		Parameters: snowball.Parameters{
-			K:     v.GetInt(SnowSampleSizeKey),
-			Alpha: v.GetInt(SnowQuorumSizeKey),
-			// During the X-chain linearization we require BetaVirtuous and
-			// BetaRogue to be equal. Therefore we use the more conservative
-			// BetaRogue value for both BetaVirtuous and BetaRogue.
-			//
-			// TODO: After the X-chain linearization use the
-			// SnowVirtuousCommitThresholdKey as before.
-			BetaVirtuous:            v.GetInt(SnowRogueCommitThresholdKey),
-			BetaRogue:               v.GetInt(SnowRogueCommitThresholdKey),
-			ConcurrentRepolls:       v.GetInt(SnowConcurrentRepollsKey),
-			OptimalProcessing:       v.GetInt(SnowOptimalProcessingKey),
-			MaxOutstandingItems:     v.GetInt(SnowMaxProcessingKey),
-			MaxItemProcessingTime:   v.GetDuration(SnowMaxTimeProcessingKey),
-			MixedQueryNumPushVdr:    int(v.GetUint(SnowMixedQueryNumPushVdrKey)),
-			MixedQueryNumPushNonVdr: int(v.GetUint(SnowMixedQueryNumPushNonVdrKey)),
-		},
-		BatchSize: v.GetInt(SnowAvalancheBatchSizeKey),
-		Parents:   v.GetInt(SnowAvalancheNumParentsKey),
+func getConsensusConfig(v *viper.Viper) snowball.Parameters {
+	p := snowball.Parameters{
+		K:               v.GetInt(SnowSampleSizeKey),
+		AlphaPreference: v.GetInt(SnowPreferenceQuorumSizeKey),
+		AlphaConfidence: v.GetInt(SnowConfidenceQuorumSizeKey),
+		// During the X-chain linearization we require BetaVirtuous and
+		// BetaRogue to be equal. Therefore we use the more conservative
+		// BetaRogue value for both BetaVirtuous and BetaRogue.
+		//
+		// TODO: After the X-chain linearization use the
+		// SnowVirtuousCommitThresholdKey as before.
+		BetaVirtuous:          v.GetInt(SnowRogueCommitThresholdKey),
+		BetaRogue:             v.GetInt(SnowRogueCommitThresholdKey),
+		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
+		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
+		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
+		MaxItemProcessingTime: v.GetDuration(SnowMaxTimeProcessingKey),
 	}
+	if v.IsSet(SnowQuorumSizeKey) {
+		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
+		p.AlphaConfidence = p.AlphaPreference
+	}
+	return p
 }
 
 func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
@@ -232,14 +247,15 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 			MetricsAPIEnabled:  v.GetBool(MetricsAPIEnabledKey),
 			HealthAPIEnabled:   v.GetBool(HealthAPIEnabledKey),
 		},
-		HTTPHost:          v.GetString(HTTPHostKey),
-		HTTPPort:          uint16(v.GetUint(HTTPPortKey)),
-		HTTPSEnabled:      v.GetBool(HTTPSEnabledKey),
-		HTTPSKey:          httpsKey,
-		HTTPSCert:         httpsCert,
-		APIAllowedOrigins: v.GetStringSlice(HTTPAllowedOrigins),
-		ShutdownTimeout:   v.GetDuration(HTTPShutdownTimeoutKey),
-		ShutdownWait:      v.GetDuration(HTTPShutdownWaitKey),
+		HTTPHost:           v.GetString(HTTPHostKey),
+		HTTPPort:           uint16(v.GetUint(HTTPPortKey)),
+		HTTPSEnabled:       v.GetBool(HTTPSEnabledKey),
+		HTTPSKey:           httpsKey,
+		HTTPSCert:          httpsCert,
+		HTTPAllowedOrigins: v.GetStringSlice(HTTPAllowedOrigins),
+		HTTPAllowedHosts:   v.GetStringSlice(HTTPAllowedHostsKey),
+		ShutdownTimeout:    v.GetDuration(HTTPShutdownTimeoutKey),
+		ShutdownWait:       v.GetDuration(HTTPShutdownWaitKey),
 	}
 
 	config.APIAuthConfig, err = getAPIAuthConfig(v)
@@ -309,45 +325,28 @@ func getGossipConfig(v *viper.Viper) subnets.GossipConfig {
 
 func getNetworkConfig(
 	v *viper.Viper,
-	stakingEnabled bool,
+	networkID uint32,
+	sybilProtectionEnabled bool,
 	halflife time.Duration,
-	networkID uint32, // TODO remove after cortina upgrade
 ) (network.Config, error) {
 	// Set the max number of recent inbound connections upgraded to be
 	// equal to the max number of inbound connections per second.
-	maxInboundConnsPerSec := v.GetFloat64(InboundThrottlerMaxConnsPerSecKey)
-	upgradeCooldown := v.GetDuration(InboundConnUpgradeThrottlerCooldownKey)
+	maxInboundConnsPerSec := v.GetFloat64(NetworkInboundThrottlerMaxConnsPerSecKey)
+	upgradeCooldown := v.GetDuration(NetworkInboundConnUpgradeThrottlerCooldownKey)
 	upgradeCooldownInSeconds := upgradeCooldown.Seconds()
 	maxRecentConnsUpgraded := int(math.Ceil(maxInboundConnsPerSec * upgradeCooldownInSeconds))
 
-	var (
-		compressionType compression.Type
-		err             error
-	)
-	if v.IsSet(NetworkCompressionTypeKey) {
-		if v.IsSet(NetworkCompressionEnabledKey) {
-			return network.Config{}, fmt.Errorf("cannot set both %q and %q", NetworkCompressionTypeKey, NetworkCompressionEnabledKey)
-		}
-
-		compressionType, err = compression.TypeFromString(v.GetString(NetworkCompressionTypeKey))
-		if err != nil {
-			return network.Config{}, err
-		}
-	} else {
-		if v.GetBool(NetworkCompressionEnabledKey) {
-			compressionType = constants.DefaultNetworkCompressionType
-		} else {
-			compressionType = compression.TypeNone
-		}
+	compressionType, err := compression.TypeFromString(v.GetString(NetworkCompressionTypeKey))
+	if err != nil {
+		return network.Config{}, err
 	}
 
-	cortinaTime := version.GetCortinaTime(networkID)
-	if compressionType == compression.TypeZstd && !time.Now().After(cortinaTime) {
-		// TODO remove after cortina upgrade
-		return network.Config{}, errZstdNotSupported
+	allowPrivateIPs := !constants.ProductionNetworkIDs.Contains(networkID)
+	if v.IsSet(NetworkAllowPrivateIPsKey) {
+		allowPrivateIPs = v.GetBool(NetworkAllowPrivateIPsKey)
 	}
+
 	config := network.Config{
-		// Throttling
 		ThrottlerConfig: network.ThrottlerConfig{
 			MaxInboundConnsPerSec: maxInboundConnsPerSec,
 			InboundConnUpgradeThrottlerConfig: throttling.InboundConnUpgradeThrottlerConfig{
@@ -382,7 +381,7 @@ func getNetworkConfig(
 		},
 
 		HealthConfig: network.HealthConfig{
-			Enabled:                      stakingEnabled,
+			Enabled:                      sybilProtectionEnabled,
 			MaxTimeSinceMsgSent:          v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
 			MaxTimeSinceMsgReceived:      v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
 			MaxPortionSendQueueBytesFull: v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
@@ -395,8 +394,8 @@ func getNetworkConfig(
 		ProxyReadHeaderTimeout: v.GetDuration(NetworkTCPProxyReadTimeoutKey),
 
 		DialerConfig: dialer.Config{
-			ThrottleRps:       v.GetUint32(OutboundConnectionThrottlingRpsKey),
-			ConnectionTimeout: v.GetDuration(OutboundConnectionTimeoutKey),
+			ThrottleRps:       v.GetUint32(NetworkOutboundConnectionThrottlingRpsKey),
+			ConnectionTimeout: v.GetDuration(NetworkOutboundConnectionTimeoutKey),
 		},
 
 		TLSKeyLogFile: v.GetString(NetworkTLSKeyLogFileKey),
@@ -422,7 +421,7 @@ func getNetworkConfig(
 		MaxClockDifference:           v.GetDuration(NetworkMaxClockDifferenceKey),
 		CompressionType:              compressionType,
 		PingFrequency:                v.GetDuration(NetworkPingFrequencyKey),
-		AllowPrivateIPs:              v.GetBool(NetworkAllowPrivateIPsKey),
+		AllowPrivateIPs:              allowPrivateIPs,
 		UptimeMetricFreq:             v.GetDuration(UptimeMetricFreqKey),
 		MaximumInboundMessageTimeout: v.GetDuration(NetworkMaximumInboundTimeoutKey),
 
@@ -441,9 +440,13 @@ func getNetworkConfig(
 	case config.HealthConfig.MaxPortionSendQueueBytesFull < 0 || config.HealthConfig.MaxPortionSendQueueBytesFull > 1:
 		return network.Config{}, fmt.Errorf("%s must be in [0,1]", NetworkHealthMaxPortionSendQueueFillKey)
 	case config.DialerConfig.ConnectionTimeout < 0:
-		return network.Config{}, fmt.Errorf("%q must be >= 0", OutboundConnectionTimeoutKey)
+		return network.Config{}, fmt.Errorf("%q must be >= 0", NetworkOutboundConnectionTimeoutKey)
 	case config.PeerListGossipFreq < 0:
 		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkPeerListGossipFreqKey)
+	case config.ThrottlerConfig.InboundMsgThrottlerConfig.CPUThrottlerConfig.MaxRecheckDelay < constants.MinInboundThrottlerMaxRecheckDelay:
+		return network.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerCPUMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
+	case config.ThrottlerConfig.InboundMsgThrottlerConfig.DiskThrottlerConfig.MaxRecheckDelay < constants.MinInboundThrottlerMaxRecheckDelay:
+		return network.Config{}, fmt.Errorf("%s must be >= %d", InboundThrottlerDiskMaxRecheckDelayKey, constants.MinInboundThrottlerMaxRecheckDelay)
 	case config.MaxReconnectDelay < 0:
 		return network.Config{}, fmt.Errorf("%s must be >= 0", NetworkMaxReconnectDelayKey)
 	case config.InitialReconnectDelay < 0:
@@ -464,8 +467,11 @@ func getNetworkConfig(
 	return config, nil
 }
 
-func getBenchlistConfig(v *viper.Viper, consensusParameters avalanche.Parameters) (benchlist.Config, error) {
-	alpha := consensusParameters.Alpha
+func getBenchlistConfig(v *viper.Viper, consensusParameters snowball.Parameters) (benchlist.Config, error) {
+	// AlphaConfidence is used here to ensure that benching can't cause a
+	// liveness failure. If AlphaPreference were used, the benchlist may grow to
+	// a point that committing would be extremely unlikely to happen.
+	alpha := consensusParameters.AlphaConfidence
 	k := consensusParameters.K
 	config := benchlist.Config{
 		Threshold:              v.GetInt(BenchlistFailThresholdKey),
@@ -522,14 +528,14 @@ func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
 
 func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig, error) {
 	config := node.BootstrapConfig{
-		RetryBootstrap:                          v.GetBool(RetryBootstrapKey),
-		RetryBootstrapWarnFrequency:             v.GetInt(RetryBootstrapWarnFrequencyKey),
 		BootstrapBeaconConnectionTimeout:        v.GetDuration(BootstrapBeaconConnectionTimeoutKey),
 		BootstrapMaxTimeGetAncestors:            v.GetDuration(BootstrapMaxTimeGetAncestorsKey),
 		BootstrapAncestorsMaxContainersSent:     int(v.GetUint(BootstrapAncestorsMaxContainersSentKey)),
 		BootstrapAncestorsMaxContainersReceived: int(v.GetUint(BootstrapAncestorsMaxContainersReceivedKey)),
 	}
 
+	// TODO: Add a "BootstrappersKey" flag to more clearly enforce ID and IP
+	// length equality.
 	ipsSet := v.IsSet(BootstrapIPsKey)
 	idsSet := v.IsSet(BootstrapIDsKey)
 	if ipsSet && !idsSet {
@@ -538,40 +544,49 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 	if !ipsSet && idsSet {
 		return node.BootstrapConfig{}, fmt.Errorf("set %q but didn't set %q", BootstrapIDsKey, BootstrapIPsKey)
 	}
-
-	bootstrapIPs, bootstrapIDs := genesis.SampleBeacons(networkID, 5)
-	if ipsSet {
-		bootstrapIPs = strings.Split(v.GetString(BootstrapIPsKey), ",")
+	if !ipsSet && !idsSet {
+		config.Bootstrappers = genesis.SampleBootstrappers(networkID, 5)
+		return config, nil
 	}
-	for _, ip := range bootstrapIPs {
+
+	bootstrapIPs := strings.Split(v.GetString(BootstrapIPsKey), ",")
+	config.Bootstrappers = make([]genesis.Bootstrapper, 0, len(bootstrapIPs))
+	for _, bootstrapIP := range bootstrapIPs {
+		ip := strings.TrimSpace(bootstrapIP)
 		if ip == "" {
 			continue
 		}
+
 		addr, err := ips.ToIPPort(ip)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap ip %s: %w", ip, err)
 		}
-		config.BootstrapIPs = append(config.BootstrapIPs, addr)
+		config.Bootstrappers = append(config.Bootstrappers, genesis.Bootstrapper{
+			// ID is populated below
+			IP: ips.IPDesc(addr),
+		})
 	}
 
-	if idsSet {
-		bootstrapIDs = strings.Split(v.GetString(BootstrapIDsKey), ",")
-	}
-	for _, id := range bootstrapIDs {
+	bootstrapIDs := strings.Split(v.GetString(BootstrapIDsKey), ",")
+	bootstrapNodeIDs := make([]ids.NodeID, 0, len(bootstrapIDs))
+	for _, bootstrapID := range bootstrapIDs {
+		id := strings.TrimSpace(bootstrapID)
 		if id == "" {
 			continue
 		}
+
 		nodeID, err := ids.NodeIDFromString(id)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap peer id %s: %w", id, err)
 		}
-		config.BootstrapIDs = append(config.BootstrapIDs, nodeID)
+		bootstrapNodeIDs = append(bootstrapNodeIDs, nodeID)
 	}
 
-	lenIPs := len(config.BootstrapIPs)
-	lenIDs := len(config.BootstrapIDs)
-	if lenIPs != lenIDs {
-		return node.BootstrapConfig{}, fmt.Errorf("expected the number of bootstrapIPs (%d) to match the number of bootstrapIDs (%d)", lenIPs, lenIDs)
+	if len(config.Bootstrappers) != len(bootstrapNodeIDs) {
+		return node.BootstrapConfig{}, fmt.Errorf("expected the number of bootstrapIPs (%d) to match the number of bootstrapIDs (%d)", len(config.Bootstrappers), len(bootstrapNodeIDs))
+	}
+	for i, nodeID := range bootstrapNodeIDs {
+		config.Bootstrappers[i].ID = nodeID
 	}
 
 	return config, nil
@@ -590,18 +605,22 @@ func getIPConfig(v *viper.Viper) (node.IPConfig, error) {
 		return node.IPConfig{}, fmt.Errorf("only one of --%s and --%s can be given", PublicIPKey, PublicIPResolutionServiceKey)
 	}
 
+	// Define default configuration
+	ipConfig := node.IPConfig{
+		IPUpdater:        dynamicip.NewNoUpdater(),
+		IPResolutionFreq: ipResolutionFreq,
+		Nat:              nat.NewNoRouter(),
+		ListenHost:       v.GetString(StakingHostKey),
+	}
+
 	if publicIP != "" {
 		// User specified a specific public IP to use.
 		ip := net.ParseIP(publicIP)
 		if ip == nil {
 			return node.IPConfig{}, fmt.Errorf("invalid IP Address %s", publicIP)
 		}
-		return node.IPConfig{
-			IPPort:           ips.NewDynamicIPPort(ip, stakingPort),
-			IPUpdater:        dynamicip.NewNoUpdater(),
-			IPResolutionFreq: ipResolutionFreq,
-			Nat:              nat.NewNoRouter(),
-		}, nil
+		ipConfig.IPPort = ips.NewDynamicIPPort(ip, stakingPort)
+		return ipConfig, nil
 	}
 	if ipResolutionService != "" {
 		// User specified to use dynamic IP resolution.
@@ -617,18 +636,9 @@ func getIPConfig(v *viper.Viper) (node.IPConfig, error) {
 		if err != nil {
 			return node.IPConfig{}, fmt.Errorf("couldn't resolve public IP: %w", err)
 		}
-		ipPort := ips.NewDynamicIPPort(ip, stakingPort)
-
-		return node.IPConfig{
-			IPPort: ipPort,
-			IPUpdater: dynamicip.NewUpdater(
-				ipPort,
-				resolver,
-				ipResolutionFreq,
-			),
-			IPResolutionFreq: ipResolutionFreq,
-			Nat:              nat.NewNoRouter(),
-		}, nil
+		ipConfig.IPPort = ips.NewDynamicIPPort(ip, stakingPort)
+		ipConfig.IPUpdater = dynamicip.NewUpdater(ipConfig.IPPort, resolver, ipResolutionFreq)
+		return ipConfig, nil
 	}
 
 	// User didn't specify a public IP to use, and they didn't specify a public IP resolution
@@ -638,13 +648,10 @@ func getIPConfig(v *viper.Viper) (node.IPConfig, error) {
 	if err != nil {
 		return node.IPConfig{}, fmt.Errorf("public IP / IP resolution service not given and failed to resolve IP with NAT: %w", err)
 	}
-	return node.IPConfig{
-		Nat:                   nat,
-		AttemptedNATTraversal: true,
-		IPPort:                ips.NewDynamicIPPort(ip, stakingPort),
-		IPUpdater:             dynamicip.NewNoUpdater(),
-		IPResolutionFreq:      ipResolutionFreq,
-	}, nil
+	ipConfig.IPPort = ips.NewDynamicIPPort(ip, stakingPort)
+	ipConfig.Nat = nat
+	ipConfig.AttemptedNATTraversal = true
+	return ipConfig, nil
 }
 
 func getProfilerConfig(v *viper.Viper) (profiler.Config, error) {
@@ -791,18 +798,19 @@ func getStakingSigner(v *viper.Viper) (*bls.SecretKey, error) {
 
 func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, error) {
 	config := node.StakingConfig{
-		EnableStaking:         v.GetBool(StakingEnabledKey),
-		DisabledStakingWeight: v.GetUint64(StakingDisabledWeightKey),
-		StakingKeyPath:        GetExpandedArg(v, StakingTLSKeyPathKey),
-		StakingCertPath:       GetExpandedArg(v, StakingCertPathKey),
-		StakingSignerPath:     GetExpandedArg(v, StakingSignerKeyPathKey),
+		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
+		SybilProtectionDisabledWeight: v.GetUint64(SybilProtectionDisabledWeightKey),
+		PartialSyncPrimaryNetwork:     v.GetBool(PartialSyncPrimaryNetworkKey),
+		StakingKeyPath:                GetExpandedArg(v, StakingTLSKeyPathKey),
+		StakingCertPath:               GetExpandedArg(v, StakingCertPathKey),
+		StakingSignerPath:             GetExpandedArg(v, StakingSignerKeyPathKey),
 	}
-	if !config.EnableStaking && config.DisabledStakingWeight == 0 {
-		return node.StakingConfig{}, errInvalidStakerWeights
+	if !config.SybilProtectionEnabled && config.SybilProtectionDisabledWeight == 0 {
+		return node.StakingConfig{}, errSybilProtectionDisabledStakerWeights
 	}
 
-	if !config.EnableStaking && (networkID == constants.MainnetID || networkID == constants.TahoeID) {
-		return node.StakingConfig{}, errStakingDisableOnPublicNetwork
+	if !config.SybilProtectionEnabled && (networkID == constants.MainnetID || networkID == constants.TahoeID) {
+		return node.StakingConfig{}, errSybilProtectionDisabledOnPublicNetwork
 	}
 
 	var err error
@@ -869,14 +877,14 @@ func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
 	// try first loading genesis content directly from flag/env-var
-	if v.IsSet(GenesisConfigContentKey) {
-		genesisData := v.GetString(GenesisConfigContentKey)
+	if v.IsSet(GenesisFileContentKey) {
+		genesisData := v.GetString(GenesisFileContentKey)
 		return genesis.FromFlag(networkID, genesisData, stakingCfg)
 	}
 
 	// if content is not specified go for the file
-	if v.IsSet(GenesisConfigFileKey) {
-		genesisFileName := GetExpandedArg(v, GenesisConfigFileKey)
+	if v.IsSet(GenesisFileKey) {
+		genesisFileName := GetExpandedArg(v, GenesisFileKey)
 		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
 	}
 
@@ -925,7 +933,8 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 	}
 
 	return node.DatabaseConfig{
-		Name: v.GetString(DBTypeKey),
+		Name:     v.GetString(DBTypeKey),
+		ReadOnly: v.GetBool(DBReadOnlyKey),
 		Path: filepath.Join(
 			GetExpandedArg(v, DBPathKey),
 			constants.NetworkName(networkID),
@@ -952,7 +961,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 
 		if !exists {
 			if v.IsSet(fileKey) {
-				return nil, fmt.Errorf("%s file does not exist in %v", name, aliasFilePath)
+				return nil, fmt.Errorf("%w: %s", errFileDoesNotExist, aliasFilePath)
 			}
 			return nil, nil
 		}
@@ -965,7 +974,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 
 	aliasMap := make(map[ids.ID][]string)
 	if err := json.Unmarshal(fileBytes, &aliasMap); err != nil {
-		return nil, fmt.Errorf("problem unmarshaling %s: %w", name, err)
+		return nil, fmt.Errorf("%w on %s: %w", errUnmarshalling, name, err)
 	}
 	return aliasMap, nil
 }
@@ -1008,7 +1017,7 @@ func getPathFromDirKey(v *viper.Viper, configKey string) (string, error) {
 	}
 	if v.IsSet(configKey) {
 		// user specified a config dir explicitly, but dir does not exist.
-		return "", fmt.Errorf("cannot read directory: %v", cleanPath)
+		return "", fmt.Errorf("%w: %s", errCannotReadDirectory, cleanPath)
 	}
 	return "", nil
 }
@@ -1116,6 +1125,11 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 				return nil, err
 			}
 
+			if config.ConsensusParameters.Alpha != nil {
+				config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+				config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
+			}
+
 			if err := config.Valid(); err != nil {
 				return nil, err
 			}
@@ -1161,7 +1175,12 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 		config := getDefaultSubnetConfig(v)
 		if err := json.Unmarshal(file, &config); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
+		}
+
+		if config.ConsensusParameters.Alpha != nil {
+			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
+			config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
 		}
 
 		if err := config.Valid(); err != nil {
@@ -1176,10 +1195,11 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 	return subnets.Config{
-		ConsensusParameters:   getConsensusConfig(v),
-		ValidatorOnly:         false,
-		GossipConfig:          getGossipConfig(v),
-		ProposerMinBlockDelay: proposervm.DefaultMinBlockDelay,
+		ConsensusParameters:         getConsensusConfig(v),
+		ValidatorOnly:               false,
+		GossipConfig:                getGossipConfig(v),
+		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
+		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 	}
 }
 
@@ -1258,10 +1278,12 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 			Type:     exporterType,
 			Endpoint: endpoint,
 			Insecure: v.GetBool(TracingInsecureKey),
-			// TODO add support for headers
+			Headers:  v.GetStringMapString(TracingHeadersKey),
 		},
 		Enabled:         true,
 		TraceSampleRate: v.GetFloat64(TracingSampleRateKey),
+		AppName:         constants.AppName,
+		Version:         version.Current.String(),
 	}, nil
 }
 
@@ -1305,9 +1327,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Gossiping
-	nodeConfig.ConsensusGossipFrequency = v.GetDuration(ConsensusGossipFrequencyKey)
-	if nodeConfig.ConsensusGossipFrequency < 0 {
-		return node.Config{}, fmt.Errorf("%s must be >= 0", ConsensusGossipFrequencyKey)
+	nodeConfig.FrontierPollFrequency = v.GetDuration(ConsensusFrontierPollFrequencyKey)
+	if nodeConfig.FrontierPollFrequency < 0 {
+		return node.Config{}, fmt.Errorf("%s must be >= 0", ConsensusFrontierPollFrequencyKey)
 	}
 
 	// App handling
@@ -1388,7 +1410,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	}
 
 	// Network Config
-	nodeConfig.NetworkConfig, err = getNetworkConfig(v, nodeConfig.EnableStaking, healthCheckAveragerHalflife, nodeConfig.NetworkID)
+	nodeConfig.NetworkConfig, err = getNetworkConfig(
+		v,
+		nodeConfig.NetworkID,
+		nodeConfig.SybilProtectionEnabled,
+		healthCheckAveragerHalflife,
+	)
 	if err != nil {
 		return node.Config{}, err
 	}
@@ -1436,15 +1463,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.BootstrapConfig, err = getBootstrapConfig(v, nodeConfig.NetworkID)
 	if err != nil {
 		return node.Config{}, err
-	}
-
-	// Node health
-	nodeConfig.MinPercentConnectedStakeHealthy = map[ids.ID]float64{
-		constants.PrimaryNetworkID: calcMinConnectedStake(primaryNetworkConfig.ConsensusParameters.Parameters),
-	}
-
-	for subnetID, config := range subnetConfigs {
-		nodeConfig.MinPercentConnectedStakeHealthy[subnetID] = calcMinConnectedStake(config.ConsensusParameters.Parameters)
 	}
 
 	// Chain Configs
@@ -1497,17 +1515,10 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	nodeConfig.ChainDataDir = GetExpandedArg(v, ChainDataDirKey)
 
+	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
+
 	nodeConfig.ProvidedFlags = providedFlags(v)
 	return nodeConfig, nil
-}
-
-// calcMinConnectedStake takes [consensusParams] as input and calculates the
-// expected min connected stake percentage according to alpha and k.
-func calcMinConnectedStake(consensusParams snowball.Parameters) float64 {
-	alpha := consensusParams.Alpha
-	k := consensusParams.K
-	r := float64(alpha) / float64(k)
-	return r*(1-constants.MinConnectedStakeBuffer) + constants.MinConnectedStakeBuffer
 }
 
 func providedFlags(v *viper.Viper) map[string]interface{} {

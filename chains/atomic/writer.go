@@ -3,9 +3,7 @@
 
 package atomic
 
-import (
-	"github.com/MetalBlockchain/metalgo/database"
-)
+import "github.com/MetalBlockchain/metalgo/database"
 
 // WriteAll writes all of the batches to the underlying database of baseBatch.
 // Assumes all batches have the same underlying database.

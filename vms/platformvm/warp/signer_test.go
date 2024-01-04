@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 )
 
@@ -18,8 +19,8 @@ func TestSigner(t *testing.T) {
 		require.NoError(t, err)
 
 		chainID := ids.GenerateTestID()
-		s := NewSigner(sk, chainID)
+		s := NewSigner(sk, constants.UnitTestID, chainID)
 
-		test(t, s, sk, chainID)
+		test(t, s, sk, constants.UnitTestID, chainID)
 	}
 }

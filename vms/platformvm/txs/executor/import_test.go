@@ -17,11 +17,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 func TestNewImportTx(t *testing.T) {
-	env := newEnvironment(false /*=postBanff*/, false /*=postCortina*/)
+	env := newEnvironment(t, false /*=postBanff*/, false /*=postCortina*/)
 	defer func() {
 		require.NoError(t, shutdownEnvironment(env))
 	}()
@@ -32,12 +33,10 @@ func TestNewImportTx(t *testing.T) {
 		sharedMemory  atomic.SharedMemory
 		sourceKeys    []*secp256k1.PrivateKey
 		timestamp     time.Time
-		shouldErr     bool
-		shouldVerify  bool
+		expectedErr   error
 	}
 
-	factory := secp256k1.Factory{}
-	sourceKey, err := factory.NewPrivateKey()
+	sourceKey, err := secp256k1.NewPrivateKey()
 	require.NoError(t, err)
 
 	cnt := new(byte)
@@ -72,7 +71,7 @@ func TestNewImportTx(t *testing.T) {
 			require.NoError(t, err)
 
 			inputID := utxo.InputID()
-			err = peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
+			require.NoError(t, peerSharedMemory.Apply(map[ids.ID]*atomic.Requests{
 				env.ctx.ChainID: {
 					PutRequests: []*atomic.Element{
 						{
@@ -84,9 +83,7 @@ func TestNewImportTx(t *testing.T) {
 						},
 					},
 				},
-			},
-			)
-			require.NoError(t, err)
+			}))
 		}
 
 		return sm
@@ -104,8 +101,8 @@ func TestNewImportTx(t *testing.T) {
 					env.ctx.AVAXAssetID: env.config.TxFee - 1,
 				},
 			),
-			sourceKeys: []*secp256k1.PrivateKey{sourceKey},
-			shouldErr:  true,
+			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
+			expectedErr: utxo.ErrInsufficientFunds,
 		},
 		{
 			description:   "can barely pay fee",
@@ -116,9 +113,8 @@ func TestNewImportTx(t *testing.T) {
 					env.ctx.AVAXAssetID: env.config.TxFee,
 				},
 			),
-			sourceKeys:   []*secp256k1.PrivateKey{sourceKey},
-			shouldErr:    false,
-			shouldVerify: true,
+			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
+			expectedErr: nil,
 		},
 		{
 			description:   "attempting to import from C-chain",
@@ -129,10 +125,9 @@ func TestNewImportTx(t *testing.T) {
 					env.ctx.AVAXAssetID: env.config.TxFee,
 				},
 			),
-			sourceKeys:   []*secp256k1.PrivateKey{sourceKey},
-			timestamp:    env.config.ApricotPhase5Time,
-			shouldErr:    false,
-			shouldVerify: true,
+			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
+			timestamp:   env.config.ApricotPhase5Time,
+			expectedErr: nil,
 		},
 		{
 			description:   "attempting to import non-avax from X-chain",
@@ -144,10 +139,9 @@ func TestNewImportTx(t *testing.T) {
 					customAssetID:       1,
 				},
 			),
-			sourceKeys:   []*secp256k1.PrivateKey{sourceKey},
-			timestamp:    env.config.BanffTime,
-			shouldErr:    false,
-			shouldVerify: true,
+			sourceKeys:  []*secp256k1.PrivateKey{sourceKey},
+			timestamp:   env.config.BanffTime,
+			expectedErr: nil,
 		},
 	}
 
@@ -163,15 +157,16 @@ func TestNewImportTx(t *testing.T) {
 				tt.sourceKeys,
 				ids.ShortEmpty,
 			)
-			if tt.shouldErr {
-				require.Error(err)
+			require.ErrorIs(err, tt.expectedErr)
+			if tt.expectedErr != nil {
 				return
 			}
 			require.NoError(err)
 
 			unsignedTx := tx.Unsigned.(*txs.ImportTx)
 			require.NotEmpty(unsignedTx.ImportedInputs)
-			require.Equal(len(tx.Creds), len(unsignedTx.Ins)+len(unsignedTx.ImportedInputs), "should have the same number of credentials as inputs")
+			numInputs := len(unsignedTx.Ins) + len(unsignedTx.ImportedInputs)
+			require.Equal(len(tx.Creds), numInputs, "should have the same number of credentials as inputs")
 
 			totalIn := uint64(0)
 			for _, in := range unsignedTx.Ins {
@@ -201,12 +196,7 @@ func TestNewImportTx(t *testing.T) {
 				StateVersions: env,
 				Tx:            tx,
 			}
-			err = tx.Unsigned.Visit(&verifier)
-			if tt.shouldVerify {
-				require.NoError(err)
-			} else {
-				require.Error(err)
-			}
+			require.NoError(tx.Unsigned.Visit(&verifier))
 		})
 	}
 }

@@ -6,7 +6,7 @@ Shared memory creates a way for blockchains in the Avalanche Ecosystem to commun
 
 ### Using Shared Base Database
 
-MetalGo uses a single base database (typically leveldb). This database is partitioned using the `prefixdb` package, so that each recipient of a `prefixdb` can treat it as if it were its own unique database.
+AvalancheGo uses a single base database (typically leveldb). This database is partitioned using the `prefixdb` package, so that each recipient of a `prefixdb` can treat it as if it were its own unique database.
 
 Each blockchain in the Avalanche Ecosystem has its own `prefixdb` passed in via `vm.Initialize(...)`, which means that the `prefixdb`s that are given to each blockchain share the same base level database.
 

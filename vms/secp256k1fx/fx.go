@@ -9,9 +9,9 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 )
 
@@ -40,8 +40,9 @@ var (
 
 // Fx describes the secp256k1 feature extension
 type Fx struct {
+	secp256k1.RecoverCache
+
 	VM           VM
-	SECPFactory  secp256k1.Factory
 	bootstrapped bool
 }
 
@@ -53,21 +54,19 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log := fx.VM.Logger()
 	log.Debug("initializing secp256k1 fx")
 
-	fx.SECPFactory = secp256k1.Factory{
-		Cache: cache.LRU[ids.ID, *secp256k1.PublicKey]{
+	fx.RecoverCache = secp256k1.RecoverCache{
+		LRU: cache.LRU[ids.ID, *secp256k1.PublicKey]{
 			Size: defaultCacheSize,
 		},
 	}
 	c := fx.VM.CodecRegistry()
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		c.RegisterType(&TransferInput{}),
 		c.RegisterType(&MintOutput{}),
 		c.RegisterType(&TransferOutput{}),
 		c.RegisterType(&MintOperation{}),
 		c.RegisterType(&Credential{}),
 	)
-	return errs.Err
 }
 
 func (fx *Fx) InitializeVM(vmIntf interface{}) error {
@@ -202,7 +201,7 @@ func (fx *Fx) VerifyCredentials(utx UnsignedTx, in *Input, cred *Credential, out
 		// Make sure each signature in the signature list is from an owner of
 		// the output being consumed
 		sig := cred.Sigs[i]
-		pk, err := fx.SECPFactory.RecoverHashPublicKey(txHash, sig[:])
+		pk, err := fx.RecoverPublicKeyFromHash(txHash, sig[:])
 		if err != nil {
 			return err
 		}

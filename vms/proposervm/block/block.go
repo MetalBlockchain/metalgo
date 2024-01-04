@@ -4,8 +4,8 @@
 package block
 
 import (
-	"crypto/x509"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -19,6 +19,7 @@ var (
 
 	errUnexpectedProposer = errors.New("expected no proposer but one was provided")
 	errMissingProposer    = errors.New("expected proposer but none was provided")
+	errInvalidCertificate = errors.New("invalid certificate")
 )
 
 type Block interface {
@@ -54,7 +55,7 @@ type statelessBlock struct {
 
 	id        ids.ID
 	timestamp time.Time
-	cert      *x509.Certificate
+	cert      *staking.Certificate
 	proposer  ids.NodeID
 	bytes     []byte
 }
@@ -90,13 +91,9 @@ func (b *statelessBlock) initialize(bytes []byte) error {
 		return nil
 	}
 
-	cert, err := x509.ParseCertificate(b.StatelessBlock.Certificate)
+	cert, err := staking.ParseCertificate(b.StatelessBlock.Certificate)
 	if err != nil {
-		return err
-	}
-
-	if err := staking.VerifyCertificate(cert); err != nil {
-		return err
+		return fmt.Errorf("%w: %w", errInvalidCertificate, err)
 	}
 
 	b.cert = cert
@@ -132,5 +129,9 @@ func (b *statelessBlock) Verify(shouldHaveProposer bool, chainID ids.ID) error {
 	}
 
 	headerBytes := header.Bytes()
-	return b.cert.CheckSignature(b.cert.SignatureAlgorithm, headerBytes, b.Signature)
+	return staking.CheckSignature(
+		b.cert,
+		headerBytes,
+		b.Signature,
+	)
 }

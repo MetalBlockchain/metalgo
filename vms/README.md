@@ -10,7 +10,7 @@ For each blockchain, consensus is driven by the consensus engine. For each subne
 
 A blockchain consists of two components: a consensus engine and a Virtual Machine (VM). The consensus engine samples validators, handles the responses, and pushes the results of the completed polls into the consensus [code](../snow/consensus/) to decide which containers to Accept/Reject. The VM encodes the application logic for the blockchain. The VM defines the contents of a block, the rules for determining whether a block is valid, the APIs exposed to users, the state transition that occurs if a given block is accepted, and so on.
 
-The consensus engine is general and agnostic to the application semantics of the blockchain. There are two consensus engine implementations in MetalGo: Snowman and Avalanche. Snowman provides a consensus engine for linear chains and Avalanche provides a consensus engine for DAGs. These consensus engine implementations can be re-used for multiple different blockchains in the Avalanche ecosystem, and each blockchain actually runs its own independent instance of consensus.
+The consensus engine is general and agnostic to the application semantics of the blockchain. There are two consensus engine implementations in AvalancheGo: Snowman and Avalanche. Snowman provides a consensus engine for linear chains and Avalanche provides a consensus engine for DAGs. These consensus engine implementations can be re-used for multiple different blockchains in the Avalanche ecosystem, and each blockchain actually runs its own independent instance of consensus.
 
 To launch a blockchain on Avalanche, you just need to write a VM that defines your application; the consensus part is handled by the existing consensus engine implementations.
 

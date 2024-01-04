@@ -4,14 +4,29 @@
 package bootstrap
 
 import (
+	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 type Config struct {
-	common.Config
 	common.AllGetsServer
+
+	Ctx     *snow.ConsensusContext
+	Beacons validators.Manager
+
+	SampleK          int
+	StartupTracker   tracker.Startup
+	Sender           common.Sender
+	BootstrapTracker common.BootstrapTracker
+	Timer            common.Timer
+
+	// This node will only consider the first [AncestorsMaxContainersReceived]
+	// containers in an ancestors message it receives.
+	AncestorsMaxContainersReceived int
 
 	// Blocked tracks operations that are blocked on blocks
 	//

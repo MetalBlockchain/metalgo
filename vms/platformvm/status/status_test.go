@@ -26,28 +26,26 @@ func TestStatusJSON(t *testing.T) {
 		require.NoError(err)
 
 		var parsedStatus Status
-		err = json.Unmarshal(statusJSON, &parsedStatus)
-		require.NoError(err)
+		require.NoError(json.Unmarshal(statusJSON, &parsedStatus))
 		require.Equal(status, parsedStatus)
 	}
 
 	{
 		status := Status(math.MaxInt32)
 		_, err := json.Marshal(status)
-		require.Error(err)
+		require.ErrorIs(err, errUnknownStatus)
 	}
 
 	{
 		status := Committed
-		err := json.Unmarshal([]byte("null"), &status)
-		require.NoError(err)
+		require.NoError(json.Unmarshal([]byte("null"), &status))
 		require.Equal(Committed, status)
 	}
 
 	{
 		var status Status
 		err := json.Unmarshal([]byte(`"not a status"`), &status)
-		require.Error(err)
+		require.ErrorIs(err, errUnknownStatus)
 	}
 }
 
@@ -68,7 +66,7 @@ func TestStatusVerify(t *testing.T) {
 
 	badStatus := Status(math.MaxInt32)
 	err := badStatus.Verify()
-	require.Error(err, "%s passed verification", badStatus)
+	require.ErrorIs(err, errUnknownStatus)
 }
 
 func TestStatusString(t *testing.T) {

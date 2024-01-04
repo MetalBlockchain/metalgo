@@ -23,11 +23,11 @@ type MempoolTxVerifier struct {
 }
 
 func (*MempoolTxVerifier) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (*MempoolTxVerifier) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	return errWrongTxType
+	return ErrWrongTxType
 }
 
 func (v *MempoolTxVerifier) AddValidatorTx(tx *txs.AddValidatorTx) error {
@@ -74,6 +74,14 @@ func (v *MempoolTxVerifier) AddPermissionlessDelegatorTx(tx *txs.AddPermissionle
 	return v.standardTx(tx)
 }
 
+func (v *MempoolTxVerifier) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+	return v.standardTx(tx)
+}
+
+func (v *MempoolTxVerifier) BaseTx(tx *txs.BaseTx) error {
+	return v.standardTx(tx)
+}
+
 func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	baseState, err := v.standardBaseState()
 	if err != nil {
@@ -88,15 +96,12 @@ func (v *MempoolTxVerifier) standardTx(tx txs.UnsignedTx) error {
 	err = tx.Visit(&executor)
 	// We ignore [errFutureStakeTime] here because the time will be advanced
 	// when this transaction is issued.
-	if errors.Is(err, errFutureStakeTime) {
+	if errors.Is(err, ErrFutureStakeTime) {
 		return nil
 	}
 	return err
 }
 
-// Upon Banff activation, txs are not verified against current chain time
-// but against the block timestamp. [baseTime] calculates
-// the right timestamp to be used to mempool tx verification
 func (v *MempoolTxVerifier) standardBaseState() (state.Diff, error) {
 	state, err := state.NewDiff(v.ParentID, v.StateVersions)
 	if err != nil {
@@ -108,14 +113,6 @@ func (v *MempoolTxVerifier) standardBaseState() (state.Diff, error) {
 		return nil, err
 	}
 
-	if !v.Backend.Config.IsBanffActivated(nextBlkTime) {
-		// next tx would be included into an Apricot block
-		// so we verify it against current chain state
-		return state, nil
-	}
-
-	// next tx would be included into a Banff block
-	// so we verify it against duly updated chain state
 	changes, err := AdvanceTimeTo(v.Backend, state, nextBlkTime)
 	if err != nil {
 		return nil, err

@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
@@ -36,7 +38,7 @@ func (e *EngineTest) GetBlock(ctx context.Context, blkID ids.ID) (snowman.Block,
 		return e.GetBlockF(ctx, blkID)
 	}
 	if e.CantGetBlock && e.T != nil {
-		e.T.Fatalf("Unexpectedly called GetBlock")
+		require.FailNow(e.T, errGetBlock.Error())
 	}
 	return nil, errGetBlock
 }

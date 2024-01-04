@@ -5,9 +5,8 @@ package platformvm
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
+	"net/http"
 
 	"github.com/gorilla/rpc/v2"
 
@@ -19,29 +18,25 @@ import (
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 	"github.com/MetalBlockchain/metalgo/database"
-	"github.com/MetalBlockchain/metalgo/database/manager"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/window"
-	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/network"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
@@ -49,31 +44,26 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks/builder"
-	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/blocks/executor"
+	snowmanblock "github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/block/builder"
+	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
-)
-
-const (
-	validatorSetsCacheSize        = 512
-	maxRecentlyAcceptedWindowSize = 256
-	recentlyAcceptedWindowTTL     = 5 * time.Minute
+	pvalidators "github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
 )
 
 var (
-	_ block.ChainVM              = (*VM)(nil)
+	_ snowmanblock.ChainVM       = (*VM)(nil)
 	_ secp256k1fx.VM             = (*VM)(nil)
 	_ validators.State           = (*VM)(nil)
 	_ validators.SubnetConnector = (*VM)(nil)
-
-	errMissingValidatorSet = errors.New("missing validator set")
-	errMissingValidator    = errors.New("missing validator")
 )
 
 type VM struct {
 	config.Config
 	blockbuilder.Builder
+	network.Network
+	validators.State
 
 	metrics            metrics.Metrics
 	atomicUtxosManager avax.AtomicUTXOManager
@@ -84,8 +74,8 @@ type VM struct {
 	uptimeManager uptime.Manager
 
 	// The context of this vm
-	ctx       *snow.Context
-	dbManager manager.Manager
+	ctx *snow.Context
+	db  database.Database
 
 	state state.State
 
@@ -95,16 +85,11 @@ type VM struct {
 	// Bootstrapped remembers if this chain has finished bootstrapping or not
 	bootstrapped utils.Atomic[bool]
 
-	// Maps caches for each subnet that is currently tracked.
-	// Key: Subnet ID
-	// Value: cache mapping height -> validator set map
-	validatorSetCaches map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput]
-
-	// sliding window of blocks that were recently accepted
-	recentlyAccepted window.Window[ids.ID]
-
 	txBuilder txbuilder.Builder
 	manager   blockexecutor.Manager
+
+	// TODO: Remove after v1.11.x is activated
+	pruned utils.Atomic[bool]
 }
 
 // Initialize this blockchain.
@@ -112,15 +97,21 @@ type VM struct {
 func (vm *VM) Initialize(
 	ctx context.Context,
 	chainCtx *snow.Context,
-	dbManager manager.Manager,
+	db database.Database,
 	genesisBytes []byte,
 	_ []byte,
-	_ []byte,
+	configBytes []byte,
 	toEngine chan<- common.Message,
 	_ []*common.Fx,
 	appSender common.AppSender,
 ) error {
 	chainCtx.Log.Verbo("initializing platform chain")
+
+	execConfig, err := config.GetExecutionConfig(configBytes)
+	if err != nil {
+		return err
+	}
+	chainCtx.Log.Info("using VM execution config", zap.Reflect("config", execConfig))
 
 	registerer := prometheus.NewRegistry()
 	if err := chainCtx.Metrics.Register(registerer); err != nil {
@@ -128,14 +119,13 @@ func (vm *VM) Initialize(
 	}
 
 	// Initialize metrics as soon as possible
-	var err error
-	vm.metrics, err = metrics.New("", registerer, vm.TrackedSubnets)
+	vm.metrics, err = metrics.New("", registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
 
 	vm.ctx = chainCtx
-	vm.dbManager = dbManager
+	vm.db = db
 
 	vm.codecRegistry = linearcodec.NewDefault()
 	vm.fx = &secp256k1fx.Fx{}
@@ -143,33 +133,27 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	vm.validatorSetCaches = make(map[ids.ID]cache.Cacher[uint64, map[ids.NodeID]*validators.GetValidatorOutput])
-	vm.recentlyAccepted = window.New[ids.ID](
-		window.Config{
-			Clock:   &vm.clock,
-			MaxSize: maxRecentlyAcceptedWindowSize,
-			TTL:     recentlyAcceptedWindowTTL,
-		},
-	)
-
 	rewards := reward.NewCalculator(vm.RewardConfig)
+
 	vm.state, err = state.New(
-		vm.dbManager.Current().Database,
+		vm.db,
 		genesisBytes,
 		registerer,
-		&vm.Config,
+		vm.Config.Validators,
+		execConfig,
 		vm.ctx,
 		vm.metrics,
 		rewards,
-		&vm.bootstrapped,
 	)
 	if err != nil {
 		return err
 	}
 
+	validatorManager := pvalidators.NewManager(chainCtx.Log, vm.Config, vm.state, vm.metrics, &vm.clock)
+	vm.State = validatorManager
 	vm.atomicUtxosManager = avax.NewAtomicUTXOManager(chainCtx.SharedMemory, txs.Codec)
 	utxoHandler := utxo.NewHandler(vm.ctx, &vm.clock, vm.fx)
-	vm.uptimeManager = uptime.NewManager(vm.state)
+	vm.uptimeManager = uptime.NewManager(vm.state, &vm.clock)
 	vm.UptimeLockedCalculator.SetCalculator(&vm.bootstrapped, &chainCtx.Lock, vm.uptimeManager)
 
 	vm.txBuilder = txbuilder.New(
@@ -193,9 +177,7 @@ func (vm *VM) Initialize(
 		Bootstrapped: &vm.bootstrapped,
 	}
 
-	// Note: There is a circular dependency between the mempool and block
-	//       builder which is broken by passing in the vm.
-	mempool, err := mempool.NewMempool("mempool", registerer, vm)
+	mempool, err := mempool.New("mempool", registerer, toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -205,15 +187,20 @@ func (vm *VM) Initialize(
 		vm.metrics,
 		vm.state,
 		txExecutorBackend,
-		vm.recentlyAccepted,
+		validatorManager,
+	)
+	vm.Network = network.New(
+		txExecutorBackend.Ctx,
+		vm.manager,
+		mempool,
+		txExecutorBackend.Config.PartialSyncPrimaryNetwork,
+		appSender,
 	)
 	vm.Builder = blockbuilder.New(
 		mempool,
 		vm.txBuilder,
 		txExecutorBackend,
 		vm.manager,
-		toEngine,
-		appSender,
 	)
 
 	// Create all of the chains that the database says exist
@@ -228,16 +215,46 @@ func (vm *VM) Initialize(
 	chainCtx.Log.Info("initializing last accepted",
 		zap.Stringer("blkID", lastAcceptedID),
 	)
-	return vm.SetPreference(ctx, lastAcceptedID)
+	if err := vm.SetPreference(ctx, lastAcceptedID); err != nil {
+		return err
+	}
+
+	shouldPrune, err := vm.state.ShouldPrune()
+	if err != nil {
+		return fmt.Errorf(
+			"failed to check if the database should be pruned: %w",
+			err,
+		)
+	}
+	if !shouldPrune {
+		chainCtx.Log.Info("state already pruned and indexed")
+		vm.pruned.Set(true)
+		return nil
+	}
+
+	go func() {
+		err := vm.state.PruneAndIndex(&vm.ctx.Lock, vm.ctx.Log)
+		if err != nil {
+			vm.ctx.Log.Error("state pruning and height indexing failed",
+				zap.Error(err),
+			)
+		}
+
+		vm.pruned.Set(true)
+	}()
+
+	return nil
 }
 
 // Create all chains that exist that this node validates.
 func (vm *VM) initBlockchains() error {
-	if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
+	if vm.Config.PartialSyncPrimaryNetwork {
+		vm.ctx.Log.Info("skipping primary network chain creation")
+	} else if err := vm.createSubnet(constants.PrimaryNetworkID); err != nil {
 		return err
 	}
 
-	if vm.StakingEnabled {
+	if vm.SybilProtectionEnabled {
 		for subnetID := range vm.TrackedSubnets {
 			if err := vm.createSubnet(subnetID); err != nil {
 				return err
@@ -290,22 +307,22 @@ func (vm *VM) onNormalOperationsStarted() error {
 		return err
 	}
 
-	primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
-	if !exists {
-		return errMissingValidatorSet
-	}
+	primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 	if err := vm.uptimeManager.StartTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
 		return err
 	}
 
+	vl := validators.NewLogger(vm.ctx.Log, constants.PrimaryNetworkID, vm.ctx.NodeID)
+	vm.Validators.RegisterCallbackListener(constants.PrimaryNetworkID, vl)
+
 	for subnetID := range vm.TrackedSubnets {
-		vdrIDs, exists := vm.getValidatorIDs(subnetID)
-		if !exists {
-			return errMissingValidatorSet
-		}
+		vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
 		if err := vm.uptimeManager.StartTracking(vdrIDs, subnetID); err != nil {
 			return err
 		}
+
+		vl := validators.NewLogger(vm.ctx.Log, subnetID, vm.ctx.NodeID)
+		vm.Validators.RegisterCallbackListener(subnetID, vl)
 	}
 
 	if err := vm.state.Commit(); err != nil {
@@ -330,26 +347,20 @@ func (vm *VM) SetState(_ context.Context, state snow.State) error {
 
 // Shutdown this blockchain
 func (vm *VM) Shutdown(context.Context) error {
-	if vm.dbManager == nil {
+	if vm.db == nil {
 		return nil
 	}
 
 	vm.Builder.Shutdown()
 
 	if vm.bootstrapped.Get() {
-		primaryVdrIDs, exists := vm.getValidatorIDs(constants.PrimaryNetworkID)
-		if !exists {
-			return errMissingValidatorSet
-		}
+		primaryVdrIDs := vm.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 		if err := vm.uptimeManager.StopTracking(primaryVdrIDs, constants.PrimaryNetworkID); err != nil {
 			return err
 		}
 
 		for subnetID := range vm.TrackedSubnets {
-			vdrIDs, exists := vm.getValidatorIDs(subnetID)
-			if !exists {
-				return errMissingValidatorSet
-			}
+			vdrIDs := vm.Validators.GetValidatorIDs(subnetID)
 			if err := vm.uptimeManager.StopTracking(vdrIDs, subnetID); err != nil {
 				return err
 			}
@@ -360,33 +371,16 @@ func (vm *VM) Shutdown(context.Context) error {
 		}
 	}
 
-	errs := wrappers.Errs{}
-	errs.Add(
+	return utils.Err(
 		vm.state.Close(),
-		vm.dbManager.Close(),
+		vm.db.Close(),
 	)
-	return errs.Err
-}
-
-func (vm *VM) getValidatorIDs(subnetID ids.ID) ([]ids.NodeID, bool) {
-	validatorSet, exist := vm.Validators.Get(subnetID)
-	if !exist {
-		return nil, false
-	}
-	validators := validatorSet.List()
-
-	validatorIDs := make([]ids.NodeID, len(validators))
-	for i, vdr := range validators {
-		validatorIDs[i] = vdr.NodeID
-	}
-
-	return validatorIDs, true
 }
 
 func (vm *VM) ParseBlock(_ context.Context, b []byte) (snowman.Block, error) {
 	// Note: blocks to be parsed are not verified, so we must used blocks.Codec
 	// rather than blocks.GenesisCodec
-	statelessBlk, err := blocks.Parse(blocks.Codec, b)
+	statelessBlk, err := block.Parse(block.Codec, b)
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +398,9 @@ func (vm *VM) LastAccepted(context.Context) (ids.ID, error) {
 
 // SetPreference sets the preferred block to be the one with ID [blkID]
 func (vm *VM) SetPreference(_ context.Context, blkID ids.ID) error {
-	vm.Builder.SetPreference(blkID)
+	if vm.manager.SetPreference(blkID) {
+		vm.Builder.ResetBlockTimer()
+	}
 	return nil
 }
 
@@ -415,49 +411,35 @@ func (*VM) Version(context.Context) (string, error) {
 // CreateHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
-func (vm *VM) CreateHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
 	server.RegisterInterceptFunc(vm.metrics.InterceptRequest)
 	server.RegisterAfterFunc(vm.metrics.AfterRequest)
-	if err := server.RegisterService(
-		&Service{
-			vm:          vm,
-			addrManager: avax.NewAddressManager(vm.ctx),
-			stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
-				Size: stakerAttributesCacheSize,
-			},
+	service := &Service{
+		vm:          vm,
+		addrManager: avax.NewAddressManager(vm.ctx),
+		stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
+			Size: stakerAttributesCacheSize,
 		},
-		"platform",
-	); err != nil {
-		return nil, err
 	}
-
-	return map[string]*common.HTTPHandler{
-		"": {
-			Handler: server,
-		},
-	}, nil
+	err := server.RegisterService(service, "platform")
+	return map[string]http.Handler{
+		"": server,
+	}, err
 }
 
 // CreateStaticHandlers returns a map where:
 // * keys are API endpoint extensions
 // * values are API handlers
-func (*VM) CreateStaticHandlers(context.Context) (map[string]*common.HTTPHandler, error) {
+func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
 	server := rpc.NewServer()
 	server.RegisterCodec(json.NewCodec(), "application/json")
 	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	if err := server.RegisterService(&api.StaticService{}, "platform"); err != nil {
-		return nil, err
-	}
-
-	return map[string]*common.HTTPHandler{
-		"": {
-			LockOptions: common.NoLock,
-			Handler:     server,
-		},
-	}, nil
+	return map[string]http.Handler{
+		"": server,
+	}, server.RegisterService(&api.StaticService{}, "platform")
 }
 
 func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
@@ -475,200 +457,6 @@ func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 	return vm.state.Commit()
 }
 
-// GetValidatorSet returns the validator set at the specified height for the
-// provided subnetID.
-func (vm *VM) GetValidatorSet(ctx context.Context, height uint64, subnetID ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
-	validatorSetsCache, exists := vm.validatorSetCaches[subnetID]
-	if !exists {
-		validatorSetsCache = &cache.LRU[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{Size: validatorSetsCacheSize}
-		// Only cache tracked subnets
-		if subnetID == constants.PrimaryNetworkID || vm.TrackedSubnets.Contains(subnetID) {
-			vm.validatorSetCaches[subnetID] = validatorSetsCache
-		}
-	}
-
-	if validatorSet, ok := validatorSetsCache.Get(height); ok {
-		vm.metrics.IncValidatorSetsCached()
-		return validatorSet, nil
-	}
-
-	lastAcceptedHeight, err := vm.GetCurrentHeight(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if lastAcceptedHeight < height {
-		return nil, database.ErrNotFound
-	}
-
-	// get the start time to track metrics
-	startTime := vm.Clock().Time()
-
-	currentSubnetValidators, ok := vm.Validators.Get(subnetID)
-	if !ok {
-		currentSubnetValidators = validators.NewSet()
-		if err := vm.state.ValidatorSet(subnetID, currentSubnetValidators); err != nil {
-			return nil, err
-		}
-	}
-	currentPrimaryNetworkValidators, ok := vm.Validators.Get(constants.PrimaryNetworkID)
-	if !ok {
-		// This should never happen
-		return nil, errMissingValidatorSet
-	}
-
-	currentSubnetValidatorList := currentSubnetValidators.List()
-	vdrSet := make(map[ids.NodeID]*validators.GetValidatorOutput, len(currentSubnetValidatorList))
-	for _, vdr := range currentSubnetValidatorList {
-		primaryVdr, ok := currentPrimaryNetworkValidators.Get(vdr.NodeID)
-		if !ok {
-			// This should never happen
-			return nil, fmt.Errorf("%w: %s", errMissingValidator, vdr.NodeID)
-		}
-		vdrSet[vdr.NodeID] = &validators.GetValidatorOutput{
-			NodeID:    vdr.NodeID,
-			PublicKey: primaryVdr.PublicKey,
-			Weight:    vdr.Weight,
-		}
-	}
-
-	for i := lastAcceptedHeight; i > height; i-- {
-		weightDiffs, err := vm.state.GetValidatorWeightDiffs(i, subnetID)
-		if err != nil {
-			return nil, err
-		}
-
-		for nodeID, weightDiff := range weightDiffs {
-			vdr, ok := vdrSet[nodeID]
-			if !ok {
-				// This node isn't in the current validator set.
-				vdr = &validators.GetValidatorOutput{
-					NodeID: nodeID,
-				}
-				vdrSet[nodeID] = vdr
-			}
-
-			// The weight of this node changed at this block.
-			var op func(uint64, uint64) (uint64, error)
-			if weightDiff.Decrease {
-				// The validator's weight was decreased at this block, so in the
-				// prior block it was higher.
-				op = math.Add64
-			} else {
-				// The validator's weight was increased at this block, so in the
-				// prior block it was lower.
-				op = math.Sub[uint64]
-			}
-
-			// Apply the weight change.
-			vdr.Weight, err = op(vdr.Weight, weightDiff.Amount)
-			if err != nil {
-				return nil, err
-			}
-
-			if vdr.Weight == 0 {
-				// The validator's weight was 0 before this block so
-				// they weren't in the validator set.
-				delete(vdrSet, nodeID)
-			}
-		}
-
-		pkDiffs, err := vm.state.GetValidatorPublicKeyDiffs(i)
-		if err != nil {
-			return nil, err
-		}
-
-		for nodeID, pk := range pkDiffs {
-			// pkDiffs includes all primary network key diffs, if we are
-			// fetching a subnet's validator set, we should ignore non-subnet
-			// validators.
-			if vdr, ok := vdrSet[nodeID]; ok {
-				// The validator's public key was removed at this block, so it
-				// was in the validator set before.
-				vdr.PublicKey = pk
-			}
-		}
-	}
-
-	// cache the validator set
-	validatorSetsCache.Put(height, vdrSet)
-
-	endTime := vm.Clock().Time()
-	vm.metrics.IncValidatorSetsCreated()
-	vm.metrics.AddValidatorSetsDuration(endTime.Sub(startTime))
-	vm.metrics.AddValidatorSetsHeightDiff(lastAcceptedHeight - height)
-	return vdrSet, nil
-}
-
-// GetCurrentHeight returns the height of the last accepted block
-func (vm *VM) GetSubnetID(_ context.Context, chainID ids.ID) (ids.ID, error) {
-	if chainID == constants.PlatformChainID {
-		return constants.PrimaryNetworkID, nil
-	}
-
-	chainTx, _, err := vm.state.GetTx(chainID)
-	if err != nil {
-		return ids.Empty, fmt.Errorf(
-			"problem retrieving blockchain %q: %w",
-			chainID,
-			err,
-		)
-	}
-	chain, ok := chainTx.Unsigned.(*txs.CreateChainTx)
-	if !ok {
-		return ids.Empty, fmt.Errorf("%q is not a blockchain", chainID)
-	}
-	return chain.SubnetID, nil
-}
-
-// GetMinimumHeight returns the height of the most recent block beyond the
-// horizon of our recentlyAccepted window.
-//
-// Because the time between blocks is arbitrary, we're only guaranteed that
-// the window's configured TTL amount of time has passed once an element
-// expires from the window.
-//
-// To try to always return a block older than the window's TTL, we return the
-// parent of the oldest element in the window (as an expired element is always
-// guaranteed to be sufficiently stale). If we haven't expired an element yet
-// in the case of a process restart, we default to the lastAccepted block's
-// height which is likely (but not guaranteed) to also be older than the
-// window's configured TTL.
-//
-// If [UseCurrentHeight] is true, we will always return the last accepted block
-// height as the minimum. This is used to trigger the proposervm on recently
-// created subnets before [recentlyAcceptedWindowTTL].
-func (vm *VM) GetMinimumHeight(ctx context.Context) (uint64, error) {
-	if vm.Config.UseCurrentHeight {
-		return vm.GetCurrentHeight(ctx)
-	}
-
-	oldest, ok := vm.recentlyAccepted.Oldest()
-	if !ok {
-		return vm.GetCurrentHeight(ctx)
-	}
-
-	blk, err := vm.manager.GetBlock(oldest)
-	if err != nil {
-		return 0, err
-	}
-
-	// We subtract 1 from the height of [oldest] because we want the height of
-	// the last block accepted before the [recentlyAccepted] window.
-	//
-	// There is guaranteed to be a block accepted before this window because the
-	// first block added to [recentlyAccepted] window is >= height 1.
-	return blk.Height() - 1, nil
-}
-
-// GetCurrentHeight returns the height of the last accepted block
-func (vm *VM) GetCurrentHeight(context.Context) (uint64, error) {
-	lastAccepted, err := vm.manager.GetBlock(vm.state.GetLastAccepted())
-	if err != nil {
-		return 0, err
-	}
-	return lastAccepted.Height(), nil
-}
-
 func (vm *VM) CodecRegistry() codec.Registry {
 	return vm.codecRegistry
 }
@@ -681,31 +469,14 @@ func (vm *VM) Logger() logging.Logger {
 	return vm.ctx.Log
 }
 
-// Returns the percentage of the total stake of the subnet connected to this
-// node.
-func (vm *VM) getPercentConnected(subnetID ids.ID) (float64, error) {
-	vdrSet, exists := vm.Validators.Get(subnetID)
-	if !exists {
-		return 0, errMissingValidatorSet
+func (vm *VM) VerifyHeightIndex(_ context.Context) error {
+	if vm.pruned.Get() {
+		return nil
 	}
 
-	vdrSetWeight := vdrSet.Weight()
-	if vdrSetWeight == 0 {
-		return 1, nil
-	}
+	return snowmanblock.ErrIndexIncomplete
+}
 
-	var (
-		connectedStake uint64
-		err            error
-	)
-	for _, vdr := range vdrSet.List() {
-		if !vm.uptimeManager.IsConnected(vdr.NodeID, subnetID) {
-			continue // not connected to us --> don't include
-		}
-		connectedStake, err = math.Add64(connectedStake, vdr.Weight)
-		if err != nil {
-			return 0, err
-		}
-	}
-	return float64(connectedStake) / float64(vdrSetWeight), nil
+func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, error) {
+	return vm.state.GetBlockIDAtHeight(height)
 }

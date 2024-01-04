@@ -4,6 +4,7 @@
 package avm
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -22,13 +23,44 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
+var errMissingUTXO = errors.New("missing utxo")
+
 type WalletService struct {
 	vm         *VM
 	pendingTxs linkedhashmap.LinkedHashmap[ids.ID, *txs.Tx]
 }
 
 func (w *WalletService) decided(txID ids.ID) {
+	if _, ok := w.pendingTxs.Get(txID); !ok {
+		return
+	}
+
+	w.vm.ctx.Log.Info("tx decided over wallet API",
+		zap.Stringer("txID", txID),
+	)
 	w.pendingTxs.Delete(txID)
+
+	for {
+		txID, tx, ok := w.pendingTxs.Oldest()
+		if !ok {
+			return
+		}
+
+		txBytes := tx.Bytes()
+		_, err := w.vm.IssueTx(txBytes)
+		if err == nil {
+			w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+				zap.Stringer("txID", txID),
+			)
+			return
+		}
+
+		w.pendingTxs.Delete(txID)
+		w.vm.ctx.Log.Warn("dropping tx issued over wallet API",
+			zap.Stringer("txID", txID),
+			zap.Error(err),
+		)
+	}
 }
 
 func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
@@ -37,15 +69,34 @@ func (w *WalletService) issue(txBytes []byte) (ids.ID, error) {
 		return ids.ID{}, err
 	}
 
-	txID, err := w.vm.IssueTx(txBytes)
-	if err != nil {
-		return ids.ID{}, err
+	txID := tx.ID()
+	w.vm.ctx.Log.Info("issuing tx over wallet API",
+		zap.Stringer("txID", txID),
+	)
+
+	if _, ok := w.pendingTxs.Get(txID); ok {
+		w.vm.ctx.Log.Warn("issuing duplicate tx over wallet API",
+			zap.Stringer("txID", txID),
+		)
+		return txID, nil
 	}
 
-	if _, ok := w.pendingTxs.Get(txID); !ok {
-		w.pendingTxs.Put(txID, tx)
+	if w.pendingTxs.Len() == 0 {
+		_, err := w.vm.IssueTx(txBytes)
+		if err != nil {
+			return ids.ID{}, err
+		}
+
+		w.vm.ctx.Log.Info("issued tx to mempool over wallet API",
+			zap.Stringer("txID", txID),
+		)
+	} else {
+		w.vm.ctx.Log.Info("enqueueing tx over wallet API",
+			zap.Stringer("txID", txID),
+		)
 	}
 
+	w.pendingTxs.Put(txID, tx)
 	return txID, nil
 }
 
@@ -90,6 +141,10 @@ func (w *WalletService) IssueTx(_ *http.Request, args *api.FormattedTx, reply *a
 	if err != nil {
 		return fmt.Errorf("problem decoding transaction: %w", err)
 	}
+
+	w.vm.ctx.Lock.Lock()
+	defer w.vm.ctx.Lock.Unlock()
+
 	txID, err := w.issue(txBytes)
 	reply.TxID = txID
 	return err
@@ -127,6 +182,9 @@ func (w *WalletService) SendMultiple(_ *http.Request, args *SendMultipleArgs, re
 	if err != nil {
 		return fmt.Errorf("couldn't parse 'From' addresses: %w", err)
 	}
+
+	w.vm.ctx.Lock.Lock()
+	defer w.vm.ctx.Lock.Unlock()
 
 	// Load user's UTXOs/keys
 	utxos, kc, err := w.vm.LoadUser(args.Username, args.Password, fromAddrs)

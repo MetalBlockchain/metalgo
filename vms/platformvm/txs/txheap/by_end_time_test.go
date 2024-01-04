@@ -14,7 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
-func TestByStopTime(t *testing.T) {
+func TestByEndTime(t *testing.T) {
 	require := require.New(t)
 
 	txHeap := NewByEndTime()
@@ -23,39 +23,36 @@ func TestByStopTime(t *testing.T) {
 
 	utx0 := &txs.AddValidatorTx{
 		Validator: txs.Validator{
-			NodeID: ids.NodeID{0},
+			NodeID: ids.BuildTestNodeID([]byte{0}),
 			Start:  uint64(baseTime.Unix()),
 			End:    uint64(baseTime.Unix()) + 1,
 		},
 		RewardsOwner: &secp256k1fx.OutputOwners{},
 	}
 	tx0 := &txs.Tx{Unsigned: utx0}
-	err := tx0.Initialize(txs.Codec)
-	require.NoError(err)
+	require.NoError(tx0.Initialize(txs.Codec))
 
 	utx1 := &txs.AddValidatorTx{
 		Validator: txs.Validator{
-			NodeID: ids.NodeID{1},
+			NodeID: ids.BuildTestNodeID([]byte{1}),
 			Start:  uint64(baseTime.Unix()),
 			End:    uint64(baseTime.Unix()) + 2,
 		},
 		RewardsOwner: &secp256k1fx.OutputOwners{},
 	}
 	tx1 := &txs.Tx{Unsigned: utx1}
-	err = tx1.Initialize(txs.Codec)
-	require.NoError(err)
+	require.NoError(tx1.Initialize(txs.Codec))
 
 	utx2 := &txs.AddValidatorTx{
 		Validator: txs.Validator{
-			NodeID: ids.NodeID{1},
+			NodeID: ids.BuildTestNodeID([]byte{1}),
 			Start:  uint64(baseTime.Unix()),
 			End:    uint64(baseTime.Unix()) + 3,
 		},
 		RewardsOwner: &secp256k1fx.OutputOwners{},
 	}
 	tx2 := &txs.Tx{Unsigned: utx2}
-	err = tx2.Initialize(txs.Codec)
-	require.NoError(err)
+	require.NoError(tx2.Initialize(txs.Codec))
 
 	txHeap.Add(tx2)
 	require.Equal(utx2.EndTime(), txHeap.Timestamp())

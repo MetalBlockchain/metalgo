@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
 METAL_ROOT=$PKG_ROOT/metalgo-$TAG
 
 mkdir -p $METAL_ROOT

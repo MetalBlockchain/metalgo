@@ -8,16 +8,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/ids"
 )
 
 func TestParseInvalid(t *testing.T) {
-	vtxBytes := []byte{}
+	vtxBytes := []byte{1, 2, 3, 4, 5}
 	_, err := Parse(vtxBytes)
-	require.Error(t, err, "parse on an invalid vertex should have errored")
+	require.ErrorIs(t, err, codec.ErrUnknownVersion)
 }
 
 func TestParseValid(t *testing.T) {
+	require := require.New(t)
+
 	chainID := ids.ID{1}
 	height := uint64(2)
 	parentIDs := []ids.ID{{4}, {5}}
@@ -28,10 +31,10 @@ func TestParseValid(t *testing.T) {
 		parentIDs,
 		txs,
 	)
-	require.NoError(t, err)
+	require.NoError(err)
 
 	vtxBytes := vtx.Bytes()
 	parsedVtx, err := Parse(vtxBytes)
-	require.NoError(t, err)
-	require.Equal(t, vtx, parsedVtx)
+	require.NoError(err)
+	require.Equal(vtx, parsedVtx)
 }

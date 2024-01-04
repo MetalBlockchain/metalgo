@@ -15,9 +15,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
+	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/rpc"
-
-	cjson "github.com/MetalBlockchain/metalgo/utils/json"
 )
 
 var _ Client = (*client)(nil)
@@ -44,8 +43,6 @@ type Client interface {
 	ConfirmTx(ctx context.Context, txID ids.ID, freq time.Duration, options ...rpc.Option) (choices.Status, error)
 	// GetTx returns the byte representation of [txID]
 	GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error)
-	// IssueStopVertex issues a stop vertex.
-	IssueStopVertex(ctx context.Context, options ...rpc.Option) error
 	// GetUTXOs returns the byte representation of the UTXOs controlled by [addrs]
 	GetUTXOs(
 		ctx context.Context,
@@ -80,7 +77,7 @@ type Client interface {
 	// CreateAsset creates a new asset and returns its assetID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	CreateAsset(
 		ctx context.Context,
 		user api.UserPass,
@@ -96,7 +93,7 @@ type Client interface {
 	// CreateFixedCapAsset creates a new fixed cap asset and returns its assetID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	CreateFixedCapAsset(
 		ctx context.Context,
 		user api.UserPass,
@@ -111,7 +108,7 @@ type Client interface {
 	// CreateVariableCapAsset creates a new variable cap asset and returns its assetID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	CreateVariableCapAsset(
 		ctx context.Context,
 		user api.UserPass,
@@ -126,7 +123,7 @@ type Client interface {
 	// CreateNFTAsset creates a new NFT asset and returns its assetID
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	CreateNFTAsset(
 		ctx context.Context,
 		user api.UserPass,
@@ -156,7 +153,7 @@ type Client interface {
 	// Mint [amount] of [assetID] to be owned by [to]
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	Mint(
 		ctx context.Context,
 		user api.UserPass,
@@ -170,7 +167,7 @@ type Client interface {
 	// SendNFT sends an NFT and returns the ID of the newly created transaction
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	SendNFT(
 		ctx context.Context,
 		user api.UserPass,
@@ -184,7 +181,7 @@ type Client interface {
 	// MintNFT issues a MintNFT transaction and returns the ID of the newly created transaction
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	MintNFT(
 		ctx context.Context,
 		user api.UserPass,
@@ -199,13 +196,13 @@ type Client interface {
 	// returns the ID of the newly created transaction
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	Import(ctx context.Context, user api.UserPass, to ids.ShortID, sourceChain string, options ...rpc.Option) (ids.ID, error) // Export sends an asset from this chain to the P/C-Chain.
 	// After this tx is accepted, the AVAX must be imported to the P/C-chain with an importTx.
 	// Returns the ID of the newly created atomic transaction
 	//
 	// Deprecated: Transactions should be issued using the
-	// `metalgo/wallet/chain/x.Wallet` utility.
+	// `avalanchego/wallet/chain/x.Wallet` utility.
 	Export(
 		ctx context.Context,
 		user api.UserPass,
@@ -246,20 +243,18 @@ func (c *client) GetBlock(ctx context.Context, blkID ids.ID, options ...rpc.Opti
 	if err != nil {
 		return nil, err
 	}
-
 	return formatting.Decode(res.Encoding, res.Block)
 }
 
 func (c *client) GetBlockByHeight(ctx context.Context, height uint64, options ...rpc.Option) ([]byte, error) {
 	res := &api.FormattedBlock{}
 	err := c.requester.SendRequest(ctx, "avm.getBlockByHeight", &api.GetBlockByHeightArgs{
-		Height:   height,
+		Height:   json.Uint64(height),
 		Encoding: formatting.HexNC,
 	}, res, options...)
 	if err != nil {
 		return nil, err
 	}
-
 	return formatting.Decode(res.Encoding, res.Block)
 }
 
@@ -280,10 +275,6 @@ func (c *client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 		Encoding: formatting.Hex,
 	}, res, options...)
 	return res.TxID, err
-}
-
-func (c *client) IssueStopVertex(ctx context.Context, options ...rpc.Option) error {
-	return c.requester.SendRequest(ctx, "avm.issueStopVertex", &struct{}{}, &struct{}{}, options...)
 }
 
 func (c *client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Option) (choices.Status, error) {
@@ -323,12 +314,7 @@ func (c *client) GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) 
 	if err != nil {
 		return nil, err
 	}
-
-	txBytes, err := formatting.Decode(res.Encoding, res.Tx)
-	if err != nil {
-		return nil, err
-	}
-	return txBytes, nil
+	return formatting.Decode(res.Encoding, res.Tx)
 }
 
 func (c *client) GetUTXOs(
@@ -355,7 +341,7 @@ func (c *client) GetAtomicUTXOs(
 	err := c.requester.SendRequest(ctx, "avm.getUTXOs", &api.GetUTXOsArgs{
 		Addresses:   ids.ShortIDsToStrings(addrs),
 		SourceChain: sourceChain,
-		Limit:       cjson.Uint32(limit),
+		Limit:       json.Uint32(limit),
 		StartIndex: api.Index{
 			Address: startAddress.String(),
 			UTXO:    startUTXOID.String(),
@@ -448,14 +434,14 @@ func (c *client) CreateAsset(
 	holders := make([]*Holder, len(clientHolders))
 	for i, clientHolder := range clientHolders {
 		holders[i] = &Holder{
-			Amount:  cjson.Uint64(clientHolder.Amount),
+			Amount:  json.Uint64(clientHolder.Amount),
 			Address: clientHolder.Address.String(),
 		}
 	}
 	minters := make([]Owners, len(clientMinters))
 	for i, clientMinter := range clientMinters {
 		minters[i] = Owners{
-			Threshold: cjson.Uint32(clientMinter.Threshold),
+			Threshold: json.Uint32(clientMinter.Threshold),
 			Minters:   ids.ShortIDsToStrings(clientMinter.Minters),
 		}
 	}
@@ -489,7 +475,7 @@ func (c *client) CreateFixedCapAsset(
 	holders := make([]*Holder, len(clientHolders))
 	for i, clientHolder := range clientHolders {
 		holders[i] = &Holder{
-			Amount:  cjson.Uint64(clientHolder.Amount),
+			Amount:  json.Uint64(clientHolder.Amount),
 			Address: clientHolder.Address.String(),
 		}
 	}
@@ -522,7 +508,7 @@ func (c *client) CreateVariableCapAsset(
 	minters := make([]Owners, len(clientMinters))
 	for i, clientMinter := range clientMinters {
 		minters[i] = Owners{
-			Threshold: cjson.Uint32(clientMinter.Threshold),
+			Threshold: json.Uint32(clientMinter.Threshold),
 			Minters:   ids.ShortIDsToStrings(clientMinter.Minters),
 		}
 	}
@@ -554,7 +540,7 @@ func (c *client) CreateNFTAsset(
 	minters := make([]Owners, len(clientMinters))
 	for i, clientMinter := range clientMinters {
 		minters[i] = Owners{
-			Threshold: cjson.Uint32(clientMinter.Threshold),
+			Threshold: json.Uint32(clientMinter.Threshold),
 			Minters:   ids.ShortIDsToStrings(clientMinter.Minters),
 		}
 	}
@@ -629,7 +615,7 @@ func (c *client) Send(
 			JSONChangeAddr: api.JSONChangeAddr{ChangeAddr: changeAddr.String()},
 		},
 		SendOutput: SendOutput{
-			Amount:  cjson.Uint64(amount),
+			Amount:  json.Uint64(amount),
 			AssetID: assetID,
 			To:      to.String(),
 		},
@@ -651,7 +637,7 @@ func (c *client) SendMultiple(
 	outputs := make([]SendOutput, len(clientOutputs))
 	for i, clientOutput := range clientOutputs {
 		outputs[i] = SendOutput{
-			Amount:  cjson.Uint64(clientOutput.Amount),
+			Amount:  json.Uint64(clientOutput.Amount),
 			AssetID: clientOutput.AssetID,
 			To:      clientOutput.To.String(),
 		}
@@ -685,7 +671,7 @@ func (c *client) Mint(
 			JSONFromAddrs:  api.JSONFromAddrs{From: ids.ShortIDsToStrings(from)},
 			JSONChangeAddr: api.JSONChangeAddr{ChangeAddr: changeAddr.String()},
 		},
-		Amount:  cjson.Uint64(amount),
+		Amount:  json.Uint64(amount),
 		AssetID: assetID,
 		To:      to.String(),
 	}, res, options...)
@@ -710,7 +696,7 @@ func (c *client) SendNFT(
 			JSONChangeAddr: api.JSONChangeAddr{ChangeAddr: changeAddr.String()},
 		},
 		AssetID: assetID,
-		GroupID: cjson.Uint32(groupID),
+		GroupID: json.Uint32(groupID),
 		To:      to.String(),
 	}, res, options...)
 	return res.TxID, err
@@ -773,7 +759,7 @@ func (c *client) Export(
 			JSONFromAddrs:  api.JSONFromAddrs{From: ids.ShortIDsToStrings(from)},
 			JSONChangeAddr: api.JSONChangeAddr{ChangeAddr: changeAddr.String()},
 		},
-		Amount:      cjson.Uint64(amount),
+		Amount:      json.Uint64(amount),
 		TargetChain: targetChain,
 		To:          to.String(),
 		AssetID:     assetID,

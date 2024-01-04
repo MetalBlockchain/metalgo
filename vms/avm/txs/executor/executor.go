@@ -10,7 +10,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/vms/avm/states"
+	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 )
@@ -19,7 +19,7 @@ var _ txs.Visitor = (*Executor)(nil)
 
 type Executor struct {
 	Codec          codec.Manager
-	State          states.Chain // state will be modified
+	State          state.Chain // state will be modified
 	Tx             *txs.Tx
 	Inputs         set.Set[ids.ID]             // imported inputs
 	AtomicRequests map[ids.ID]*atomic.Requests // may be nil

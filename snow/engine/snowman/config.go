@@ -8,6 +8,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
@@ -16,10 +17,12 @@ import (
 type Config struct {
 	common.AllGetsServer
 
-	Ctx        *snow.ConsensusContext
-	VM         block.ChainVM
-	Sender     common.Sender
-	Validators validators.Set
-	Params     snowball.Parameters
-	Consensus  snowman.Consensus
+	Ctx                 *snow.ConsensusContext
+	VM                  block.ChainVM
+	Sender              common.Sender
+	Validators          validators.Manager
+	ConnectedValidators tracker.Peers
+	Params              snowball.Parameters
+	Consensus           snowman.Consensus
+	PartialSync         bool
 }

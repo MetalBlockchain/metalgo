@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/blocks"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 )
 
 var Noop Metrics = noopMetrics{}
@@ -21,7 +21,7 @@ func (noopMetrics) MarkOptionVoteWon() {}
 
 func (noopMetrics) MarkOptionVoteLost() {}
 
-func (noopMetrics) MarkAccepted(blocks.Block) error {
+func (noopMetrics) MarkAccepted(block.Block) error {
 	return nil
 }
 

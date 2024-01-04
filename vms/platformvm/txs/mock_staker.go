@@ -13,7 +13,7 @@ import (
 
 	ids "github.com/MetalBlockchain/metalgo/ids"
 	bls "github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStaker is a mock of Staker interface.

@@ -10,6 +10,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/utils/timer"
@@ -29,16 +31,15 @@ func TestManagerFire(t *testing.T) {
 		"",
 		prometheus.NewRegistry(),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	go manager.Dispatch()
+	defer manager.Stop()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
 	manager.RegisterRequest(
-		ids.NodeID{},
+		ids.EmptyNodeID,
 		ids.ID{},
 		true,
 		ids.RequestID{},

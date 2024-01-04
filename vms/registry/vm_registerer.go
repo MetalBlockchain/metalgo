@@ -5,9 +5,10 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"path"
-	"sync"
 
 	"go.uber.org/zap"
 
@@ -19,7 +20,11 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms"
 )
 
-var _ VMRegisterer = (*vmRegisterer)(nil)
+var (
+	_ VMRegisterer = (*vmRegisterer)(nil)
+
+	errNotVM = errors.New("not a VM")
+)
 
 // VMRegisterer defines functionality to install a virtual machine.
 type VMRegisterer interface {
@@ -89,7 +94,7 @@ func (r *vmRegisterer) createStaticHandlers(
 	ctx context.Context,
 	vmID ids.ID,
 	factory vms.Factory,
-) (map[string]*common.HTTPHandler, error) {
+) (map[string]http.Handler, error) {
 	vm, err := factory.New(r.config.VMFactoryLog)
 	if err != nil {
 		return nil, err
@@ -97,7 +102,7 @@ func (r *vmRegisterer) createStaticHandlers(
 
 	commonVM, ok := vm.(common.VM)
 	if !ok {
-		return nil, fmt.Errorf("%s doesn't implement VM", vmID)
+		return nil, fmt.Errorf("%s is %w", vmID, errNotVM)
 	}
 
 	handlers, err := commonVM.CreateStaticHandlers(ctx)
@@ -115,16 +120,14 @@ func (r *vmRegisterer) createStaticHandlers(
 	return handlers, nil
 }
 
-func (r *vmRegisterer) createStaticEndpoints(pathAdder server.PathAdder, handlers map[string]*common.HTTPHandler, defaultEndpoint string) error {
-	// use a single lock for this entire vm
-	lock := new(sync.RWMutex)
+func (r *vmRegisterer) createStaticEndpoints(pathAdder server.PathAdder, handlers map[string]http.Handler, defaultEndpoint string) error {
 	// register the static endpoints
 	for extension, service := range handlers {
 		r.config.Log.Verbo("adding static API endpoint",
 			zap.String("endpoint", defaultEndpoint),
 			zap.String("extension", extension),
 		)
-		if err := pathAdder.AddRoute(service, lock, defaultEndpoint, extension); err != nil {
+		if err := pathAdder.AddRoute(service, defaultEndpoint, extension); err != nil {
 			return fmt.Errorf(
 				"failed to add static API endpoint %s%s: %w",
 				defaultEndpoint,

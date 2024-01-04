@@ -21,14 +21,14 @@ const (
 )
 
 var (
-	ErrProtocolVersionMismatch = errors.New("protocol version mismatch")
+	ErrProtocolVersionMismatch = errors.New("RPCChainVM protocol version mismatch between AvalancheGo and Virtual Machine plugin")
 	ErrHandshakeFailed         = errors.New("handshake failed")
 	ErrInvalidConfig           = errors.New("invalid config")
 	ErrProcessNotFound         = errors.New("vm process not found")
 )
 
 type Initializer interface {
-	// Initialize provides MetalGo with compatibility, networking and
+	// Initialize provides AvalancheGo with compatibility, networking and
 	// process information of a VM.
 	Initialize(ctx context.Context, protocolVersion uint, vmAddr string) error
 }

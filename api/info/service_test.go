@@ -7,9 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
+
+	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -45,8 +45,9 @@ func initGetVMsTest(t *testing.T) *getVMsTest {
 
 // Tests GetVMs in the happy-case
 func TestGetVMsSuccess(t *testing.T) {
+	require := require.New(t)
+
 	resources := initGetVMsTest(t)
-	defer resources.ctrl.Finish()
 
 	id1 := ids.GenerateTestID()
 	id2 := ids.GenerateTestID()
@@ -67,30 +68,25 @@ func TestGetVMsSuccess(t *testing.T) {
 	resources.mockVMManager.EXPECT().Aliases(id2).Times(1).Return(alias2, nil)
 
 	reply := GetVMsReply{}
-	err := resources.info.GetVMs(nil, nil, &reply)
-
-	require.Equal(t, expectedVMRegistry, reply.VMs)
-	require.Equal(t, err, nil)
+	require.NoError(resources.info.GetVMs(nil, nil, &reply))
+	require.Equal(expectedVMRegistry, reply.VMs)
 }
 
 // Tests GetVMs if we fail to list our vms.
 func TestGetVMsVMsListFactoriesFails(t *testing.T) {
 	resources := initGetVMsTest(t)
-	defer resources.ctrl.Finish()
 
 	resources.mockLog.EXPECT().Debug(gomock.Any(), gomock.Any()).Times(1)
 	resources.mockVMManager.EXPECT().ListFactories().Times(1).Return(nil, errTest)
 
 	reply := GetVMsReply{}
 	err := resources.info.GetVMs(nil, nil, &reply)
-
-	require.Equal(t, errTest, err)
+	require.ErrorIs(t, err, errTest)
 }
 
 // Tests GetVMs if we can't get our vm aliases.
 func TestGetVMsGetAliasesFails(t *testing.T) {
 	resources := initGetVMsTest(t)
-	defer resources.ctrl.Finish()
 
 	id1 := ids.GenerateTestID()
 	id2 := ids.GenerateTestID()
@@ -104,6 +100,5 @@ func TestGetVMsGetAliasesFails(t *testing.T) {
 
 	reply := GetVMsReply{}
 	err := resources.info.GetVMs(nil, nil, &reply)
-
-	require.Equal(t, err, errTest)
+	require.ErrorIs(t, err, errTest)
 }

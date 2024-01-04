@@ -5,7 +5,7 @@
 
 - name: Setup metalgo repo
   apt_repository:
-    repo: deb https://downloads.avax.network/apt focal main
+    repo: deb https://downloads.avax.network/apt jammy main
     state: present
 
 - name: Setup golang repo
@@ -36,19 +36,12 @@
   user:
     name: "{{ ava_user }}"
     shell: /bin/bash
-    uid: 114
+    uid: "{{ ava_uid }}"
     group: "{{ ava_group }}"
 
 - name: Create metal config dir
   file:
     path: /etc/metalgo
-    owner: "{{ ava_user }}"
-    group: "{{ ava_group }}"
-    state: directory
-
-- name: Create metal C config dir
-  file:
-    path: /etc/metalgo/C
     owner: "{{ ava_user }}"
     group: "{{ ava_group }}"
     state: directory
@@ -83,13 +76,7 @@
     dest: /etc/metalgo/conf.json
     mode: 0644
 
-- name: Configure avalanche C Chain
-  template:
-    src: templates/C/config.json.j2
-    dest: /etc/metalgo/C/config.json
-    mode: 0644
-
-- name: Enable Metal
+- name: Enable Avalanche
   systemd:
     name: metalgo
     enabled: yes

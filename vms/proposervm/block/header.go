@@ -3,9 +3,7 @@
 
 package block
 
-import (
-	"github.com/MetalBlockchain/metalgo/ids"
-)
+import "github.com/MetalBlockchain/metalgo/ids"
 
 type Header interface {
 	ChainID() ids.ID

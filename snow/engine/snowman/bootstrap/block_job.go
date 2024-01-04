@@ -35,7 +35,6 @@ func (p *parser) Parse(ctx context.Context, blkBytes []byte) (queue.Job, error) 
 		return nil, err
 	}
 	return &blockJob{
-		parser:      p,
 		log:         p.log,
 		numAccepted: p.numAccepted,
 		numDropped:  p.numDropped,
@@ -45,7 +44,6 @@ func (p *parser) Parse(ctx context.Context, blkBytes []byte) (queue.Job, error) 
 }
 
 type blockJob struct {
-	parser                  *parser
 	log                     logging.Logger
 	numAccepted, numDropped prometheus.Counter
 	blk                     snowman.Block
@@ -100,7 +98,8 @@ func (b *blockJob) Execute(ctx context.Context) error {
 		b.numAccepted.Inc()
 		b.log.Trace("accepting block in bootstrapping",
 			zap.Stringer("blkID", blkID),
-			zap.Uint64("blkHeight", b.blk.Height()),
+			zap.Uint64("height", b.blk.Height()),
+			zap.Time("timestamp", b.blk.Timestamp()),
 		)
 		if err := b.blk.Accept(ctx); err != nil {
 			b.log.Debug("failed to accept block during bootstrapping",

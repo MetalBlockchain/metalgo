@@ -8,17 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/database/manager"
+	"go.uber.org/mock/gomock"
+
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
-	"github.com/MetalBlockchain/metalgo/version"
 )
 
 var (
@@ -47,7 +46,7 @@ type ContextEnabledBlockMock struct {
 	*mocks.MockWithVerifyContext
 }
 
-func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) (block.ChainVM, *gomock.Controller) {
+func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
 	// test key is "contextTestKey"
 
 	// create mock
@@ -88,7 +87,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) (block.ChainV
 		)
 	}
 
-	return ctxVM, ctrl
+	return ctxVM
 }
 
 func TestContextVMSummary(t *testing.T) {
@@ -100,10 +99,8 @@ func TestContextVMSummary(t *testing.T) {
 	defer stopper.Stop(context.Background())
 
 	ctx := snow.DefaultContextTest()
-	dbManager := manager.NewMemDB(version.Semantic1_0_0)
 
-	err := vm.Initialize(context.Background(), ctx, dbManager, nil, nil, nil, nil, nil, nil)
-	require.NoError(err)
+	require.NoError(vm.Initialize(context.Background(), ctx, memdb.New(), nil, nil, nil, nil, nil, nil))
 
 	blkIntf, err := vm.BuildBlockWithContext(context.Background(), blockContext)
 	require.NoError(err)
@@ -115,6 +112,5 @@ func TestContextVMSummary(t *testing.T) {
 	require.NoError(err)
 	require.True(shouldVerify)
 
-	err = blk.VerifyWithContext(context.Background(), blockContext)
-	require.NoError(err)
+	require.NoError(blk.VerifyWithContext(context.Background(), blockContext))
 }

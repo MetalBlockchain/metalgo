@@ -13,7 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/vms/avm/blocks/executor"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/components/message"
@@ -103,14 +103,17 @@ func (n *network) AppGossip(ctx context.Context, nodeID ids.NodeID, msgBytes []b
 		)
 		return nil
 	}
+	txID := tx.ID()
 
 	// We need to grab the context lock here to avoid racy behavior with
 	// transaction verification + mempool modifications.
+	//
+	// Invariant: tx should not be referenced again without the context lock
+	// held to avoid any data races.
 	n.ctx.Lock.Lock()
 	err = n.issueTx(tx)
 	n.ctx.Lock.Unlock()
 	if err == nil {
-		txID := tx.ID()
 		n.gossipTx(ctx, txID, msgBytes)
 	}
 	return nil
@@ -177,8 +180,6 @@ func (n *network) issueTx(tx *txs.Tx) error {
 }
 
 func (n *network) gossipTx(ctx context.Context, txID ids.ID, msgBytes []byte) {
-	// This lock is just to ensure there isn't racy behavior between checking if
-	// the tx was gossiped and marking the tx as gossiped.
 	n.recentTxsLock.Lock()
 	_, has := n.recentTxs.Get(txID)
 	n.recentTxs.Put(txID, struct{}{})
