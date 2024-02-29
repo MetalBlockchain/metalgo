@@ -3,20 +3,13 @@
 
 package chains
 
-import (
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/networking/router"
-)
+import "github.com/MetalBlockchain/metalgo/ids"
 
 // TestManager implements Manager but does nothing. Always returns nil error.
 // To be used only in tests
 var TestManager Manager = testManager{}
 
 type testManager struct{}
-
-func (testManager) Router() router.Router {
-	return nil
-}
 
 func (testManager) QueueChainCreation(ChainParameters) {}
 

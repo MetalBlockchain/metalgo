@@ -5,7 +5,6 @@ package throttling
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
 )
 
 var _ InboundMsgThrottler = (*inboundMsgThrottler)(nil)
@@ -90,7 +90,7 @@ func NewInboundMsgThrottler(
 		return nil, err
 	}
 	cpuThrottler, err := NewSystemThrottler(
-		fmt.Sprintf("%s_cpu", namespace),
+		metric.AppendNamespace(namespace, "cpu"),
 		registerer,
 		throttlerConfig.CPUThrottlerConfig,
 		resourceTracker.CPUTracker(),
@@ -100,7 +100,7 @@ func NewInboundMsgThrottler(
 		return nil, err
 	}
 	diskThrottler, err := NewSystemThrottler(
-		fmt.Sprintf("%s_disk", namespace),
+		metric.AppendNamespace(namespace, "disk"),
 		registerer,
 		throttlerConfig.DiskThrottlerConfig,
 		resourceTracker.DiskTracker(),

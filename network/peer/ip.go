@@ -6,11 +6,19 @@ package peer
 import (
 	"crypto"
 	"crypto/rand"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+)
+
+var (
+	errTimestampTooFarInFuture = errors.New("timestamp too far in the future")
+	errInvalidSignature        = errors.New("invalid signature")
 )
 
 // UnsignedIP is used for a validator to claim an IP. The [Timestamp] is used to
@@ -49,10 +57,24 @@ type SignedIP struct {
 	Signature []byte
 }
 
-func (ip *SignedIP) Verify(cert *staking.Certificate) error {
-	return staking.CheckSignature(
+// Returns nil if:
+// * [ip.Timestamp] is not after [maxTimestamp].
+// * [ip.Signature] is a valid signature over [ip.UnsignedIP] from [cert].
+func (ip *SignedIP) Verify(
+	cert *staking.Certificate,
+	maxTimestamp time.Time,
+) error {
+	maxUnixTimestamp := uint64(maxTimestamp.Unix())
+	if ip.Timestamp > maxUnixTimestamp {
+		return fmt.Errorf("%w: timestamp %d > maxTimestamp %d", errTimestampTooFarInFuture, ip.Timestamp, maxUnixTimestamp)
+	}
+
+	if err := staking.CheckSignature(
 		cert,
 		ip.UnsignedIP.bytes(),
 		ip.Signature,
-	)
+	); err != nil {
+		return fmt.Errorf("%w: %w", errInvalidSignature, err)
+	}
+	return nil
 }

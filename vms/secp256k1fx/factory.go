@@ -5,12 +5,13 @@ package secp256k1fx
 
 import (
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/MetalBlockchain/metalgo/vms/fx"
 )
 
+const Name = "secp256k1fx"
+
 var (
-	_ vms.Factory = (*Factory)(nil)
+	_ fx.Factory = (*Factory)(nil)
 
 	// ID that this Fx uses when labeled
 	ID = ids.ID{'s', 'e', 'c', 'p', '2', '5', '6', 'k', '1', 'f', 'x'}
@@ -18,6 +19,6 @@ var (
 
 type Factory struct{}
 
-func (*Factory) New(logging.Logger) (interface{}, error) {
-	return &Fx{}, nil
+func (*Factory) New() any {
+	return &Fx{}
 }

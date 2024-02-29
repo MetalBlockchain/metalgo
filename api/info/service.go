@@ -25,7 +25,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
+	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var errNoChainProvided = errors.New("argument 'chain' not given")
@@ -416,6 +419,7 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 // GetVMsReply contains the response metadata for GetVMs
 type GetVMsReply struct {
 	VMs map[ids.ID][]string `json:"vms"`
+	Fxs map[ids.ID]string   `json:"fxs"`
 }
 
 // GetVMs lists the virtual machines installed on the node
@@ -432,5 +436,10 @@ func (i *Info) GetVMs(_ *http.Request, _ *struct{}, reply *GetVMsReply) error {
 	}
 
 	reply.VMs, err = ids.GetRelevantAliases(i.VMManager, vmIDs)
+	reply.Fxs = map[ids.ID]string{
+		secp256k1fx.ID: secp256k1fx.Name,
+		nftfx.ID:       nftfx.Name,
+		propertyfx.ID:  propertyfx.Name,
+	}
 	return err
 }

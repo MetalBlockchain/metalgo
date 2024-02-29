@@ -16,6 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
@@ -61,7 +62,7 @@ func newState(
 	metricsNamespace string,
 	metricsRegisterer prometheus.Registerer,
 ) (*state, error) {
-	jobsCacheMetricsNamespace := fmt.Sprintf("%s_jobs_cache", metricsNamespace)
+	jobsCacheMetricsNamespace := metric.AppendNamespace(metricsNamespace, "jobs_cache")
 	jobsCache, err := metercacher.New[ids.ID, Job](
 		jobsCacheMetricsNamespace,
 		metricsRegisterer,

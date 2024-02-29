@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/network/p2p/gossip"
@@ -65,6 +67,7 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 
 func newGossipMempool(
 	mempool mempool.Mempool,
+	registerer prometheus.Registerer,
 	log logging.Logger,
 	txVerifier TxVerifier,
 	parser txs.Parser,
@@ -72,7 +75,7 @@ func newGossipMempool(
 	targetFalsePositiveProbability,
 	resetFalsePositiveProbability float64,
 ) (*gossipMempool, error) {
-	bloom, err := gossip.NewBloomFilter(minTargetElements, targetFalsePositiveProbability, resetFalsePositiveProbability)
+	bloom, err := gossip.NewBloomFilter(registerer, "mempool_bloom_filter", minTargetElements, targetFalsePositiveProbability, resetFalsePositiveProbability)
 	return &gossipMempool{
 		Mempool:    mempool,
 		log:        log,

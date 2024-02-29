@@ -78,15 +78,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms"
 	"github.com/MetalBlockchain/metalgo/vms/avm"
-	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
 	"github.com/MetalBlockchain/metalgo/vms/registry"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
 	ipcsapi "github.com/MetalBlockchain/metalgo/api/ipcs"
 	avmconfig "github.com/MetalBlockchain/metalgo/vms/avm/config"
@@ -1226,9 +1223,6 @@ func (n *Node) initVMs() error {
 			},
 		}),
 		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), secp256k1fx.ID, &secp256k1fx.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), nftfx.ID, &nftfx.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), propertyfx.ID, &propertyfx.Factory{}),
 	)
 	if err != nil {
 		return err
