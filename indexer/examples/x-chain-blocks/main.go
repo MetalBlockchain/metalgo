@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/indexer"
+	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
@@ -32,7 +33,7 @@ func main() {
 			continue
 		}
 
-		proposerVMBlock, err := block.Parse(container.Bytes)
+		proposerVMBlock, err := block.Parse(container.Bytes, version.DefaultUpgradeTime)
 		if err != nil {
 			log.Fatalf("failed to parse proposervm block: %s\n", err)
 		}

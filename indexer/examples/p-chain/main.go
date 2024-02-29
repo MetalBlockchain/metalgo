@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/indexer"
+	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 
 	platformvmblock "github.com/MetalBlockchain/metalgo/vms/platformvm/block"
@@ -34,7 +35,7 @@ func main() {
 		}
 
 		platformvmBlockBytes := container.Bytes
-		proposerVMBlock, err := proposervmblock.Parse(container.Bytes)
+		proposerVMBlock, err := proposervmblock.Parse(container.Bytes, version.DefaultUpgradeTime)
 		if err == nil {
 			platformvmBlockBytes = proposerVMBlock.Block()
 		}

@@ -11,7 +11,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/chains"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/nat"
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
@@ -19,7 +18,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/dynamicip"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
@@ -74,19 +72,16 @@ type APIConfig struct {
 }
 
 type IPConfig struct {
-	IPPort           ips.DynamicIPPort `json:"ip"`
-	IPUpdater        dynamicip.Updater `json:"-"`
-	IPResolutionFreq time.Duration     `json:"ipResolutionFrequency"`
-	// True if we attempted NAT traversal
-	AttemptedNATTraversal bool `json:"attemptedNATTraversal"`
-	// Tries to perform network address translation
-	Nat nat.Router `json:"-"`
+	PublicIP                  string        `json:"publicIP"`
+	PublicIPResolutionService string        `json:"publicIPResolutionService"`
+	PublicIPResolutionFreq    time.Duration `json:"publicIPResolutionFreq"`
 	// The host portion of the address to listen on. The port to
 	// listen on will be sourced from IPPort.
 	//
 	// - If empty, listen on all interfaces (both ipv4 and ipv6).
 	// - If populated, listen only on the specified address.
 	ListenHost string `json:"listenHost"`
+	ListenPort uint16 `json:"listenPort"`
 }
 
 type StakingConfig struct {

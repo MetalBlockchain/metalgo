@@ -35,7 +35,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
@@ -303,6 +302,9 @@ func (vm *VM) pruneMempool() error {
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
+	// Packing all of the transactions in order performs additional checks that
+	// the MempoolTxVerifier doesn't include. So, evicting transactions from
+	// here is expected to happen occasionally.
 	blockTxs, err := vm.Builder.PackBlockTxs(math.MaxInt)
 	if err != nil {
 		return err
@@ -506,18 +508,6 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	return map[string]http.Handler{
 		"": server,
 	}, err
-}
-
-// CreateStaticHandlers returns a map where:
-// * keys are API endpoint extensions
-// * values are API handlers
-func (*VM) CreateStaticHandlers(context.Context) (map[string]http.Handler, error) {
-	server := rpc.NewServer()
-	server.RegisterCodec(json.NewCodec(), "application/json")
-	server.RegisterCodec(json.NewCodec(), "application/json;charset=UTF-8")
-	return map[string]http.Handler{
-		"": server,
-	}, server.RegisterService(&api.StaticService{}, "platform")
 }
 
 func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {

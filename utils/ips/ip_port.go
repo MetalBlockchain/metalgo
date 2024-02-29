@@ -12,7 +12,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
 
-const nullStr = "null"
+const (
+	IPPortLen = 16 + wrappers.ShortLen
+	nullStr   = "null"
+)
 
 var (
 	errMissingQuotes = errors.New("first and last characters should be quotes")
