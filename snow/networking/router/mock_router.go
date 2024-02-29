@@ -20,8 +20,8 @@ import (
 	logging "github.com/MetalBlockchain/metalgo/utils/logging"
 	set "github.com/MetalBlockchain/metalgo/utils/set"
 	version "github.com/MetalBlockchain/metalgo/version"
-	prometheus "github.com/prometheus/client_golang/prometheus"
 	gomock "go.uber.org/mock/gomock"
+	prometheus "github.com/prometheus/client_golang/prometheus"
 )
 
 // MockRouter is a mock of Router interface.

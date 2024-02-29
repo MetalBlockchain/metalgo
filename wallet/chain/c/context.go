@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,8 +8,13 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm"
 )
+
+const Alias = "C"
 
 var _ Context = (*context)(nil)
 
@@ -41,7 +46,7 @@ func NewContextFromClients(
 		return nil, err
 	}
 
-	chainID, err := infoClient.GetBlockchainID(ctx, "C")
+	chainID, err := infoClient.GetBlockchainID(ctx, Alias)
 	if err != nil {
 		return nil, err
 	}
@@ -80,4 +85,18 @@ func (c *context) BlockchainID() ids.ID {
 
 func (c *context) AVAXAssetID() ids.ID {
 	return c.avaxAssetID
+}
+
+func newSnowContext(c Context) (*snow.Context, error) {
+	chainID := c.BlockchainID()
+	lookup := ids.NewAliaser()
+	return &snow.Context{
+		NetworkID:   c.NetworkID(),
+		SubnetID:    constants.PrimaryNetworkID,
+		ChainID:     chainID,
+		CChainID:    chainID,
+		AVAXAssetID: c.AVAXAssetID(),
+		Log:         logging.NoLog{},
+		BCLookup:    lookup,
+	}, lookup.Alias(chainID, Alias)
 }

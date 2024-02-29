@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package info
@@ -17,10 +17,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
@@ -32,6 +34,7 @@ var errNoChainProvided = errors.New("argument 'chain' not given")
 type Info struct {
 	Parameters
 	log          logging.Logger
+	validators   validators.Manager
 	myIP         ips.DynamicIPPort
 	networking   network.Network
 	chainManager chains.Manager
@@ -59,6 +62,7 @@ type Parameters struct {
 func NewService(
 	parameters Parameters,
 	log logging.Logger,
+	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,
 	myIP ips.DynamicIPPort,
@@ -73,6 +77,7 @@ func NewService(
 		&Info{
 			Parameters:   parameters,
 			log:          log,
+			validators:   validators,
 			chainManager: chainManager,
 			vmManager:    vmManager,
 			myIP:         myIP,
@@ -316,6 +321,64 @@ func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeRespons
 	}
 	reply.WeightedAveragePercentage = json.Float64(result.WeightedAveragePercentage)
 	reply.RewardingStakePercentage = json.Float64(result.RewardingStakePercentage)
+	return nil
+}
+
+type ACP struct {
+	SupportWeight json.Uint64         `json:"supportWeight"`
+	Supporters    set.Set[ids.NodeID] `json:"supporters"`
+	ObjectWeight  json.Uint64         `json:"objectWeight"`
+	Objectors     set.Set[ids.NodeID] `json:"objectors"`
+	AbstainWeight json.Uint64         `json:"abstainWeight"`
+}
+
+type ACPsReply struct {
+	ACPs map[uint32]*ACP `json:"acps"`
+}
+
+func (a *ACPsReply) getACP(acpNum uint32) *ACP {
+	acp, ok := a.ACPs[acpNum]
+	if !ok {
+		acp = &ACP{}
+		a.ACPs[acpNum] = acp
+	}
+	return acp
+}
+
+func (i *Info) Acps(_ *http.Request, _ *struct{}, reply *ACPsReply) error {
+	i.log.Debug("API called",
+		zap.String("service", "info"),
+		zap.String("method", "acps"),
+	)
+
+	reply.ACPs = make(map[uint32]*ACP, constants.CurrentACPs.Len())
+	peers := i.networking.PeerInfo(nil)
+	for _, peer := range peers {
+		weight := json.Uint64(i.validators.GetWeight(constants.PrimaryNetworkID, peer.ID))
+		if weight == 0 {
+			continue
+		}
+
+		for acpNum := range peer.SupportedACPs {
+			acp := reply.getACP(acpNum)
+			acp.Supporters.Add(peer.ID)
+			acp.SupportWeight += weight
+		}
+		for acpNum := range peer.ObjectedACPs {
+			acp := reply.getACP(acpNum)
+			acp.Objectors.Add(peer.ID)
+			acp.ObjectWeight += weight
+		}
+	}
+
+	totalWeight, err := i.validators.TotalWeight(constants.PrimaryNetworkID)
+	if err != nil {
+		return err
+	}
+	for acpNum := range constants.CurrentACPs {
+		acp := reply.getACP(acpNum)
+		acp.AbstainWeight = json.Uint64(totalWeight) - acp.SupportWeight - acp.ObjectWeight
+	}
 	return nil
 }
 
