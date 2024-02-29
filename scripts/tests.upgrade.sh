@@ -5,7 +5,7 @@ set -euo pipefail
 # e.g.,
 # ./scripts/tests.upgrade.sh                                                # Use default version
 # ./scripts/tests.upgrade.sh 1.10.18                                        # Specify a version
-# AVALANCHEGO_PATH=./path/to/avalanchego ./scripts/tests.upgrade.sh 1.10.18 # Customization of avalanchego path
+# METALGO_PATH=./path/to/avalanchego ./scripts/tests.upgrade.sh 1.10.18 # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -27,7 +27,7 @@ if [[ -z "${VERSION}" ]]; then
   exit 255
 fi
 
-AVALANCHEGO_PATH="$(realpath ${AVALANCHEGO_PATH:-./build/avalanchego})"
+METALGO_PATH="$(realpath ${METALGO_PATH:-./build/metalgo})"
 
 #################################
 # download avalanchego
@@ -72,8 +72,8 @@ ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 
 #################################
 # By default, it runs all upgrade test cases!
-echo "running upgrade tests against the local cluster with ${AVALANCHEGO_PATH}"
+echo "running upgrade tests against the local cluster with ${METALGO_PATH}"
 ./tests/upgrade/upgrade.test \
   --ginkgo.v \
-  --avalanchego-path=/tmp/avalanchego-v${VERSION}/avalanchego \
-  --avalanchego-path-to-upgrade-to=${AVALANCHEGO_PATH}
+  --metalgo-path=/tmp/avalanchego-v${VERSION}/avalanchego \
+  --metalgo-path-to-upgrade-to=${METALGO_PATH}

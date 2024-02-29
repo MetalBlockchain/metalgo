@@ -31,15 +31,15 @@ var (
 func init() {
 	flag.StringVar(
 		&avalancheGoExecPath,
-		"avalanchego-path",
+		"metalgo-path",
 		"",
-		"avalanchego executable path",
+		"metalgo executable path",
 	)
 	flag.StringVar(
 		&avalancheGoExecPathToUpgradeTo,
-		"avalanchego-path-to-upgrade-to",
+		"metalgo-path-to-upgrade-to",
 		"",
-		"avalanchego executable path to upgrade to",
+		"metalgo executable path to upgrade to",
 	)
 }
 
