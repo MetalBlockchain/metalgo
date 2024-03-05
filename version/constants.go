@@ -26,7 +26,7 @@ var (
 	Current = &Semantic{
 		Major: 1,
 		Minor: 10,
-		Patch: 18,
+		Patch: 19,
 	}
 	CurrentApp = &Application{
 		Name:  Client,
@@ -71,23 +71,23 @@ var (
 	DefaultUpgradeTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC)
 
 	ApricotPhase1Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Unix(0, 0),
+		constants.TahoeID:   time.Unix(0, 0),
 	}
 
 	ApricotPhase2Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Unix(0, 0),
+		constants.TahoeID:   time.Unix(0, 0),
 	}
 
 	ApricotPhase3Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Unix(0, 0),
+		constants.TahoeID:   time.Unix(0, 0),
 	}
 
 	ApricotPhase4Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Unix(0, 0),
+		constants.TahoeID:   time.Unix(0, 0),
 	}
 	ApricotPhase4MinPChainHeight = map[uint32]uint64{
 		constants.MainnetID: 0,
@@ -95,8 +95,8 @@ var (
 	}
 
 	ApricotPhase5Times = map[uint32]time.Time{
-		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Unix(0, 0),
+		constants.TahoeID:   time.Unix(0, 0),
 	}
 
 	ApricotPhasePre6Times = map[uint32]time.Time{

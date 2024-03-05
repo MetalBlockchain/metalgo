@@ -16,15 +16,20 @@ import (
 	"github.com/MetalBlockchain/metalgo/api"
 	"github.com/MetalBlockchain/metalgo/api/server"
 	"github.com/MetalBlockchain/metalgo/chains"
+	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/database/rpcdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/vms"
 	"github.com/MetalBlockchain/metalgo/vms/registry"
+
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 const (
@@ -44,6 +49,7 @@ type Config struct {
 	ProfileDir   string
 	LogFactory   logging.Factory
 	NodeConfig   interface{}
+	DB           database.Database
 	ChainManager chains.Manager
 	HTTPServer   server.PathAdderWithReadLock
 	VMRegistry   registry.VMRegistry
@@ -375,4 +381,36 @@ func (a *Admin) getLogLevels(loggerNames []string) (map[string]LogAndDisplayLeve
 		}
 	}
 	return loggerLevels, nil
+}
+
+type DBGetArgs struct {
+	Key string `json:"key"`
+}
+
+type DBGetReply struct {
+	Value     string        `json:"value"`
+	ErrorCode rpcdbpb.Error `json:"errorCode"`
+}
+
+//nolint:stylecheck // renaming this method to DBGet would change the API method from "dbGet" to "dBGet"
+func (a *Admin) DbGet(_ *http.Request, args *DBGetArgs, reply *DBGetReply) error {
+	a.Log.Debug("API called",
+		zap.String("service", "admin"),
+		zap.String("method", "dbGet"),
+		logging.UserString("key", args.Key),
+	)
+
+	key, err := formatting.Decode(formatting.HexNC, args.Key)
+	if err != nil {
+		return err
+	}
+
+	value, err := a.DB.Get(key)
+	if err != nil {
+		reply.ErrorCode = rpcdb.ErrorToErrEnum[err]
+		return rpcdb.ErrorToRPCError(err)
+	}
+
+	reply.Value, err = formatting.Encode(formatting.HexNC, value)
+	return err
 }

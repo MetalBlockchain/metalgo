@@ -11,10 +11,14 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms"
 	"github.com/MetalBlockchain/metalgo/vms/registry"
+
+	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
 
 type loadVMsTest struct {
@@ -110,4 +114,57 @@ func TestLoadVMsGetAliasesFails(t *testing.T) {
 	reply := LoadVMsReply{}
 	err := resources.admin.LoadVMs(&http.Request{}, nil, &reply)
 	require.ErrorIs(err, errTest)
+}
+
+func TestServiceDBGet(t *testing.T) {
+	a := &Admin{Config: Config{
+		Log: logging.NoLog{},
+		DB:  memdb.New(),
+	}}
+
+	helloBytes := []byte("hello")
+	helloHex, err := formatting.Encode(formatting.HexNC, helloBytes)
+	require.NoError(t, err)
+
+	worldBytes := []byte("world")
+	worldHex, err := formatting.Encode(formatting.HexNC, worldBytes)
+	require.NoError(t, err)
+
+	require.NoError(t, a.DB.Put(helloBytes, worldBytes))
+
+	tests := []struct {
+		name              string
+		key               string
+		expectedValue     string
+		expectedErrorCode rpcdbpb.Error
+	}{
+		{
+			name:              "key exists",
+			key:               helloHex,
+			expectedValue:     worldHex,
+			expectedErrorCode: rpcdbpb.Error_ERROR_UNSPECIFIED,
+		},
+		{
+			name:              "key doesn't exist",
+			key:               "",
+			expectedValue:     "",
+			expectedErrorCode: rpcdbpb.Error_ERROR_NOT_FOUND,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require := require.New(t)
+
+			reply := &DBGetReply{}
+			require.NoError(a.DbGet(
+				nil,
+				&DBGetArgs{
+					Key: test.key,
+				},
+				reply,
+			))
+			require.Equal(test.expectedValue, reply.Value)
+			require.Equal(test.expectedErrorCode, reply.ErrorCode)
+		})
+	}
 }

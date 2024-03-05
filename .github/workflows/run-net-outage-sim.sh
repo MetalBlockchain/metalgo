@@ -14,7 +14,7 @@ wait_until_healthy () {
   # store the response code here
   response=0
   # while the endpoint doesn't return 200
-  while [ $response -ne 200 ]
+  while [ "$response" -ne 200 ]
   do
     echo "Checking if local node is healthy..."
     # Ignore error in case of ephemeral failure to hit node's API
@@ -22,12 +22,12 @@ wait_until_healthy () {
     echo "got status code $response from health endpoint"
     # check that 3 hours haven't passed
     now=$(date +%s)
-    if [ $now -ge $stop ];
-    then 
+    if [ "$now" -ge "$stop" ];
+    then
       # timeout: exit
       SUCCESS=1
       return
-    fi  
+    fi
     # no timeout yet, wait 30s until retry
     sleep 30
   done
@@ -44,7 +44,7 @@ echo "done existing database files"
 
 #download latest mainnet DB backup
 FILENAME="mainnet-db-daily-"
-DATE=`date +'%m-%d-%Y'`
+DATE=$(date +'%m-%d-%Y')
 DB_FILE="$FILENAME$DATE"
 echo "Copying database file $DB_FILE from S3 to local..."
 aws s3 cp s3://avalanche-db-daily/ /opt/ --no-progress --recursive --exclude "*" --include "$DB_FILE*" 
@@ -53,7 +53,7 @@ echo "Done downloading database"
 # extract DB
 echo "Extracting database..."
 mkdir -p /var/lib/metalgo/db 
-tar -zxf /opt/$DB_FILE*-tar.gz -C /var/lib/metalgo/db 
+tar -zxf /opt/"$DB_FILE"*-tar.gz -C /var/lib/metalgo/db 
 echo "Done extracting database"
 
 echo "Creating Docker network..."

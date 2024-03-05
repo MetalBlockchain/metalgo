@@ -50,8 +50,8 @@ github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:kGUq
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69mGp/UtRPn422BH4/Y4Q3SLUrD9KHuDkm8iodFc=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
-github.com/MetalBlockchain/coreth v0.12.10-rc.5 h1:IoSArAmwPoPOjji6GrqhZqGDaCkaEmUmHEkpiMmAQn8=
-github.com/MetalBlockchain/coreth v0.12.10-rc.5/go.mod h1:vg5HknNNJ1++U0LWujArtffykjC3DN0KAkQ11SUPy9A=
+github.com/MetalBlockchain/coreth v0.12.11-rc.2 h1:QwnCtEF7kcilcjPZnVYn+EZM0D83NcgvmbI5CYWTBgc=
+github.com/MetalBlockchain/coreth v0.12.11-rc.2/go.mod h1:hLGTXHDdT8UuoyDPzEUvPmDzrm4T7r6ZKLHWfrVaPA8=
 github.com/Microsoft/go-winio v0.5.2 h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
