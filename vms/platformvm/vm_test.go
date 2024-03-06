@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/chains"
@@ -39,6 +38,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
@@ -56,6 +56,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -70,16 +71,14 @@ import (
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
-type activeFork uint8
-
 const (
-	apricotPhase3 activeFork = iota
+	apricotPhase3 fork = iota
 	apricotPhase5
-	banffFork
-	cortinaFork
-	durangoFork
+	banff
+	cortina
+	durango
 
-	latestFork activeFork = durangoFork
+	latestFork = durango
 
 	defaultWeight uint64 = 10000
 )
@@ -135,6 +134,8 @@ func init() {
 		genesisNodeIDs = append(genesisNodeIDs, nodeID)
 	}
 }
+
+type fork uint8
 
 type mutableSharedMemory struct {
 	atomic.SharedMemory
@@ -200,7 +201,7 @@ func defaultGenesis(t *testing.T, avaxAssetID ids.ID) (*api.BuildGenesisArgs, []
 	return &buildGenesisArgs, genesisBytes
 }
 
-func defaultVM(t *testing.T, fork activeFork) (*VM, database.Database, *mutableSharedMemory) {
+func defaultVM(t *testing.T, f fork) (*VM, database.Database, *mutableSharedMemory) {
 	require := require.New(t)
 	var (
 		apricotPhase3Time = mockable.MaxTime
@@ -213,14 +214,14 @@ func defaultVM(t *testing.T, fork activeFork) (*VM, database.Database, *mutableS
 	// always reset latestForkTime (a package level variable)
 	// to ensure test independence
 	latestForkTime = defaultGenesisTime.Add(time.Second)
-	switch fork {
-	case durangoFork:
+	switch f {
+	case durango:
 		durangoTime = latestForkTime
 		fallthrough
-	case cortinaFork:
+	case cortina:
 		cortinaTime = latestForkTime
 		fallthrough
-	case banffFork:
+	case banff:
 		banffTime = latestForkTime
 		fallthrough
 	case apricotPhase5:
@@ -229,7 +230,7 @@ func defaultVM(t *testing.T, fork activeFork) (*VM, database.Database, *mutableS
 	case apricotPhase3:
 		apricotPhase3Time = latestForkTime
 	default:
-		require.NoError(fmt.Errorf("unhandled fork %d", fork))
+		require.NoError(fmt.Errorf("unhandled fork %d", f))
 	}
 
 	vm := &VM{Config: config.Config{
@@ -305,6 +306,7 @@ func defaultVM(t *testing.T, fork activeFork) (*VM, database.Database, *mutableS
 		[]ids.ShortID{keys[0].PublicKey().Address(), keys[1].PublicKey().Address(), keys[2].PublicKey().Address()},
 		[]*secp256k1.PrivateKey{keys[0]}, // pays tx fee
 		keys[0].PublicKey().Address(),    // change addr
+		nil,
 	)
 	require.NoError(err)
 	vm.ctx.Lock.Unlock()
@@ -393,16 +395,21 @@ func TestAddValidatorCommit(t *testing.T) {
 		rewardAddress = ids.GenerateTestShortID()
 	)
 
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
+
 	// create valid tx
-	tx, err := vm.txBuilder.NewAddValidatorTx(
+	tx, err := vm.txBuilder.NewAddPermissionlessValidatorTx(
 		vm.MinValidatorStake,
 		uint64(startTime.Unix()),
 		uint64(endTime.Unix()),
 		nodeID,
+		signer.NewProofOfPossession(sk),
 		rewardAddress,
 		reward.PercentDenominator,
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -429,7 +436,7 @@ func TestAddValidatorCommit(t *testing.T) {
 // verify invalid attempt to add validator to primary network
 func TestInvalidAddValidatorCommit(t *testing.T) {
 	require := require.New(t)
-	vm, _, _ := defaultVM(t, cortinaFork)
+	vm, _, _ := defaultVM(t, cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
@@ -447,6 +454,7 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 		reward.PercentDenominator,
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -479,7 +487,7 @@ func TestInvalidAddValidatorCommit(t *testing.T) {
 // Reject attempt to add validator to primary network
 func TestAddValidatorReject(t *testing.T) {
 	require := require.New(t)
-	vm, _, _ := defaultVM(t, cortinaFork)
+	vm, _, _ := defaultVM(t, cortina)
 	vm.ctx.Lock.Lock()
 	defer vm.ctx.Lock.Unlock()
 
@@ -500,6 +508,7 @@ func TestAddValidatorReject(t *testing.T) {
 		reward.PercentDenominator,
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -534,24 +543,29 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	startTime := latestForkTime.Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
 
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
+
 	// create valid tx
-	tx, err := vm.txBuilder.NewAddValidatorTx(
+	tx, err := vm.txBuilder.NewAddPermissionlessValidatorTx(
 		vm.MinValidatorStake,
 		uint64(startTime.Unix()),
 		uint64(endTime.Unix()),
 		repeatNodeID,
+		signer.NewProofOfPossession(sk),
 		ids.GenerateTestShortID(),
 		reward.PercentDenominator,
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
 	// trigger block creation
 	vm.ctx.Lock.Unlock()
 	err = vm.issueTx(context.Background(), tx)
-	require.ErrorIs(err, txexecutor.ErrAlreadyValidator)
 	vm.ctx.Lock.Lock()
+	require.ErrorIs(err, txexecutor.ErrDuplicateValidator)
 }
 
 // Accept proposal to add validator to subnet
@@ -578,6 +592,7 @@ func TestAddSubnetValidatorAccept(t *testing.T) {
 		testSubnet1.ID(),
 		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -625,6 +640,7 @@ func TestAddSubnetValidatorReject(t *testing.T) {
 		testSubnet1.ID(),
 		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[1], testSubnet1ControlKeys[2]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -811,6 +827,7 @@ func TestCreateChain(t *testing.T) {
 		"name",
 		[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -861,6 +878,7 @@ func TestCreateSubnet(t *testing.T) {
 		},
 		[]*secp256k1.PrivateKey{keys[0]}, // payer
 		keys[0].PublicKey().Address(),    // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -904,6 +922,7 @@ func TestCreateSubnet(t *testing.T) {
 		createSubnetTx.ID(),
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -967,6 +986,7 @@ func TestAtomicImport(t *testing.T) {
 		recipientKey.PublicKey().Address(),
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.ErrorIs(err, txbuilder.ErrNoFunds)
 
@@ -1006,6 +1026,7 @@ func TestAtomicImport(t *testing.T) {
 		recipientKey.PublicKey().Address(),
 		[]*secp256k1.PrivateKey{recipientKey},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -1991,16 +2012,20 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 
 	id := key.PublicKey().Address()
 	nodeID := ids.GenerateTestNodeID()
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
 
-	addValidatorTx, err := vm.txBuilder.NewAddValidatorTx(
+	addValidatorTx, err := vm.txBuilder.NewAddPermissionlessValidatorTx(
 		defaultMaxValidatorStake,
 		uint64(validatorStartTime.Unix()),
 		uint64(validatorEndTime.Unix()),
 		nodeID,
+		signer.NewProofOfPossession(sk),
 		id,
 		reward.PercentDenominator,
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].Address(),
+		nil,
 	)
 	require.NoError(err)
 
@@ -2020,6 +2045,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 		[]ids.ShortID{id},
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].Address(),
+		nil,
 	)
 	require.NoError(err)
 
@@ -2042,6 +2068,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 		createSubnetTx.ID(),
 		[]*secp256k1.PrivateKey{key, keys[1]},
 		keys[1].Address(),
+		nil,
 	)
 	require.NoError(err)
 
@@ -2050,6 +2077,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 		createSubnetTx.ID(),
 		[]*secp256k1.PrivateKey{key, keys[2]},
 		keys[2].Address(),
+		nil,
 	)
 	require.NoError(err)
 
@@ -2087,6 +2115,7 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 		[]ids.ShortID{keys[0].PublicKey().Address()},
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].Address(),
+		nil,
 	)
 	require.NoError(err)
 	subnetID := createSubnetTx.ID()
@@ -2122,6 +2151,7 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 		[]ids.ShortID{keys[1].PublicKey().Address()},
 		[]*secp256k1.PrivateKey{keys[0]},
 		ids.ShortEmpty, // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -2170,6 +2200,7 @@ func TestBaseTx(t *testing.T) {
 		},
 		[]*secp256k1.PrivateKey{keys[0]},
 		changeAddr,
+		nil,
 	)
 	require.NoError(err)
 
@@ -2245,6 +2276,7 @@ func TestPruneMempool(t *testing.T) {
 		},
 		[]*secp256k1.PrivateKey{keys[0]},
 		changeAddr,
+		nil,
 	)
 	require.NoError(err)
 
@@ -2263,15 +2295,20 @@ func TestPruneMempool(t *testing.T) {
 		endTime   = startTime.Add(vm.MinStakeDuration)
 	)
 
-	addValidatorTx, err := vm.txBuilder.NewAddValidatorTx(
+	sk, err := bls.NewSecretKey()
+	require.NoError(err)
+
+	addValidatorTx, err := vm.txBuilder.NewAddPermissionlessValidatorTx(
 		defaultMinValidatorStake,
 		uint64(startTime.Unix()),
 		uint64(endTime.Unix()),
 		ids.GenerateTestNodeID(),
+		signer.NewProofOfPossession(sk),
 		keys[2].Address(),
 		20000,
 		[]*secp256k1.PrivateKey{keys[1]},
 		ids.ShortEmpty,
+		nil,
 	)
 	require.NoError(err)
 

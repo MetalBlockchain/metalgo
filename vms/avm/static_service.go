@@ -4,18 +4,16 @@
 package avm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	stdjson "encoding/json"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
@@ -23,6 +21,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 )
 
 var (
@@ -56,7 +56,7 @@ func CreateStaticService() *StaticService {
 
 // BuildGenesisArgs are arguments for BuildGenesis
 type BuildGenesisArgs struct {
-	NetworkID   json.Uint32                `json:"networkID"`
+	NetworkID   avajson.Uint32             `json:"networkID"`
 	GenesisData map[string]AssetDefinition `json:"genesisData"`
 	Encoding    formatting.Encoding        `json:"encoding"`
 }
@@ -64,7 +64,7 @@ type BuildGenesisArgs struct {
 type AssetDefinition struct {
 	Name         string                   `json:"name"`
 	Symbol       string                   `json:"symbol"`
-	Denomination json.Uint8               `json:"denomination"`
+	Denomination avajson.Uint8            `json:"denomination"`
 	InitialState map[string][]interface{} `json:"initialState"`
 	Memo         string                   `json:"memo"`
 }
@@ -118,12 +118,12 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 				switch assetType {
 				case "fixedCap":
 					for _, state := range initialStates {
-						b, err := stdjson.Marshal(state)
+						b, err := json.Marshal(state)
 						if err != nil {
 							return fmt.Errorf("problem marshaling state: %w", err)
 						}
 						holder := Holder{}
-						if err := stdjson.Unmarshal(b, &holder); err != nil {
+						if err := json.Unmarshal(b, &holder); err != nil {
 							return fmt.Errorf("problem unmarshaling holder: %w", err)
 						}
 						_, addrbuff, err := address.ParseBech32(holder.Address)
@@ -144,12 +144,12 @@ func (*StaticService) BuildGenesis(_ *http.Request, args *BuildGenesisArgs, repl
 					}
 				case "variableCap":
 					for _, state := range initialStates {
-						b, err := stdjson.Marshal(state)
+						b, err := json.Marshal(state)
 						if err != nil {
 							return fmt.Errorf("problem marshaling state: %w", err)
 						}
 						owners := Owners{}
-						if err := stdjson.Unmarshal(b, &owners); err != nil {
+						if err := json.Unmarshal(b, &owners); err != nil {
 							return fmt.Errorf("problem unmarshaling Owners: %w", err)
 						}
 

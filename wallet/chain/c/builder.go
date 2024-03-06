@@ -7,11 +7,7 @@ import (
 	"errors"
 	"math/big"
 
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/coreth/plugin/evm"
-
-	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
@@ -20,6 +16,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
+
+	stdcontext "context"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 const avaxConversionRateInt = 1_000_000_000
@@ -362,7 +361,7 @@ func (b *builder) NewExportTx(
 			return nil, err
 		}
 
-		inputAmount := math.Min(amountToConsume, avaxBalance)
+		inputAmount := min(amountToConsume, avaxBalance)
 		inputs = append(inputs, evm.EVMInput{
 			Address: addr,
 			Amount:  inputAmount,

@@ -7,11 +7,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/spf13/cast"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/api/admin"
@@ -28,6 +24,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 const (

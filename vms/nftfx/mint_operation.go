@@ -6,11 +6,10 @@ package nftfx
 import (
 	"errors"
 
-	"github.com/MetalBlockchain/metalgo/vms/types"
-
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/types"
 )
 
 var errNilMintOperation = errors.New("nil mint operation")

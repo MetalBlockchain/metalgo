@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
@@ -20,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	stdcontext "context"
 )
 
 var (
@@ -246,20 +246,15 @@ func (s *signerVisitor) getSubnetSigners(subnetID ids.ID, subnetAuth verify.Veri
 		return nil, errUnknownSubnetAuthType
 	}
 
-	subnetTx, err := s.backend.GetTx(s.ctx, subnetID)
+	ownerIntf, err := s.backend.GetSubnetOwner(s.ctx, subnetID)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to fetch subnet %q: %w",
+			"failed to fetch subnet owner for %q: %w",
 			subnetID,
 			err,
 		)
 	}
-	subnet, ok := subnetTx.Unsigned.(*txs.CreateSubnetTx)
-	if !ok {
-		return nil, errWrongTxType
-	}
-
-	owner, ok := subnet.Owner.(*secp256k1fx.OutputOwners)
+	owner, ok := ownerIntf.(*secp256k1fx.OutputOwners)
 	if !ok {
 		return nil, errUnknownOwnerType
 	}

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -22,6 +20,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribePChain("[Permissionless Subnets]", func() {

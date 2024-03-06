@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/api/metrics"

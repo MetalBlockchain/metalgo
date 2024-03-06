@@ -12,7 +12,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 )
 
@@ -45,7 +44,7 @@ func GetBootstrappers(networkID uint32) []Bootstrapper {
 // SampleBootstrappers returns the some beacons this node should connect to
 func SampleBootstrappers(networkID uint32, count int) []Bootstrapper {
 	bootstrappers := GetBootstrappers(networkID)
-	count = math.Min(count, len(bootstrappers))
+	count = min(count, len(bootstrappers))
 
 	s := sampler.NewUniform()
 	s.Initialize(uint64(len(bootstrappers)))

@@ -7,11 +7,10 @@ import (
 	"context"
 	"crypto/cipher"
 	"crypto/rand"
+	"slices"
 	"sync"
 
 	"golang.org/x/crypto/chacha20poly1305"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"

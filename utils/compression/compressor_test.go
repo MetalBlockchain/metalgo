@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"testing"
 
-	_ "embed"
-
 	"github.com/stretchr/testify/require"
+
+	_ "embed"
 
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/units"

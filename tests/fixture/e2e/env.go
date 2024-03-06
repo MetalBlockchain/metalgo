@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/api/info"
@@ -22,6 +20,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 // Env is used to access shared test fixture. Intended to be

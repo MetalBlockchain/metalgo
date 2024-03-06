@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/keychain"
@@ -20,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	stdcontext "context"
 )
 
 var (

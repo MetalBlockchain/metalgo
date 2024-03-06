@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
-
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/utils/logging"

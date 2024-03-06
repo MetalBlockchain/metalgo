@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -21,7 +20,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
@@ -178,8 +176,8 @@ func (s *NetworkServer) HandleChangeProofRequest(
 
 	// override limits if they exceed caps
 	var (
-		keyLimit   = math.Min(req.KeyLimit, maxKeyValuesLimit)
-		bytesLimit = math.Min(int(req.BytesLimit), maxByteSizeLimit)
+		keyLimit   = min(req.KeyLimit, maxKeyValuesLimit)
+		bytesLimit = min(int(req.BytesLimit), maxByteSizeLimit)
 		start      = maybeBytesToMaybe(req.StartKey)
 		end        = maybeBytesToMaybe(req.EndKey)
 	)
@@ -295,8 +293,8 @@ func (s *NetworkServer) HandleRangeProofRequest(
 	}
 
 	// override limits if they exceed caps
-	req.KeyLimit = math.Min(req.KeyLimit, maxKeyValuesLimit)
-	req.BytesLimit = math.Min(req.BytesLimit, maxByteSizeLimit)
+	req.KeyLimit = min(req.KeyLimit, maxKeyValuesLimit)
+	req.BytesLimit = min(req.BytesLimit, maxByteSizeLimit)
 
 	proofBytes, err := getRangeProof(
 		ctx,

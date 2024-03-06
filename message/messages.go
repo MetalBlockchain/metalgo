@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
-
 	"google.golang.org/protobuf/proto"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -19,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
@@ -353,7 +350,7 @@ func (mb *msgBuilder) parseInbound(
 
 	expiration := mockable.MaxTime
 	if deadline, ok := GetDeadline(msg); ok {
-		deadline = math.Min(deadline, mb.maxMessageTimeout)
+		deadline = min(deadline, mb.maxMessageTimeout)
 		expiration = time.Now().Add(deadline)
 	}
 

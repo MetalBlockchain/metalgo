@@ -8,16 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	stdecdsa "crypto/ecdsa"
-
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
-
-	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/cb58"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
+
+	stdecdsa "crypto/ecdsa"
+	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 const (

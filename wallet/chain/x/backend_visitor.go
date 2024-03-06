@@ -4,11 +4,11 @@
 package x
 
 import (
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+
+	stdcontext "context"
 )
 
 var _ txs.Visitor = (*backendVisitor)(nil)

@@ -4,7 +4,7 @@
 package merkledb
 
 import (
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"

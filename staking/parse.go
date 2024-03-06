@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/crypto/cryptobyte"
 
-	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
-
 	"github.com/MetalBlockchain/metalgo/utils/units"
+
+	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
 )
 
 const (

@@ -6,11 +6,10 @@ package sampler
 import (
 	"fmt"
 	"math"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"golang.org/x/exp/slices"
 
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )

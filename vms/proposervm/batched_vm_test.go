@@ -22,7 +22,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
 
@@ -499,7 +498,7 @@ func TestGetAncestorsAtSnomanPlusPlusFork(t *testing.T) {
 			return nil, nil // unknown blockID
 		}
 
-		endIndex := math.Min(startIndex+maxBlocksNum, len(sortedBlocks))
+		endIndex := min(startIndex+maxBlocksNum, len(sortedBlocks))
 		return sortedBlocks[startIndex:endIndex], nil
 	}
 

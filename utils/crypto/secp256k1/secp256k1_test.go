@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
-
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/cb58"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
+
+	secp256k1 "github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 func TestRecover(t *testing.T) {

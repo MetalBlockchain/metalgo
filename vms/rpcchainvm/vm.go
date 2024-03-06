@@ -14,8 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -25,6 +23,7 @@ import (
 
 	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 	runtimepb "github.com/MetalBlockchain/metalgo/proto/pb/vm/runtime"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const defaultRuntimeDialTimeout = 5 * time.Second

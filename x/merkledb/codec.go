@@ -10,10 +10,10 @@ import (
 	"io"
 	"math"
 	"math/bits"
+	"slices"
 	"sync"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"

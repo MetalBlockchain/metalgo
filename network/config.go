@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -142,6 +143,8 @@ type Config struct {
 
 	// TLSKey is this node's TLS key that is used to sign IPs.
 	TLSKey crypto.Signer `json:"-"`
+	// BLSKey is this node's BLS key that is used to sign IPs.
+	BLSKey *bls.SecretKey `json:"-"`
 
 	// TrackedSubnets of the node.
 	TrackedSubnets set.Set[ids.ID]    `json:"-"`

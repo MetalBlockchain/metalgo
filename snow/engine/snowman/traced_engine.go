@@ -8,12 +8,12 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/trace"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ Engine = (*tracedEngine)(nil)

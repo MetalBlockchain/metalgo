@@ -8,10 +8,10 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/trace"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ snowstorm.Tx = (*tracedTx)(nil)

@@ -5,9 +5,8 @@ package prefixdb
 
 import (
 	"context"
+	"slices"
 	"sync"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"

@@ -18,15 +18,15 @@ const (
 	// RPCChainVMProtocol should be bumped anytime changes are made which
 	// require the plugin vm to upgrade to latest avalanchego release to be
 	// compatible.
-	RPCChainVMProtocol uint = 31
+	RPCChainVMProtocol uint = 33
 )
 
 // These are globals that describe network upgrades and node versions
 var (
 	Current = &Semantic{
 		Major: 1,
-		Minor: 10,
-		Patch: 19,
+		Minor: 11,
+		Patch: 1,
 	}
 	CurrentApp = &Application{
 		Name:  Client,
@@ -37,13 +37,13 @@ var (
 	MinimumCompatibleVersion = &Application{
 		Name:  Client,
 		Major: 1,
-		Minor: 10,
+		Minor: 11,
 		Patch: 0,
 	}
 	PrevMinimumCompatibleVersion = &Application{
 		Name:  Client,
 		Major: 1,
-		Minor: 9,
+		Minor: 10,
 		Patch: 0,
 	}
 
@@ -123,12 +123,22 @@ var (
 		constants.MainnetID: time.Date(2023, time.August, 17, 10, 0, 0, 0, time.UTC),
 		constants.TahoeID:   time.Date(2023, time.June, 28, 15, 0, 0, 0, time.UTC),
 	}
-	CortinaXChainStopVertexID map[uint32]ids.ID
+	CortinaXChainStopVertexID = map[uint32]ids.ID{
+		// The mainnet stop vertex is well known. It can be verified on any
+		// fully synced node by looking at the parentID of the genesis block.
+		//
+		// Ref: https://subnets.avax.network/x-chain/block/0
+		constants.MainnetID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
+		// The fuji stop vertex is well known. It can be verified on any fully
+		// synced node by looking at the parentID of the genesis block.
+		//
+		// Ref: https://subnets-test.avax.network/x-chain/block/0
+		constants.TahoeID: ids.FromStringOrPanic("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk"),
+	}
 
-	// TODO: update this before release
 	DurangoTimes = map[uint32]time.Time{
-		constants.MainnetID: time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Date(10000, time.March, 1, 0, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(10000, time.March, 11, 0, 0, 0, 0, time.UTC),
 	}
 )
 
@@ -150,29 +160,6 @@ func init() {
 			versions[i] = version
 		}
 		RPCChainVMProtocolCompatibility[rpcChainVMProtocol] = versions
-	}
-
-	// The mainnet stop vertex is well known. It can be verified on any fully
-	// synced node by looking at the parentID of the genesis block.
-	//
-	// Ref: https://subnets.avax.network/x-chain/block/0
-	mainnetXChainStopVertexID, err := ids.FromString("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY")
-	if err != nil {
-		panic(err)
-	}
-
-	// The fuji stop vertex is well known. It can be verified on any fully
-	// synced node by looking at the parentID of the genesis block.
-	//
-	// Ref: https://subnets-test.avax.network/x-chain/block/0
-	tahoeXChainStopVertexID, err := ids.FromString("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk")
-	if err != nil {
-		panic(err)
-	}
-
-	CortinaXChainStopVertexID = map[uint32]ids.ID{
-		constants.MainnetID: mainnetXChainStopVertexID,
-		constants.TahoeID:   tahoeXChainStopVertexID,
 	}
 }
 
@@ -257,7 +244,7 @@ func GetCompatibility(networkID uint32) Compatibility {
 	return NewCompatibility(
 		CurrentApp,
 		MinimumCompatibleVersion,
-		GetCortinaTime(networkID),
+		GetDurangoTime(networkID),
 		PrevMinimumCompatibleVersion,
 	)
 }

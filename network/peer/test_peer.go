@@ -20,6 +20,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
@@ -104,7 +105,11 @@ func StartTestPeer(
 	}
 
 	signerIP := ips.NewDynamicIPPort(net.IPv6zero, 1)
-	tls := tlsCert.PrivateKey.(crypto.Signer)
+	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
+	blsKey, err := bls.NewSecretKey()
+	if err != nil {
+		return nil, err
+	}
 
 	peer := Start(
 		&Config{
@@ -117,13 +122,14 @@ func StartTestPeer(
 			VersionCompatibility: version.GetCompatibility(networkID),
 			MySubnets:            set.Set[ids.ID]{},
 			Beacons:              validators.NewManager(),
+			Validators:           validators.NewManager(),
 			NetworkID:            networkID,
 			PingFrequency:        constants.DefaultPingFrequency,
 			PongTimeout:          constants.DefaultPingPongTimeout,
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
 			UptimeCalculator:     uptime.NoOpCalculator,
-			IPSigner:             NewIPSigner(signerIP, tls),
+			IPSigner:             NewIPSigner(signerIP, tlsKey, blsKey),
 		},
 		conn,
 		cert,

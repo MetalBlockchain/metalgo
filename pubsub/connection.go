@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/pubsub/bloom"

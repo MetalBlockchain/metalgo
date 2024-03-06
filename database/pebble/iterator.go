@@ -6,11 +6,10 @@ package pebble
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/cockroachdb/pebble"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 )

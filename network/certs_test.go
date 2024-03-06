@@ -9,9 +9,9 @@ import (
 	"sync"
 	"testing"
 
-	_ "embed"
-
 	"github.com/stretchr/testify/require"
+
+	_ "embed"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/peer"

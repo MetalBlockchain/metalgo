@@ -11,11 +11,8 @@ import (
 	"os"
 	"time"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/MetalBlockchain/metalgo/api/keystore/gkeystore"
@@ -52,6 +49,7 @@ import (
 	validatorstatepb "github.com/MetalBlockchain/metalgo/proto/pb/validatorstate"
 	vmpb "github.com/MetalBlockchain/metalgo/proto/pb/vm"
 	warppb "github.com/MetalBlockchain/metalgo/proto/pb/warp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 var (

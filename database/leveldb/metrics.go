@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/MetalBlockchain/metalgo/utils"

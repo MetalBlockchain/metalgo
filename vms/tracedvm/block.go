@@ -10,10 +10,10 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var (

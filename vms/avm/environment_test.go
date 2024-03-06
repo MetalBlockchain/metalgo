@@ -5,11 +5,10 @@ package avm
 
 import (
 	"context"
+	"encoding/json"
 	"math/rand"
 	"testing"
 	"time"
-
-	stdjson "encoding/json"
 
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
@@ -37,6 +35,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
+	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 	keystoreutils "github.com/MetalBlockchain/metalgo/vms/components/keystore"
 )
 
@@ -163,7 +162,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	if c.vmDynamicConfig != nil {
 		vmDynamicConfig = *c.vmDynamicConfig
 	}
-	configBytes, err := stdjson.Marshal(vmDynamicConfig)
+	configBytes, err := json.Marshal(vmDynamicConfig)
 	require.NoError(err)
 
 	require.NoError(vm.Initialize(
@@ -355,15 +354,15 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},
@@ -410,11 +409,11 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 					},
@@ -445,15 +444,15 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},
@@ -465,15 +464,15 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},

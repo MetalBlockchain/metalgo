@@ -9,7 +9,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 )
 
-var _ NnarySnowflake = (*nnarySnowflake)(nil)
+var _ Nnary = (*nnarySnowflake)(nil)
 
 func newNnarySnowflake(betaVirtuous, betaRogue int, choice ids.ID) nnarySnowflake {
 	return nnarySnowflake{

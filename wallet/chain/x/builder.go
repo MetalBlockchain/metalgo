@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/math"
@@ -20,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
+
+	stdcontext "context"
 )
 
 var (
@@ -601,7 +601,7 @@ func (b *builder) spend(
 		})
 
 		// Burn any value that should be burned
-		amountToBurn := math.Min(
+		amountToBurn := min(
 			remainingAmountToBurn, // Amount we still need to burn
 			out.Amt,               // Amount available to burn
 		)

@@ -4,10 +4,8 @@
 package linkeddb
 
 import (
+	"slices"
 	"sync"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/database"
@@ -339,7 +337,7 @@ func (ldb *linkedDB) deleteNode(key []byte) error {
 
 func (ldb *linkedDB) resetBatch() {
 	ldb.headKeyIsUpdated = false
-	maps.Clear(ldb.updatedNodes)
+	clear(ldb.updatedNodes)
 	ldb.batch.Reset()
 }
 

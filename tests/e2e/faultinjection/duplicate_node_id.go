@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/api/info"
@@ -17,6 +15,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/set"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = ginkgo.Describe("Duplicate node handling", func() {

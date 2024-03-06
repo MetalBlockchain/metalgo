@@ -4,14 +4,14 @@
 package p
 
 import (
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm"
+
+	stdcontext "context"
 )
 
 const Alias = "P"

@@ -7,11 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/MetalBlockchain/metalgo/vms/types"
-
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/types"
 )
 
 const (

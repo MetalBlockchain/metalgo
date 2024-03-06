@@ -7,8 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"

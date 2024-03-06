@@ -57,7 +57,7 @@ tar -zxf /opt/"$DB_FILE"*-tar.gz -C /var/lib/metalgo/db
 echo "Done extracting database"
 
 echo "Creating Docker network..."
-docker network create controlled-net 
+docker network create controlled-net
 
 echo "Starting Docker container..."
 containerID=$(docker run --name="net_outage_simulation" --memory="12g" --memory-reservation="11g" --cpus="6.0" --net=controlled-net -p 9650:9650 -p 9651:9651 -v /var/lib/metalgo/db:/db -d avaplatform/metalgo:latest /metalgo/build/metalgo --db-dir /db --http-host=0.0.0.0)
@@ -69,16 +69,16 @@ wait_until_healthy
 if [ $SUCCESS -eq 1 ];
 then
   echo "Timed out waiting for node to become healthy; exiting."
-  exit 1 
+  exit 1
 fi
 
-# To simulate internet outage, we will disable the docker network connection 
+# To simulate internet outage, we will disable the docker network connection
 echo "Disconnecting node from internet..."
-docker network disconnect controlled-net $containerID
+docker network disconnect controlled-net "$containerID"
 echo "Sleeping 60 minutes..."
-sleep 3600 
+sleep 3600
 echo "Reconnecting node to internet..."
-docker network connect controlled-net $containerID
+docker network connect controlled-net "$containerID"
 echo "Reconnected to internet. Waiting until healthy..."
 
 # now repeatedly check the node's health until it returns healthy
@@ -88,12 +88,12 @@ wait_until_healthy
 if [ $SUCCESS -eq 1 ];
 then
   echo "Timed out waiting for node to become healthy after outage; exiting."
-  exit 1 
+  exit 1
 fi
 
 # The node returned healthy, print how long it took
 end=$(date +%s)
 
-DELAY=$(($end - $start))
+DELAY=$((end - start))
 echo "Node became healthy again after complete outage after $DELAY seconds."
 echo "Test completed"

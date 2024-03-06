@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -24,7 +25,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
-	txbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
@@ -73,7 +73,6 @@ type Builder interface {
 type builder struct {
 	mempool.Mempool
 
-	txBuilder         txbuilder.Builder
 	txExecutorBackend *txexecutor.Backend
 	blkManager        blockexecutor.Manager
 
@@ -86,13 +85,11 @@ type builder struct {
 
 func New(
 	mempool mempool.Mempool,
-	txBuilder txbuilder.Builder,
 	txExecutorBackend *txexecutor.Backend,
 	blkManager blockexecutor.Manager,
 ) Builder {
 	return &builder{
 		Mempool:           mempool,
-		txBuilder:         txBuilder,
 		txExecutorBackend: txExecutorBackend,
 		blkManager:        blkManager,
 		resetTimer:        make(chan struct{}, 1),
@@ -274,7 +271,7 @@ func buildBlock(
 		return nil, fmt.Errorf("could not find next staker to reward: %w", err)
 	}
 	if shouldReward {
-		rewardValidatorTx, err := builder.txBuilder.NewRewardValidatorTx(stakerTxID)
+		rewardValidatorTx, err := NewRewardValidatorTx(builder.txExecutorBackend.Ctx, stakerTxID)
 		if err != nil {
 			return nil, fmt.Errorf("could not build tx to reward staker: %w", err)
 		}
@@ -446,4 +443,13 @@ func getNextStakerToReward(
 		}
 	}
 	return ids.Empty, false, nil
+}
+
+func NewRewardValidatorTx(ctx *snow.Context, txID ids.ID) (*txs.Tx, error) {
+	utx := &txs.RewardValidatorTx{TxID: txID}
+	tx, err := txs.NewSigned(utx, txs.Codec, nil)
+	if err != nil {
+		return nil, err
+	}
+	return tx, tx.SyntacticVerify(ctx)
 }

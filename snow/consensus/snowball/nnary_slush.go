@@ -9,8 +9,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 )
 
-var _ NnarySlush = (*nnarySlush)(nil)
-
 func newNnarySlush(choice ids.ID) nnarySlush {
 	return nnarySlush{
 		preference: choice,

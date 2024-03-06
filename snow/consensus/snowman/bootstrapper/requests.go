@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
@@ -24,7 +23,7 @@ func (r *requests) GetPeers(context.Context) set.Set[ids.NodeID] {
 		return nil
 	}
 
-	numToSend := math.Min(
+	numToSend := min(
 		r.maxOutstanding-numPending,
 		r.pendingSend.Len(),
 	)

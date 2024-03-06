@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/MetalBlockchain/metalgo/cache"
-
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/utils"
 )

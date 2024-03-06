@@ -10,11 +10,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
-
 	"google.golang.org/protobuf/proto"
 
 	"github.com/MetalBlockchain/metalgo/database"
@@ -24,7 +21,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"
-	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
@@ -101,10 +97,9 @@ func sendRangeProofRequest(
 
 	networkClient.EXPECT().RequestAny(
 		gomock.Any(), // ctx
-		gomock.Any(), // min version
 		gomock.Any(), // request
 	).DoAndReturn(
-		func(_ context.Context, _ *version.Application, request []byte) (ids.NodeID, []byte, error) {
+		func(_ context.Context, request []byte) (ids.NodeID, []byte, error) {
 			go func() {
 				// Get response from server
 				require.NoError(server.AppRequest(context.Background(), clientNodeID, 0, time.Now().Add(time.Hour), request))
@@ -130,7 +125,7 @@ func sendRangeProofRequest(
 		gomock.Any(), // requestID
 		gomock.Any(), // responseBytes
 	).DoAndReturn(
-		func(_ context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
+		func(_ context.Context, _ ids.NodeID, _ uint32, responseBytes []byte) error {
 			// deserialize the response so we can modify it if needed.
 			var responseProto pb.RangeProof
 			require.NoError(proto.Unmarshal(responseBytes, &responseProto))
@@ -401,10 +396,9 @@ func sendChangeProofRequest(
 
 	networkClient.EXPECT().RequestAny(
 		gomock.Any(), // ctx
-		gomock.Any(), // min version
 		gomock.Any(), // request
 	).DoAndReturn(
-		func(_ context.Context, _ *version.Application, request []byte) (ids.NodeID, []byte, error) {
+		func(_ context.Context, request []byte) (ids.NodeID, []byte, error) {
 			go func() {
 				// Get response from server
 				require.NoError(server.AppRequest(context.Background(), clientNodeID, 0, time.Now().Add(time.Hour), request))
@@ -430,7 +424,7 @@ func sendChangeProofRequest(
 		gomock.Any(), // requestID
 		gomock.Any(), // responseBytes
 	).DoAndReturn(
-		func(_ context.Context, _ ids.NodeID, requestID uint32, responseBytes []byte) error {
+		func(_ context.Context, _ ids.NodeID, _ uint32, responseBytes []byte) error {
 			// deserialize the response so we can modify it if needed.
 			var responseProto pb.SyncGetChangeProofResponse
 			require.NoError(proto.Unmarshal(responseBytes, &responseProto))
@@ -764,7 +758,6 @@ func TestAppRequestSendFailed(t *testing.T) {
 
 	// Mock failure to send app request
 	networkClient.EXPECT().RequestAny(
-		gomock.Any(),
 		gomock.Any(),
 		gomock.Any(),
 	).Return(ids.EmptyNodeID, nil, errAppSendFailed).Times(2)

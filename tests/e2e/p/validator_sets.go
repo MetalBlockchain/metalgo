@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/genesis"
@@ -22,6 +20,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribePChain("[Validator Sets]", func() {

@@ -25,6 +25,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
@@ -187,6 +188,10 @@ func NewTestNetwork(
 	tlsConfig := peer.TLSConfig(*tlsCert, nil)
 	networkConfig.TLSConfig = tlsConfig
 	networkConfig.TLSKey = tlsCert.PrivateKey.(crypto.Signer)
+	networkConfig.BLSKey, err = bls.NewSecretKey()
+	if err != nil {
+		return nil, err
+	}
 
 	networkConfig.Validators = currentValidators
 	networkConfig.Beacons = validators.NewManager()

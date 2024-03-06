@@ -8,11 +8,11 @@ import (
 
 	"github.com/MetalBlockchain/coreth/plugin/evm"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
+
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 var _ Builder = (*builderWithOptions)(nil)

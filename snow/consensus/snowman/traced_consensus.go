@@ -8,11 +8,11 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/bag"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ Consensus = (*tracedConsensus)(nil)

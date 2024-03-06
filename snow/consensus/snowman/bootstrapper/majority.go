@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-
 	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/ids"

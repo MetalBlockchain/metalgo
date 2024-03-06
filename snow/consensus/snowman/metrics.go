@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 )
@@ -199,7 +197,7 @@ func (m *metrics) Issued(blkID ids.ID, pollNumber uint64) {
 }
 
 func (m *metrics) Verified(height uint64) {
-	m.currentMaxVerifiedHeight = math.Max(m.currentMaxVerifiedHeight, height)
+	m.currentMaxVerifiedHeight = max(m.currentMaxVerifiedHeight, height)
 	m.maxVerifiedHeight.Set(float64(m.currentMaxVerifiedHeight))
 }
 

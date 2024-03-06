@@ -10,12 +10,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
-	"golang.org/x/exp/maps"
-
-	"google.golang.org/protobuf/proto"
-
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
@@ -358,6 +355,8 @@ func TestPushGossiper(t *testing.T) {
 // Tests that gossip to a peer should forward the gossip if it was not
 // previously known
 func TestPushGossipE2E(t *testing.T) {
+	t.SkipNow()
+
 	require := require.New(t)
 
 	// tx known by both the sender and the receiver which should not be

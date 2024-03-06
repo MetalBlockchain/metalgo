@@ -9,9 +9,8 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"slices"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/utils/set"

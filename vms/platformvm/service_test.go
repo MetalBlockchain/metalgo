@@ -5,6 +5,7 @@ package platformvm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -12,10 +13,7 @@ import (
 	"testing"
 	"time"
 
-	stdjson "encoding/json"
-
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/api"
@@ -33,15 +31,17 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block/builder"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
+	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 	vmkeystore "github.com/MetalBlockchain/metalgo/vms/components/keystore"
 	pchainapi "github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
@@ -109,7 +109,7 @@ func TestAddValidator(t *testing.T) {
 
 	expectedJSONString := `{"username":"","password":"","from":null,"changeAddr":"","txID":"11111111111111111111111111111111LpoYY","startTime":"0","endTime":"0","weight":"0","nodeID":"NodeID-111111111111111111116DBWJs","rewardAddress":"","delegationFeeRate":"0.0000"}`
 	args := AddValidatorArgs{}
-	bytes, err := stdjson.Marshal(&args)
+	bytes, err := json.Marshal(&args)
 	require.NoError(err)
 	require.Equal(expectedJSONString, string(bytes))
 }
@@ -119,9 +119,9 @@ func TestCreateBlockchainArgsParsing(t *testing.T) {
 
 	jsonString := `{"vmID":"lol","fxIDs":["secp256k1"], "name":"awesome", "username":"bob loblaw", "password":"yeet", "genesisData":"SkB92YpWm4Q2iPnLGCuDPZPgUQMxajqQQuz91oi3xD984f8r"}`
 	args := CreateBlockchainArgs{}
-	require.NoError(stdjson.Unmarshal([]byte(jsonString), &args))
+	require.NoError(json.Unmarshal([]byte(jsonString), &args))
 
-	_, err := stdjson.Marshal(args.GenesisData)
+	_, err := json.Marshal(args.GenesisData)
 	require.NoError(err)
 }
 
@@ -129,7 +129,7 @@ func TestExportKey(t *testing.T) {
 	require := require.New(t)
 	jsonString := `{"username":"ScoobyUser","password":"ShaggyPassword1Zoinks!","address":"` + testAddress + `"}`
 	args := ExportKeyArgs{}
-	require.NoError(stdjson.Unmarshal([]byte(jsonString), &args))
+	require.NoError(json.Unmarshal([]byte(jsonString), &args))
 
 	service, _ := defaultService(t)
 	defaultAddress(t, service)
@@ -144,7 +144,7 @@ func TestImportKey(t *testing.T) {
 	require := require.New(t)
 	jsonString := `{"username":"ScoobyUser","password":"ShaggyPassword1Zoinks!","privateKey":"PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN"}`
 	args := ImportKeyArgs{}
-	require.NoError(stdjson.Unmarshal([]byte(jsonString), &args))
+	require.NoError(json.Unmarshal([]byte(jsonString), &args))
 
 	service, _ := defaultService(t)
 
@@ -209,6 +209,7 @@ func TestGetTxStatus(t *testing.T) {
 		ids.ShortEmpty,
 		[]*secp256k1.PrivateKey{recipientKey},
 		ids.ShortEmpty,
+		nil,
 	)
 	require.NoError(err)
 
@@ -261,21 +262,27 @@ func TestGetTx(t *testing.T) {
 					"chain name",
 					[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 					keys[0].PublicKey().Address(), // change addr
+					nil,
 				)
 			},
 		},
 		{
 			"proposal block",
 			func(service *Service) (*txs.Tx, error) {
-				return service.vm.txBuilder.NewAddValidatorTx( // Test GetTx works for proposal blocks
+				sk, err := bls.NewSecretKey()
+				require.NoError(t, err)
+
+				return service.vm.txBuilder.NewAddPermissionlessValidatorTx( // Test GetTx works for proposal blocks
 					service.vm.MinValidatorStake,
 					uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Unix()),
 					uint64(service.vm.clock.Time().Add(txexecutor.SyncBound).Add(defaultMinStakingDuration).Unix()),
 					ids.GenerateTestNodeID(),
+					signer.NewProofOfPossession(sk),
 					ids.GenerateTestShortID(),
 					0,
 					[]*secp256k1.PrivateKey{keys[0]},
 					keys[0].PublicKey().Address(), // change addr
+					nil,
 				)
 			},
 		},
@@ -288,6 +295,7 @@ func TestGetTx(t *testing.T) {
 					ids.GenerateTestShortID(),
 					[]*secp256k1.PrivateKey{keys[0]},
 					keys[0].PublicKey().Address(), // change addr
+					nil,
 				)
 			},
 		},
@@ -348,14 +356,14 @@ func TestGetTx(t *testing.T) {
 				case formatting.Hex:
 					// we're always guaranteed a string for hex encodings.
 					var txStr string
-					require.NoError(stdjson.Unmarshal(response.Tx, &txStr))
+					require.NoError(json.Unmarshal(response.Tx, &txStr))
 					responseTxBytes, err := formatting.Decode(response.Encoding, txStr)
 					require.NoError(err)
 					require.Equal(tx.Bytes(), responseTxBytes)
 
 				case formatting.JSON:
 					tx.Unsigned.InitCtx(service.vm.ctx)
-					expectedTxJSON, err := stdjson.Marshal(tx)
+					expectedTxJSON, err := json.Marshal(tx)
 					require.NoError(err)
 					require.Equal(expectedTxJSON, []byte(response.Tx))
 				}
@@ -374,7 +382,7 @@ func TestGetBalance(t *testing.T) {
 	for idx, utxo := range genesis.UTXOs {
 		request := GetBalanceRequest{
 			Addresses: []string{
-				fmt.Sprintf("P-%s", utxo.Address),
+				"P-" + utxo.Address,
 			},
 		}
 		reply := GetBalanceResponse{}
@@ -386,10 +394,10 @@ func TestGetBalance(t *testing.T) {
 			// As such we need to account for the subnet creation fee
 			balance = defaultBalance - service.vm.Config.GetCreateSubnetTxFee(service.vm.clock.Time())
 		}
-		require.Equal(json.Uint64(balance), reply.Balance)
-		require.Equal(json.Uint64(balance), reply.Unlocked)
-		require.Equal(json.Uint64(0), reply.LockedStakeable)
-		require.Equal(json.Uint64(0), reply.LockedNotStakeable)
+		require.Equal(avajson.Uint64(balance), reply.Balance)
+		require.Equal(avajson.Uint64(balance), reply.Unlocked)
+		require.Equal(avajson.Uint64(0), reply.LockedStakeable)
+		require.Equal(avajson.Uint64(0), reply.LockedNotStakeable)
 	}
 }
 
@@ -402,7 +410,7 @@ func TestGetStake(t *testing.T) {
 	genesis, _ := defaultGenesis(t, service.vm.ctx.AVAXAssetID)
 	addrsStrs := []string{}
 	for i, validator := range genesis.Validators {
-		addr := fmt.Sprintf("P-%s", validator.RewardOwner.Addresses[0])
+		addr := "P-" + validator.RewardOwner.Addresses[0]
 		addrsStrs = append(addrsStrs, addr)
 
 		args := GetStakeArgs{
@@ -476,6 +484,7 @@ func TestGetStake(t *testing.T) {
 		ids.GenerateTestShortID(),
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].PublicKey().Address(), // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -531,6 +540,7 @@ func TestGetStake(t *testing.T) {
 		0,
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].PublicKey().Address(), // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -609,6 +619,7 @@ func TestGetCurrentValidators(t *testing.T) {
 		ids.GenerateTestShortID(),
 		[]*secp256k1.PrivateKey{keys[0]},
 		keys[0].PublicKey().Address(), // change addr
+		nil,
 	)
 	require.NoError(err)
 
@@ -667,7 +678,7 @@ func TestGetCurrentValidators(t *testing.T) {
 	service.vm.ctx.Lock.Lock()
 
 	// Reward the delegator
-	tx, err := service.vm.txBuilder.NewRewardValidatorTx(delTx.ID())
+	tx, err := builder.NewRewardValidatorTx(service.vm.ctx, delTx.ID())
 	require.NoError(err)
 	service.vm.state.AddTx(tx, status.Committed)
 	service.vm.state.DeleteCurrentDelegator(staker)
@@ -742,6 +753,7 @@ func TestGetBlock(t *testing.T) {
 				"chain name",
 				[]*secp256k1.PrivateKey{testSubnet1ControlKeys[0], testSubnet1ControlKeys[1]},
 				keys[0].PublicKey().Address(), // change addr
+				nil,
 			)
 			require.NoError(err)
 
@@ -774,12 +786,12 @@ func TestGetBlock(t *testing.T) {
 			switch {
 			case test.encoding == formatting.JSON:
 				statelessBlock.InitCtx(service.vm.ctx)
-				expectedBlockJSON, err := stdjson.Marshal(statelessBlock)
+				expectedBlockJSON, err := json.Marshal(statelessBlock)
 				require.NoError(err)
 				require.Equal(expectedBlockJSON, []byte(response.Block))
 			default:
 				var blockStr string
-				require.NoError(stdjson.Unmarshal(response.Block, &blockStr))
+				require.NoError(json.Unmarshal(response.Block, &blockStr))
 				responseBlockBytes, err := formatting.Decode(response.Encoding, blockStr)
 				require.NoError(err)
 				require.Equal(blk.Bytes(), responseBlockBytes)
@@ -995,7 +1007,7 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			service, expected := tt.serviceAndExpectedBlockFunc(t, ctrl)
 
 			args := &api.GetBlockByHeightArgs{
-				Height:   json.Uint64(blockHeight),
+				Height:   avajson.Uint64(blockHeight),
 				Encoding: tt.encoding,
 			}
 			reply := &api.GetBlockResponse{}
@@ -1006,10 +1018,10 @@ func TestServiceGetBlockByHeight(t *testing.T) {
 			}
 			require.Equal(tt.encoding, reply.Encoding)
 
-			expectedJSON, err := stdjson.Marshal(expected)
+			expectedJSON, err := json.Marshal(expected)
 			require.NoError(err)
 
-			require.Equal(stdjson.RawMessage(expectedJSON), reply.Block)
+			require.Equal(json.RawMessage(expectedJSON), reply.Block)
 		})
 	}
 }

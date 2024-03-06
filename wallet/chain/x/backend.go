@@ -4,10 +4,10 @@
 package x
 
 import (
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
+
+	stdcontext "context"
 )
 
 var _ Backend = (*backend)(nil)

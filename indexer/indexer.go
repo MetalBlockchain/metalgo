@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/rpc/v2"
-
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/api/server"

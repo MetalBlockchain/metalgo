@@ -14,8 +14,6 @@ import (
 	"sync"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
-
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/MetalBlockchain/metalgo/utils/json"
@@ -23,6 +21,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/password"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 const (

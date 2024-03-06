@@ -9,26 +9,23 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"slices"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-	"golang.org/x/sync/semaphore"
-
 	"go.opentelemetry.io/otel/attribute"
-
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/maps"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/units"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -329,7 +326,7 @@ func (db *merkleDB) rebuild(ctx context.Context, cacheSize int) error {
 	}
 
 	// Add all key-value pairs back into the database.
-	opsSizeLimit := math.Max(
+	opsSizeLimit := max(
 		cacheSize/rebuildViewSizeFractionOfCacheSize,
 		minRebuildViewSizePerCommit,
 	)

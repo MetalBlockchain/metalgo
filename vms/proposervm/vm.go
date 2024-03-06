@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/api/metrics"
@@ -25,7 +24,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -57,26 +55,13 @@ var (
 	_ block.StateSyncableVM = (*VM)(nil)
 
 	// TODO: remove after the X-chain supports height indexing.
-	mainnetXChainID ids.ID
-	tahoeXChainID   ids.ID
+	mainnetXChainID = ids.FromStringOrPanic("UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE")
+	tahoeXChainID    = ids.FromStringOrPanic("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
 
 	dbPrefix = []byte("proposervm")
 
 	errHeightIndexInvalidWhilePruning = errors.New("height index invalid while pruning old blocks")
 )
-
-func init() {
-	var err error
-	mainnetXChainID, err = ids.FromString("UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE")
-	if err != nil {
-		panic(err)
-	}
-
-	tahoeXChainID, err = ids.FromString("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
-	if err != nil {
-		panic(err)
-	}
-}
 
 func cachedBlockSize(_ ids.ID, blk snowman.Block) int {
 	return ids.IDLen + len(blk.Bytes()) + constants.PointerOverhead
@@ -205,7 +190,7 @@ func (vm *VM) Initialize(
 	})
 
 	vm.verifiedBlocks = make(map[ids.ID]PostForkBlock)
-	detachedCtx := utils.Detach(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	context, cancel := context.WithCancel(detachedCtx)
 	vm.context = context
 	vm.onShutdown = cancel
@@ -393,7 +378,7 @@ func (vm *VM) getPreDurangoSlotTime(
 	// validators can specify. This delay may be an issue for high performance,
 	// custom VMs. Until the P-chain is modified to target a specific block
 	// time, ProposerMinBlockDelay can be configured in the subnet config.
-	delay = math.Max(delay, vm.MinBlkDelay)
+	delay = max(delay, vm.MinBlkDelay)
 	return parentTimestamp.Add(delay), nil
 }
 
@@ -419,7 +404,7 @@ func (vm *VM) getPostDurangoSlotTime(
 	// time, ProposerMinBlockDelay can be configured in the subnet config.
 	switch {
 	case err == nil:
-		delay = math.Max(delay, vm.MinBlkDelay)
+		delay = max(delay, vm.MinBlkDelay)
 		return parentTimestamp.Add(delay), err
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
 		return parentTimestamp.Add(vm.MinBlkDelay), err
@@ -920,7 +905,7 @@ func (vm *VM) optimalPChainHeight(ctx context.Context, minPChainHeight uint64) (
 		return 0, err
 	}
 
-	return math.Max(minimumHeight, minPChainHeight), nil
+	return max(minimumHeight, minPChainHeight), nil
 }
 
 // parseInnerBlock attempts to parse the provided bytes as an inner block. If

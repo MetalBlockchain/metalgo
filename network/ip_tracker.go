@@ -8,10 +8,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"go.uber.org/zap"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
@@ -20,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -382,7 +378,7 @@ func (i *ipTracker) resetBloom() error {
 		return err
 	}
 
-	count := math.Max(maxIPEntriesPerValidator*i.validators.Len(), minCountEstimate)
+	count := max(maxIPEntriesPerValidator*i.validators.Len(), minCountEstimate)
 	numHashes, numEntries := bloom.OptimalParameters(
 		count,
 		targetFalsePositiveProbability,
@@ -393,7 +389,7 @@ func (i *ipTracker) resetBloom() error {
 	}
 
 	i.bloom = newFilter
-	maps.Clear(i.bloomAdditions)
+	clear(i.bloomAdditions)
 	i.bloomSalt = newSalt
 	i.maxBloomCount = bloom.EstimateCount(numHashes, numEntries, maxFalsePositiveProbability)
 
