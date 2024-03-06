@@ -138,7 +138,7 @@ var (
 
 	DurangoTimes = map[uint32]time.Time{
 		constants.MainnetID: time.Date(10000, time.March, 1, 0, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(10000, time.March, 11, 0, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2024, time.March, 18, 0, 0, 0, 0, time.UTC),
 	}
 )
 
