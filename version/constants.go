@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package version
@@ -13,30 +13,37 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 )
 
-// RPCChainVMProtocol should be bumped anytime changes are made which require
-// the plugin vm to upgrade to latest avalanchego release to be compatible.
-const RPCChainVMProtocol uint = 30
+const (
+	Client = "metalgo"
+	// RPCChainVMProtocol should be bumped anytime changes are made which
+	// require the plugin vm to upgrade to latest avalanchego release to be
+	// compatible.
+	RPCChainVMProtocol uint = 33
+)
 
 // These are globals that describe network upgrades and node versions
 var (
 	Current = &Semantic{
 		Major: 1,
-		Minor: 10,
-		Patch: 17,
+		Minor: 11,
+		Patch: 1,
 	}
 	CurrentApp = &Application{
+		Name:  Client,
 		Major: Current.Major,
 		Minor: Current.Minor,
 		Patch: Current.Patch,
 	}
 	MinimumCompatibleVersion = &Application{
+		Name:  Client,
 		Major: 1,
-		Minor: 10,
+		Minor: 11,
 		Patch: 0,
 	}
 	PrevMinimumCompatibleVersion = &Application{
+		Name:  Client,
 		Major: 1,
-		Minor: 9,
+		Minor: 10,
 		Patch: 0,
 	}
 
@@ -63,6 +70,16 @@ var (
 
 	DefaultUpgradeTime = time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC)
 
+	ApricotPhase1Times = map[uint32]time.Time{
+		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+	}
+
+	ApricotPhase2Times = map[uint32]time.Time{
+		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
+	}
+
 	ApricotPhase3Times = map[uint32]time.Time{
 		constants.MainnetID: time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
 		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
@@ -82,9 +99,19 @@ var (
 		constants.TahoeID:   time.Date(2020, time.December, 5, 5, 0, 0, 0, time.UTC),
 	}
 
-	ApricotPhase6Times = map[uint32]time.Time{
+	ApricotPhasePre6Times = map[uint32]time.Time{
 		constants.MainnetID: time.Date(2022, time.September, 8, 20, 0, 0, 0, time.UTC),
 		constants.TahoeID:   time.Date(2022, time.September, 8, 20, 0, 0, 0, time.UTC),
+	}
+
+	ApricotPhase6Times = map[uint32]time.Time{
+		constants.MainnetID: time.Date(2022, time.September, 8, 22, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2022, time.September, 8, 22, 0, 0, 0, time.UTC),
+	}
+
+	ApricotPhasePost6Times = map[uint32]time.Time{
+		constants.MainnetID: time.Date(2022, time.September, 9, 3, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2022, time.September, 9, 3, 0, 0, 0, time.UTC),
 	}
 
 	BanffTimes = map[uint32]time.Time{
@@ -96,12 +123,22 @@ var (
 		constants.MainnetID: time.Date(2023, time.August, 17, 10, 0, 0, 0, time.UTC),
 		constants.TahoeID:   time.Date(2023, time.June, 28, 15, 0, 0, 0, time.UTC),
 	}
-	CortinaXChainStopVertexID map[uint32]ids.ID
+	CortinaXChainStopVertexID = map[uint32]ids.ID{
+		// The mainnet stop vertex is well known. It can be verified on any
+		// fully synced node by looking at the parentID of the genesis block.
+		//
+		// Ref: https://subnets.avax.network/x-chain/block/0
+		constants.MainnetID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
+		// The fuji stop vertex is well known. It can be verified on any fully
+		// synced node by looking at the parentID of the genesis block.
+		//
+		// Ref: https://subnets-test.avax.network/x-chain/block/0
+		constants.TahoeID: ids.FromStringOrPanic("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk"),
+	}
 
-	// TODO: update this before release
 	DurangoTimes = map[uint32]time.Time{
-		constants.MainnetID: time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
-		constants.TahoeID:   time.Date(10000, time.December, 1, 0, 0, 0, 0, time.UTC),
+		constants.MainnetID: time.Date(2024, time.May, 6, 8, 0, 0, 0, time.UTC),
+		constants.TahoeID:   time.Date(2024, time.April, 4, 0, 0, 0, 0, time.UTC),
 	}
 )
 
@@ -124,29 +161,20 @@ func init() {
 		}
 		RPCChainVMProtocolCompatibility[rpcChainVMProtocol] = versions
 	}
+}
 
-	// The mainnet stop vertex is well known. It can be verified on any fully
-	// synced node by looking at the parentID of the genesis block.
-	//
-	// Ref: https://subnets.avax.network/x-chain/block/0
-	mainnetXChainStopVertexID, err := ids.FromString("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY")
-	if err != nil {
-		panic(err)
+func GetApricotPhase1Time(networkID uint32) time.Time {
+	if upgradeTime, exists := ApricotPhase1Times[networkID]; exists {
+		return upgradeTime
 	}
+	return DefaultUpgradeTime
+}
 
-	// The fuji stop vertex is well known. It can be verified on any fully
-	// synced node by looking at the parentID of the genesis block.
-	//
-	// Ref: https://subnets-test.avax.network/x-chain/block/0
-	tahoeXChainStopVertexID, err := ids.FromString("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk")
-	if err != nil {
-		panic(err)
+func GetApricotPhase2Time(networkID uint32) time.Time {
+	if upgradeTime, exists := ApricotPhase2Times[networkID]; exists {
+		return upgradeTime
 	}
-
-	CortinaXChainStopVertexID = map[uint32]ids.ID{
-		constants.MainnetID: mainnetXChainStopVertexID,
-		constants.TahoeID:   tahoeXChainStopVertexID,
-	}
+	return DefaultUpgradeTime
 }
 
 func GetApricotPhase3Time(networkID uint32) time.Time {
@@ -170,8 +198,22 @@ func GetApricotPhase5Time(networkID uint32) time.Time {
 	return DefaultUpgradeTime
 }
 
+func GetApricotPhasePre6Time(networkID uint32) time.Time {
+	if upgradeTime, exists := ApricotPhasePre6Times[networkID]; exists {
+		return upgradeTime
+	}
+	return DefaultUpgradeTime
+}
+
 func GetApricotPhase6Time(networkID uint32) time.Time {
 	if upgradeTime, exists := ApricotPhase6Times[networkID]; exists {
+		return upgradeTime
+	}
+	return DefaultUpgradeTime
+}
+
+func GetApricotPhasePost6Time(networkID uint32) time.Time {
+	if upgradeTime, exists := ApricotPhasePost6Times[networkID]; exists {
 		return upgradeTime
 	}
 	return DefaultUpgradeTime
@@ -202,7 +244,7 @@ func GetCompatibility(networkID uint32) Compatibility {
 	return NewCompatibility(
 		CurrentApp,
 		MinimumCompatibleVersion,
-		GetCortinaTime(networkID),
+		GetDurangoTime(networkID),
 		PrevMinimumCompatibleVersion,
 	)
 }

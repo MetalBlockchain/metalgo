@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bimap
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -308,21 +309,58 @@ func TestBiMapDeleteValue(t *testing.T) {
 	}
 }
 
-func TestBiMapLen(t *testing.T) {
+func TestBiMapLenAndLists(t *testing.T) {
 	require := require.New(t)
 
 	m := New[int, int]()
 	require.Zero(m.Len())
+	require.Empty(m.Keys())
+	require.Empty(m.Values())
 
 	m.Put(1, 2)
 	require.Equal(1, m.Len())
+	require.ElementsMatch([]int{1}, m.Keys())
+	require.ElementsMatch([]int{2}, m.Values())
 
 	m.Put(2, 3)
 	require.Equal(2, m.Len())
+	require.ElementsMatch([]int{1, 2}, m.Keys())
+	require.ElementsMatch([]int{2, 3}, m.Values())
 
 	m.Put(1, 3)
 	require.Equal(1, m.Len())
+	require.ElementsMatch([]int{1}, m.Keys())
+	require.ElementsMatch([]int{3}, m.Values())
 
 	m.DeleteKey(1)
 	require.Zero(m.Len())
+	require.Empty(m.Keys())
+	require.Empty(m.Values())
+}
+
+func TestBiMapJSON(t *testing.T) {
+	require := require.New(t)
+
+	expectedMap := New[int, int]()
+	expectedMap.Put(1, 2)
+	expectedMap.Put(2, 3)
+
+	jsonBytes, err := json.Marshal(expectedMap)
+	require.NoError(err)
+
+	expectedJSONBytes := []byte(`{"1":2,"2":3}`)
+	require.Equal(expectedJSONBytes, jsonBytes)
+
+	var unmarshalledMap BiMap[int, int]
+	require.NoError(json.Unmarshal(jsonBytes, &unmarshalledMap))
+	require.Equal(expectedMap, &unmarshalledMap)
+}
+
+func TestBiMapInvalidJSON(t *testing.T) {
+	require := require.New(t)
+
+	invalidJSONBytes := []byte(`{"1":2,"2":2}`)
+	var unmarshalledMap BiMap[int, int]
+	err := json.Unmarshal(invalidJSONBytes, &unmarshalledMap)
+	require.ErrorIs(err, errNotBijective)
 }

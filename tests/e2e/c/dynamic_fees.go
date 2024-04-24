@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -7,21 +7,19 @@ import (
 	"math/big"
 	"strings"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/MetalBlockchain/coreth/core/types"
 	"github.com/MetalBlockchain/coreth/params"
 	"github.com/MetalBlockchain/coreth/plugin/evm"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 // This test uses the compiled bin for `hashing.sol` as
@@ -42,14 +40,14 @@ var _ = e2e.DescribeCChain("[Dynamic Fees]", func() {
 		privateNetwork := e2e.Env.NewPrivateNetwork()
 
 		ginkgo.By("allocating a pre-funded key")
-		key := privateNetwork.GetConfig().FundedKeys[0]
+		key := privateNetwork.PreFundedKeys[0]
 		ethAddress := evm.GetEthAddress(key)
 
 		ginkgo.By("initializing a coreth client")
-		node := privateNetwork.GetNodes()[0]
+		node := privateNetwork.Nodes[0]
 		nodeURI := tmpnet.NodeURI{
-			NodeID: node.GetID(),
-			URI:    node.GetProcessContext().URI,
+			NodeID: node.NodeID,
+			URI:    node.URI,
 		}
 		ethClient := e2e.NewEthClient(nodeURI)
 

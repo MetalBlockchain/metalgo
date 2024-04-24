@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -10,12 +10,12 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/dialer"
-	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/network/throttling"
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -73,6 +73,14 @@ type PeerListGossipConfig struct {
 	// PeerListGossipFreq is the frequency that this node will attempt to gossip
 	// signed IPs to its peers.
 	PeerListGossipFreq time.Duration `json:"peerListGossipFreq"`
+
+	// PeerListPullGossipFreq is the frequency that this node will attempt to
+	// request signed IPs from its peers.
+	PeerListPullGossipFreq time.Duration `json:"peerListPullGossipFreq"`
+
+	// PeerListBloomResetFreq is how frequently this node will recalculate the
+	// IP tracker's bloom filter.
+	PeerListBloomResetFreq time.Duration `json:"peerListBloomResetFreq"`
 }
 
 type TimeoutConfig struct {
@@ -126,12 +134,17 @@ type Config struct {
 	PingFrequency      time.Duration     `json:"pingFrequency"`
 	AllowPrivateIPs    bool              `json:"allowPrivateIPs"`
 
+	SupportedACPs set.Set[uint32] `json:"supportedACPs"`
+	ObjectedACPs  set.Set[uint32] `json:"objectedACPs"`
+
 	// The compression type to use when compressing outbound messages.
 	// Assumes all peers support this compression type.
 	CompressionType compression.Type `json:"compressionType"`
 
 	// TLSKey is this node's TLS key that is used to sign IPs.
 	TLSKey crypto.Signer `json:"-"`
+	// BLSKey is this node's BLS key that is used to sign IPs.
+	BLSKey *bls.SecretKey `json:"-"`
 
 	// TrackedSubnets of the node.
 	TrackedSubnets set.Set[ids.ID]    `json:"-"`
@@ -179,7 +192,4 @@ type Config struct {
 	// Specifies how much disk usage each peer can cause before
 	// we rate-limit them.
 	DiskTargeter tracker.Targeter `json:"-"`
-
-	// Tracks which validators have been sent to which peers
-	GossipTracker peer.GossipTracker `json:"-"`
 }

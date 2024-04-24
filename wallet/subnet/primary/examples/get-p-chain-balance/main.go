@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -8,13 +8,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
+	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 func main() {
@@ -37,8 +36,8 @@ func main() {
 	}
 	log.Printf("fetched state of %s in %s\n", addrStr, time.Since(fetchStartTime))
 
-	pUTXOs := primary.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
-	pBackend := p.NewBackend(state.PCTX, pUTXOs, make(map[ids.ID]*txs.Tx))
+	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
+	pBackend := p.NewBackend(state.PCTX, pUTXOs, nil)
 	pBuilder := p.NewBuilder(addresses, pBackend)
 
 	currentBalances, err := pBuilder.GetBalance()

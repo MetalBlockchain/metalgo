@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -8,14 +8,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/version"
 )
 
@@ -41,10 +39,10 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	mockRouter := router.NewMockRouter(ctrl)
 
 	b := beaconManager{
-		Router:        mockRouter,
-		timer:         timer.NewTimer(nil),
-		beacons:       validatorSet,
-		requiredConns: numValidators,
+		Router:                  mockRouter,
+		beacons:                 validatorSet,
+		requiredConns:           numValidators,
+		onSufficientlyConnected: make(chan struct{}),
 	}
 
 	// connect numValidators validators, each with a weight of 1

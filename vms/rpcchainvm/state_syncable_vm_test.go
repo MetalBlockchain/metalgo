@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/database/memdb"
@@ -20,7 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
+	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
@@ -66,8 +65,8 @@ var (
 )
 
 type StateSyncEnabledMock struct {
-	*mocks.MockChainVM
-	*mocks.MockStateSyncableVM
+	*block.MockChainVM
+	*block.MockStateSyncableVM
 }
 
 func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM {
@@ -76,8 +75,8 @@ func stateSyncEnabledTestPlugin(t *testing.T, loadExpectations bool) block.Chain
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -98,8 +97,8 @@ func getOngoingSyncStateSummaryTestPlugin(t *testing.T, loadExpectations bool) b
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -119,8 +118,8 @@ func getLastStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Ch
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -140,8 +139,8 @@ func parseStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Chai
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -162,8 +161,8 @@ func getStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.ChainV
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -183,8 +182,8 @@ func acceptStateSummaryTestPlugin(t *testing.T, loadExpectations bool) block.Cha
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -229,8 +228,8 @@ func lastAcceptedBlockPostStateSummaryAcceptTestPlugin(t *testing.T, loadExpecta
 	// create mock
 	ctrl := gomock.NewController(t)
 	ssVM := StateSyncEnabledMock{
-		MockChainVM:         mocks.NewMockChainVM(ctrl),
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockChainVM:         block.NewMockChainVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	if loadExpectations {
@@ -470,7 +469,7 @@ func TestLastAcceptedBlockPostStateSummaryAccept(t *testing.T) {
 	defer stopper.Stop(context.Background())
 
 	// Step 1: initialize VM and check initial LastAcceptedBlock
-	ctx := snow.DefaultContextTest()
+	ctx := snowtest.Context(t, snowtest.CChainID)
 
 	require.NoError(vm.Initialize(context.Background(), ctx, prefixdb.New([]byte{}, memdb.New()), nil, nil, nil, nil, nil, nil))
 

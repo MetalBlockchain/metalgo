@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -8,12 +8,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
-	"golang.org/x/exp/maps"
-
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
+	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -266,6 +265,18 @@ func (m *Manager) getAndApplyChangeProof(ctx context.Context, work *workItem) {
 		return
 	}
 
+	if targetRootID == ids.Empty {
+		// The trie is empty after this change.
+		// Delete all the key-value pairs in the range.
+		if err := m.config.DB.Clear(); err != nil {
+			m.setError(err)
+			return
+		}
+		work.start = maybe.Nothing[[]byte]()
+		m.completeWorkItem(ctx, work, maybe.Nothing[[]byte](), targetRootID, nil)
+		return
+	}
+
 	changeOrRangeProof, err := m.config.Client.GetChangeProof(
 		ctx,
 		&pb.SyncGetChangeProofRequest{
@@ -332,6 +343,17 @@ func (m *Manager) getAndApplyChangeProof(ctx context.Context, work *workItem) {
 // Assumes [m.workLock] is not held.
 func (m *Manager) getAndApplyRangeProof(ctx context.Context, work *workItem) {
 	targetRootID := m.getTargetRoot()
+
+	if targetRootID == ids.Empty {
+		if err := m.config.DB.Clear(); err != nil {
+			m.setError(err)
+			return
+		}
+		work.start = maybe.Nothing[[]byte]()
+		m.completeWorkItem(ctx, work, maybe.Nothing[[]byte](), targetRootID, nil)
+		return
+	}
+
 	proof, err := m.config.Client.GetRangeProof(ctx,
 		&pb.SyncGetRangeProofRequest{
 			RootHash: targetRootID[:],

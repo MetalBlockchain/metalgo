@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -13,11 +13,11 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var errUnknownTx = errors.New("unknown tx")
@@ -29,13 +29,12 @@ func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (snowst
 	vm.ParseTxF = parse
 
 	baseDB := memdb.New()
-	ctx := snow.DefaultContextTest()
 	s := NewSerializer(
 		SerializerConfig{
-			ChainID: ctx.ChainID,
+			ChainID: ids.Empty,
 			VM:      &vm,
 			DB:      baseDB,
-			Log:     ctx.Log,
+			Log:     logging.NoLog{},
 		},
 	)
 
@@ -260,9 +259,9 @@ func TestParseVertexWithIncorrectChainID(t *testing.T) {
 func TestParseVertexWithInvalidTxs(t *testing.T) {
 	require := require.New(t)
 
-	ctx := snow.DefaultContextTest()
+	chainID := ids.Empty
 	statelessVertex, err := vertex.Build( // regular, non-stop vertex
-		ctx.ChainID,
+		chainID,
 		0,
 		nil,
 		[][]byte{{1}},
@@ -290,7 +289,7 @@ func TestParseVertexWithInvalidTxs(t *testing.T) {
 	require.ErrorIs(err, errUnknownVertex)
 
 	childStatelessVertex, err := vertex.Build( // regular, non-stop vertex
-		ctx.ChainID,
+		chainID,
 		1,
 		[]ids.ID{id},
 		[][]byte{{2}},

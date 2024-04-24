@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -12,10 +12,8 @@ import (
 	"time"
 
 	"github.com/google/btree"
-
-	"go.uber.org/zap"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/cache/metercacher"
@@ -61,35 +59,35 @@ var (
 	errValidatorSetAlreadyPopulated = errors.New("validator set already populated")
 	errIsNotSubnet                  = errors.New("is not a subnet")
 
-	blockIDPrefix                       = []byte("blockID")
-	blockPrefix                         = []byte("block")
-	validatorsPrefix                    = []byte("validators")
-	currentPrefix                       = []byte("current")
-	pendingPrefix                       = []byte("pending")
-	validatorPrefix                     = []byte("validator")
-	delegatorPrefix                     = []byte("delegator")
-	subnetValidatorPrefix               = []byte("subnetValidator")
-	subnetDelegatorPrefix               = []byte("subnetDelegator")
-	nestedValidatorWeightDiffsPrefix    = []byte("validatorDiffs")
-	nestedValidatorPublicKeyDiffsPrefix = []byte("publicKeyDiffs")
-	flatValidatorWeightDiffsPrefix      = []byte("flatValidatorDiffs")
-	flatValidatorPublicKeyDiffsPrefix   = []byte("flatPublicKeyDiffs")
-	txPrefix                            = []byte("tx")
-	rewardUTXOsPrefix                   = []byte("rewardUTXOs")
-	utxoPrefix                          = []byte("utxo")
-	subnetPrefix                        = []byte("subnet")
-	subnetOwnerPrefix                   = []byte("subnetOwner")
-	transformedSubnetPrefix             = []byte("transformedSubnet")
-	supplyPrefix                        = []byte("supply")
-	chainPrefix                         = []byte("chain")
-	singletonPrefix                     = []byte("singleton")
+	BlockIDPrefix                       = []byte("blockID")
+	BlockPrefix                         = []byte("block")
+	ValidatorsPrefix                    = []byte("validators")
+	CurrentPrefix                       = []byte("current")
+	PendingPrefix                       = []byte("pending")
+	ValidatorPrefix                     = []byte("validator")
+	DelegatorPrefix                     = []byte("delegator")
+	SubnetValidatorPrefix               = []byte("subnetValidator")
+	SubnetDelegatorPrefix               = []byte("subnetDelegator")
+	NestedValidatorWeightDiffsPrefix    = []byte("validatorDiffs")
+	NestedValidatorPublicKeyDiffsPrefix = []byte("publicKeyDiffs")
+	FlatValidatorWeightDiffsPrefix      = []byte("flatValidatorDiffs")
+	FlatValidatorPublicKeyDiffsPrefix   = []byte("flatPublicKeyDiffs")
+	TxPrefix                            = []byte("tx")
+	RewardUTXOsPrefix                   = []byte("rewardUTXOs")
+	UTXOPrefix                          = []byte("utxo")
+	SubnetPrefix                        = []byte("subnet")
+	SubnetOwnerPrefix                   = []byte("subnetOwner")
+	TransformedSubnetPrefix             = []byte("transformedSubnet")
+	SupplyPrefix                        = []byte("supply")
+	ChainPrefix                         = []byte("chain")
+	SingletonPrefix                     = []byte("singleton")
 
-	timestampKey      = []byte("timestamp")
-	currentSupplyKey  = []byte("current supply")
-	lastAcceptedKey   = []byte("last accepted")
-	heightsIndexedKey = []byte("heights indexed")
-	initializedKey    = []byte("initialized")
-	prunedKey         = []byte("pruned")
+	TimestampKey      = []byte("timestamp")
+	CurrentSupplyKey  = []byte("current supply")
+	LastAcceptedKey   = []byte("last accepted")
+	HeightsIndexedKey = []byte("heights indexed")
+	InitializedKey    = []byte("initialized")
+	PrunedKey         = []byte("pruned")
 )
 
 // Chain collects all methods to manage the state of the chain for block
@@ -289,6 +287,7 @@ type state struct {
 
 	validators validators.Manager
 	ctx        *snow.Context
+	cfg        *config.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
 
@@ -452,7 +451,7 @@ func New(
 	db database.Database,
 	genesisBytes []byte,
 	metricsReg prometheus.Registerer,
-	validators validators.Manager,
+	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx *snow.Context,
 	metrics metrics.Metrics,
@@ -461,7 +460,7 @@ func New(
 	s, err := newState(
 		db,
 		metrics,
-		validators,
+		cfg,
 		execCfg,
 		ctx,
 		metricsReg,
@@ -490,7 +489,7 @@ func New(
 		// If the pruned key is on disk, we must delete it to ensure our disk
 		// can't get into a partially pruned state if the node restarts mid-way
 		// through pruning.
-		if err := s.singletonDB.Delete(prunedKey); err != nil {
+		if err := s.singletonDB.Delete(PrunedKey); err != nil {
 			return nil, fmt.Errorf("failed to remove prunedKey from singletonDB: %w", err)
 		}
 
@@ -505,7 +504,7 @@ func New(
 func newState(
 	db database.Database,
 	metrics metrics.Metrics,
-	validators validators.Manager,
+	cfg *config.Config,
 	execCfg *config.ExecutionConfig,
 	ctx *snow.Context,
 	metricsReg prometheus.Registerer,
@@ -531,24 +530,24 @@ func newState(
 
 	baseDB := versiondb.New(db)
 
-	validatorsDB := prefixdb.New(validatorsPrefix, baseDB)
+	validatorsDB := prefixdb.New(ValidatorsPrefix, baseDB)
 
-	currentValidatorsDB := prefixdb.New(currentPrefix, validatorsDB)
-	currentValidatorBaseDB := prefixdb.New(validatorPrefix, currentValidatorsDB)
-	currentDelegatorBaseDB := prefixdb.New(delegatorPrefix, currentValidatorsDB)
-	currentSubnetValidatorBaseDB := prefixdb.New(subnetValidatorPrefix, currentValidatorsDB)
-	currentSubnetDelegatorBaseDB := prefixdb.New(subnetDelegatorPrefix, currentValidatorsDB)
+	currentValidatorsDB := prefixdb.New(CurrentPrefix, validatorsDB)
+	currentValidatorBaseDB := prefixdb.New(ValidatorPrefix, currentValidatorsDB)
+	currentDelegatorBaseDB := prefixdb.New(DelegatorPrefix, currentValidatorsDB)
+	currentSubnetValidatorBaseDB := prefixdb.New(SubnetValidatorPrefix, currentValidatorsDB)
+	currentSubnetDelegatorBaseDB := prefixdb.New(SubnetDelegatorPrefix, currentValidatorsDB)
 
-	pendingValidatorsDB := prefixdb.New(pendingPrefix, validatorsDB)
-	pendingValidatorBaseDB := prefixdb.New(validatorPrefix, pendingValidatorsDB)
-	pendingDelegatorBaseDB := prefixdb.New(delegatorPrefix, pendingValidatorsDB)
-	pendingSubnetValidatorBaseDB := prefixdb.New(subnetValidatorPrefix, pendingValidatorsDB)
-	pendingSubnetDelegatorBaseDB := prefixdb.New(subnetDelegatorPrefix, pendingValidatorsDB)
+	pendingValidatorsDB := prefixdb.New(PendingPrefix, validatorsDB)
+	pendingValidatorBaseDB := prefixdb.New(ValidatorPrefix, pendingValidatorsDB)
+	pendingDelegatorBaseDB := prefixdb.New(DelegatorPrefix, pendingValidatorsDB)
+	pendingSubnetValidatorBaseDB := prefixdb.New(SubnetValidatorPrefix, pendingValidatorsDB)
+	pendingSubnetDelegatorBaseDB := prefixdb.New(SubnetDelegatorPrefix, pendingValidatorsDB)
 
-	nestedValidatorWeightDiffsDB := prefixdb.New(nestedValidatorWeightDiffsPrefix, validatorsDB)
-	nestedValidatorPublicKeyDiffsDB := prefixdb.New(nestedValidatorPublicKeyDiffsPrefix, validatorsDB)
-	flatValidatorWeightDiffsDB := prefixdb.New(flatValidatorWeightDiffsPrefix, validatorsDB)
-	flatValidatorPublicKeyDiffsDB := prefixdb.New(flatValidatorPublicKeyDiffsPrefix, validatorsDB)
+	nestedValidatorWeightDiffsDB := prefixdb.New(NestedValidatorWeightDiffsPrefix, validatorsDB)
+	nestedValidatorPublicKeyDiffsDB := prefixdb.New(NestedValidatorPublicKeyDiffsPrefix, validatorsDB)
+	flatValidatorWeightDiffsDB := prefixdb.New(FlatValidatorWeightDiffsPrefix, validatorsDB)
+	flatValidatorPublicKeyDiffsDB := prefixdb.New(FlatValidatorPublicKeyDiffsPrefix, validatorsDB)
 
 	txCache, err := metercacher.New(
 		"tx_cache",
@@ -559,7 +558,7 @@ func newState(
 		return nil, err
 	}
 
-	rewardUTXODB := prefixdb.New(rewardUTXOsPrefix, baseDB)
+	rewardUTXODB := prefixdb.New(RewardUTXOsPrefix, baseDB)
 	rewardUTXOsCache, err := metercacher.New[ids.ID, []*avax.UTXO](
 		"reward_utxos_cache",
 		metricsReg,
@@ -569,15 +568,15 @@ func newState(
 		return nil, err
 	}
 
-	utxoDB := prefixdb.New(utxoPrefix, baseDB)
+	utxoDB := prefixdb.New(UTXOPrefix, baseDB)
 	utxoState, err := avax.NewMeteredUTXOState(utxoDB, txs.GenesisCodec, metricsReg, execCfg.ChecksumsEnabled)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetBaseDB := prefixdb.New(subnetPrefix, baseDB)
+	subnetBaseDB := prefixdb.New(SubnetPrefix, baseDB)
 
-	subnetOwnerDB := prefixdb.New(subnetOwnerPrefix, baseDB)
+	subnetOwnerDB := prefixdb.New(SubnetOwnerPrefix, baseDB)
 	subnetOwnerCache, err := metercacher.New[ids.ID, fxOwnerAndSize](
 		"subnet_owner_cache",
 		metricsReg,
@@ -628,19 +627,20 @@ func newState(
 	return &state{
 		validatorState: newValidatorState(),
 
-		validators: validators,
+		validators: cfg.Validators,
 		ctx:        ctx,
+		cfg:        cfg,
 		metrics:    metrics,
 		rewards:    rewards,
 		baseDB:     baseDB,
 
 		addedBlockIDs: make(map[uint64]ids.ID),
 		blockIDCache:  blockIDCache,
-		blockIDDB:     prefixdb.New(blockIDPrefix, baseDB),
+		blockIDDB:     prefixdb.New(BlockIDPrefix, baseDB),
 
 		addedBlocks: make(map[ids.ID]block.Block),
 		blockCache:  blockCache,
-		blockDB:     prefixdb.New(blockPrefix, baseDB),
+		blockDB:     prefixdb.New(BlockPrefix, baseDB),
 
 		currentStakers: newBaseStakers(),
 		pendingStakers: newBaseStakers(),
@@ -670,7 +670,7 @@ func newState(
 		flatValidatorPublicKeyDiffsDB:   flatValidatorPublicKeyDiffsDB,
 
 		addedTxs: make(map[ids.ID]*txAndStatus),
-		txDB:     prefixdb.New(txPrefix, baseDB),
+		txDB:     prefixdb.New(TxPrefix, baseDB),
 		txCache:  txCache,
 
 		addedRewardUTXOs: make(map[ids.ID][]*avax.UTXO),
@@ -690,18 +690,18 @@ func newState(
 
 		transformedSubnets:     make(map[ids.ID]*txs.Tx),
 		transformedSubnetCache: transformedSubnetCache,
-		transformedSubnetDB:    prefixdb.New(transformedSubnetPrefix, baseDB),
+		transformedSubnetDB:    prefixdb.New(TransformedSubnetPrefix, baseDB),
 
 		modifiedSupplies: make(map[ids.ID]uint64),
 		supplyCache:      supplyCache,
-		supplyDB:         prefixdb.New(supplyPrefix, baseDB),
+		supplyDB:         prefixdb.New(SupplyPrefix, baseDB),
 
 		addedChains:  make(map[ids.ID][]*txs.Tx),
-		chainDB:      prefixdb.New(chainPrefix, baseDB),
+		chainDB:      prefixdb.New(ChainPrefix, baseDB),
 		chainCache:   chainCache,
 		chainDBCache: chainDBCache,
 
-		singletonDB: prefixdb.New(singletonPrefix, baseDB),
+		singletonDB: prefixdb.New(SingletonPrefix, baseDB),
 	}, nil
 }
 
@@ -762,16 +762,16 @@ func (s *state) GetPendingStakerIterator() (StakerIterator, error) {
 }
 
 func (s *state) shouldInit() (bool, error) {
-	has, err := s.singletonDB.Has(initializedKey)
+	has, err := s.singletonDB.Has(InitializedKey)
 	return !has, err
 }
 
 func (s *state) doneInit() error {
-	return s.singletonDB.Put(initializedKey, nil)
+	return s.singletonDB.Put(InitializedKey, nil)
 }
 
 func (s *state) ShouldPrune() (bool, error) {
-	has, err := s.singletonDB.Has(prunedKey)
+	has, err := s.singletonDB.Has(PrunedKey)
 	if err != nil {
 		return true, err
 	}
@@ -798,7 +798,7 @@ func (s *state) ShouldPrune() (bool, error) {
 }
 
 func (s *state) donePrune() error {
-	return s.singletonDB.Put(prunedKey, nil)
+	return s.singletonDB.Put(PrunedKey, nil)
 }
 
 func (s *state) GetSubnets() ([]*txs.Tx, error) {
@@ -1156,6 +1156,18 @@ func (s *state) ApplyValidatorWeightDiffs(
 		if err != nil {
 			return err
 		}
+
+		if parsedHeight > prevHeight {
+			s.ctx.Log.Error("unexpected parsed height",
+				zap.Stringer("subnetID", subnetID),
+				zap.Uint64("parsedHeight", parsedHeight),
+				zap.Stringer("nodeID", nodeID),
+				zap.Uint64("prevHeight", prevHeight),
+				zap.Uint64("startHeight", startHeight),
+				zap.Uint64("endHeight", endHeight),
+			)
+		}
+
 		// If the parsedHeight is less than our target endHeight, then we have
 		// fully processed the diffs from startHeight through endHeight.
 		if parsedHeight < endHeight {
@@ -1188,7 +1200,7 @@ func (s *state) ApplyValidatorWeightDiffs(
 			Height:   height,
 			SubnetID: subnetID,
 		}
-		prefixBytes, err := block.GenesisCodec.Marshal(block.Version, prefixStruct)
+		prefixBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, prefixStruct)
 		if err != nil {
 			return err
 		}
@@ -1320,13 +1332,20 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 
 	// Persist primary network validator set at genesis
 	for _, vdrTx := range genesis.Validators {
-		validatorTx, ok := vdrTx.Unsigned.(txs.ValidatorTx)
+		// We expect genesis validator txs to be either AddValidatorTx or
+		// AddPermissionlessValidatorTx.
+		//
+		// TODO: Enforce stricter type check
+		validatorTx, ok := vdrTx.Unsigned.(txs.ScheduledStaker)
 		if !ok {
-			return fmt.Errorf("expected tx type txs.ValidatorTx but got %T", vdrTx.Unsigned)
+			return fmt.Errorf("expected a scheduled staker but got %T", vdrTx.Unsigned)
 		}
 
 		stakeAmount := validatorTx.Weight()
-		stakeDuration := validatorTx.EndTime().Sub(validatorTx.StartTime())
+		// Note: We use [StartTime()] here because genesis transactions are
+		// guaranteed to be pre-Durango activation.
+		startTime := validatorTx.StartTime()
+		stakeDuration := validatorTx.EndTime().Sub(startTime)
 		currentSupply, err := s.GetCurrentSupply(constants.PrimaryNetworkID)
 		if err != nil {
 			return err
@@ -1342,7 +1361,7 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 			return err
 		}
 
-		staker, err := NewCurrentStaker(vdrTx.ID(), validatorTx, potentialReward)
+		staker, err := NewCurrentStaker(vdrTx.ID(), validatorTx, startTime, potentialReward)
 		if err != nil {
 			return err
 		}
@@ -1385,21 +1404,21 @@ func (s *state) load() error {
 }
 
 func (s *state) loadMetadata() error {
-	timestamp, err := database.GetTimestamp(s.singletonDB, timestampKey)
+	timestamp, err := database.GetTimestamp(s.singletonDB, TimestampKey)
 	if err != nil {
 		return err
 	}
 	s.persistedTimestamp = timestamp
 	s.SetTimestamp(timestamp)
 
-	currentSupply, err := database.GetUInt64(s.singletonDB, currentSupplyKey)
+	currentSupply, err := database.GetUInt64(s.singletonDB, CurrentSupplyKey)
 	if err != nil {
 		return err
 	}
 	s.persistedCurrentSupply = currentSupply
 	s.SetCurrentSupply(constants.PrimaryNetworkID, currentSupply)
 
-	lastAccepted, err := database.GetID(s.singletonDB, lastAcceptedKey)
+	lastAccepted, err := database.GetID(s.singletonDB, LastAcceptedKey)
 	if err != nil {
 		return err
 	}
@@ -1408,7 +1427,7 @@ func (s *state) loadMetadata() error {
 
 	// Lookup the most recently indexed range on disk. If we haven't started
 	// indexing the weights, then we keep the indexed heights as nil.
-	indexedHeightsBytes, err := s.singletonDB.Get(heightsIndexedKey)
+	indexedHeightsBytes, err := s.singletonDB.Get(HeightsIndexedKey)
 	if err == database.ErrNotFound {
 		return nil
 	}
@@ -1448,17 +1467,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 		tx, _, err := s.GetTx(txID)
 		if err != nil {
-			return err
-		}
-
-		metadataBytes := validatorIt.Value()
-		metadata := &validatorMetadata{
-			txID: txID,
-			// Note: we don't provide [LastUpdated] here because we expect it to
-			// always be present on disk.
-		}
-		if err := parseValidatorMetadata(metadataBytes, metadata); err != nil {
-			return err
+			return fmt.Errorf("failed loading validator transaction txID %s, %w", txID, err)
 		}
 
 		stakerTx, ok := tx.Unsigned.(txs.Staker)
@@ -1466,7 +1475,27 @@ func (s *state) loadCurrentValidators() error {
 			return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
 		}
 
-		staker, err := NewCurrentStaker(txID, stakerTx, metadata.PotentialReward)
+		metadataBytes := validatorIt.Value()
+		metadata := &validatorMetadata{
+			txID: txID,
+		}
+		if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
+			// Populate [StakerStartTime] using the tx as a default in the event
+			// it was added pre-durango and is not stored in the database.
+			//
+			// Note: We do not populate [LastUpdated] since it is expected to
+			// always be present on disk.
+			metadata.StakerStartTime = uint64(scheduledStakerTx.StartTime().Unix())
+		}
+		if err := parseValidatorMetadata(metadataBytes, metadata); err != nil {
+			return err
+		}
+
+		staker, err := NewCurrentStaker(
+			txID,
+			stakerTx,
+			time.Unix(int64(metadata.StakerStartTime), 0),
+			metadata.PotentialReward)
 		if err != nil {
 			return err
 		}
@@ -1500,15 +1529,24 @@ func (s *state) loadCurrentValidators() error {
 		metadataBytes := subnetValidatorIt.Value()
 		metadata := &validatorMetadata{
 			txID: txID,
-			// use the start time as the fallback value
-			// in case it's not stored in the database
-			LastUpdated: uint64(stakerTx.StartTime().Unix()),
+		}
+		if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
+			// Populate [StakerStartTime] and [LastUpdated] using the tx as a
+			// default in the event they are not stored in the database.
+			startTime := uint64(scheduledStakerTx.StartTime().Unix())
+			metadata.StakerStartTime = startTime
+			metadata.LastUpdated = startTime
 		}
 		if err := parseValidatorMetadata(metadataBytes, metadata); err != nil {
 			return err
 		}
 
-		staker, err := NewCurrentStaker(txID, stakerTx, metadata.PotentialReward)
+		staker, err := NewCurrentStaker(
+			txID,
+			stakerTx,
+			time.Unix(int64(metadata.StakerStartTime), 0),
+			metadata.PotentialReward,
+		)
 		if err != nil {
 			return err
 		}
@@ -1538,20 +1576,32 @@ func (s *state) loadCurrentValidators() error {
 				return err
 			}
 
-			metadata := &delegatorMetadata{
-				txID: txID,
-			}
-			err = parseDelegatorMetadata(delegatorIt.Value(), metadata)
-			if err != nil {
-				return err
-			}
-
 			stakerTx, ok := tx.Unsigned.(txs.Staker)
 			if !ok {
 				return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
 			}
 
-			staker, err := NewCurrentStaker(txID, stakerTx, metadata.PotentialReward)
+			metadataBytes := delegatorIt.Value()
+			metadata := &delegatorMetadata{
+				txID: txID,
+			}
+			if scheduledStakerTx, ok := tx.Unsigned.(txs.ScheduledStaker); ok {
+				// Populate [StakerStartTime] using the tx as a default in the
+				// event it was added pre-durango and is not stored in the
+				// database.
+				metadata.StakerStartTime = uint64(scheduledStakerTx.StartTime().Unix())
+			}
+			err = parseDelegatorMetadata(metadataBytes, metadata)
+			if err != nil {
+				return err
+			}
+
+			staker, err := NewCurrentStaker(
+				txID,
+				stakerTx,
+				time.Unix(int64(metadata.StakerStartTime), 0),
+				metadata.PotentialReward,
+			)
 			if err != nil {
 				return err
 			}
@@ -1595,7 +1645,7 @@ func (s *state) loadPendingValidators() error {
 				return err
 			}
 
-			stakerTx, ok := tx.Unsigned.(txs.Staker)
+			stakerTx, ok := tx.Unsigned.(txs.ScheduledStaker)
 			if !ok {
 				return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
 			}
@@ -1630,7 +1680,7 @@ func (s *state) loadPendingValidators() error {
 				return err
 			}
 
-			stakerTx, ok := tx.Unsigned.(txs.Staker)
+			stakerTx, ok := tx.Unsigned.(txs.ScheduledStaker)
 			if !ok {
 				return fmt.Errorf("expected tx type txs.Staker but got %T", tx.Unsigned)
 			}
@@ -1695,11 +1745,16 @@ func (s *state) initValidatorSets() error {
 }
 
 func (s *state) write(updateValidators bool, height uint64) error {
+	codecVersion := CodecVersion1
+	if !s.cfg.IsDurangoActivated(s.GetTimestamp()) {
+		codecVersion = CodecVersion0
+	}
+
 	return utils.Err(
 		s.writeBlocks(),
-		s.writeCurrentStakers(updateValidators, height),
+		s.writeCurrentStakers(updateValidators, height, codecVersion),
 		s.writePendingStakers(),
-		s.WriteValidatorMetadata(s.currentValidatorList, s.currentSubnetValidatorList), // Must be called after writeCurrentStakers
+		s.WriteValidatorMetadata(s.currentValidatorList, s.currentSubnetValidatorList, codecVersion), // Must be called after writeCurrentStakers
 		s.writeTXs(),
 		s.writeRewardUTXOs(),
 		s.writeUTXOs(),
@@ -1925,7 +1980,7 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 	return blkID, nil
 }
 
-func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error {
+func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecVersion uint16) error {
 	heightBytes := database.PackUInt64(height)
 	rawNestedPublicKeyDiffDB := prefixdb.New(heightBytes, s.nestedValidatorPublicKeyDiffsDB)
 	nestedPKDiffDB := linkeddb.NewDefault(rawNestedPublicKeyDiffDB)
@@ -1945,7 +2000,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			Height:   height,
 			SubnetID: subnetID,
 		}
-		prefixBytes, err := block.GenesisCodec.Marshal(block.Version, prefixStruct)
+		prefixBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, prefixStruct)
 		if err != nil {
 			return fmt.Errorf("failed to create prefix bytes: %w", err)
 		}
@@ -1984,17 +2039,19 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 				//
 				// Invariant: It's impossible for a delegator to have been
 				// rewarded in the same block that the validator was added.
+				startTime := uint64(staker.StartTime.Unix())
 				metadata := &validatorMetadata{
 					txID:        staker.TxID,
 					lastUpdated: staker.StartTime,
 
 					UpDuration:               0,
-					LastUpdated:              uint64(staker.StartTime.Unix()),
+					LastUpdated:              startTime,
+					StakerStartTime:          startTime,
 					PotentialReward:          staker.PotentialReward,
 					PotentialDelegateeReward: 0,
 				}
 
-				metadataBytes, err := metadataCodec.Marshal(v0, metadata)
+				metadataBytes, err := MetadataCodec.Marshal(codecVersion, metadata)
 				if err != nil {
 					return fmt.Errorf("failed to serialize current validator: %w", err)
 				}
@@ -2047,6 +2104,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 				delegatorDB,
 				weightDiff,
 				validatorDiff,
+				codecVersion,
 			)
 			if err != nil {
 				return err
@@ -2066,7 +2124,7 @@ func (s *state) writeCurrentStakers(updateValidators bool, height uint64) error 
 			}
 
 			// TODO: Remove this once we no longer support version rollbacks.
-			weightDiffBytes, err := block.GenesisCodec.Marshal(block.Version, weightDiff)
+			weightDiffBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, weightDiff)
 			if err != nil {
 				return fmt.Errorf("failed to serialize validator weight diff: %w", err)
 			}
@@ -2122,6 +2180,7 @@ func writeCurrentDelegatorDiff(
 	currentDelegatorList linkeddb.LinkedDB,
 	weightDiff *ValidatorWeightDiff,
 	validatorDiff *diffValidator,
+	codecVersion uint16,
 ) error {
 	addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
@@ -2135,8 +2194,9 @@ func writeCurrentDelegatorDiff(
 		metadata := &delegatorMetadata{
 			txID:            staker.TxID,
 			PotentialReward: staker.PotentialReward,
+			StakerStartTime: uint64(staker.StartTime.Unix()),
 		}
-		if err := writeDelegatorMetadata(currentDelegatorList, metadata); err != nil {
+		if err := writeDelegatorMetadata(currentDelegatorList, metadata, codecVersion); err != nil {
 			return fmt.Errorf("failed to write current delegator to list: %w", err)
 		}
 	}
@@ -2225,7 +2285,7 @@ func (s *state) writeTXs() error {
 
 		// Note that we're serializing a [txBytesAndStatus] here, not a
 		// *txs.Tx, so we don't use [txs.Codec].
-		txBytes, err := txs.GenesisCodec.Marshal(txs.Version, &stx)
+		txBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, &stx)
 		if err != nil {
 			return fmt.Errorf("failed to serialize tx: %w", err)
 		}
@@ -2250,7 +2310,7 @@ func (s *state) writeRewardUTXOs() error {
 		txDB := linkeddb.NewDefault(rawTxDB)
 
 		for _, utxo := range utxos {
-			utxoBytes, err := txs.GenesisCodec.Marshal(txs.Version, utxo)
+			utxoBytes, err := txs.GenesisCodec.Marshal(txs.CodecVersion, utxo)
 			if err != nil {
 				return fmt.Errorf("failed to serialize reward UTXO: %w", err)
 			}
@@ -2298,7 +2358,7 @@ func (s *state) writeSubnetOwners() error {
 		owner := owner
 		delete(s.subnetOwners, subnetID)
 
-		ownerBytes, err := block.GenesisCodec.Marshal(block.Version, &owner)
+		ownerBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &owner)
 		if err != nil {
 			return fmt.Errorf("failed to marshal subnet owner: %w", err)
 		}
@@ -2360,30 +2420,30 @@ func (s *state) writeChains() error {
 
 func (s *state) writeMetadata() error {
 	if !s.persistedTimestamp.Equal(s.timestamp) {
-		if err := database.PutTimestamp(s.singletonDB, timestampKey, s.timestamp); err != nil {
+		if err := database.PutTimestamp(s.singletonDB, TimestampKey, s.timestamp); err != nil {
 			return fmt.Errorf("failed to write timestamp: %w", err)
 		}
 		s.persistedTimestamp = s.timestamp
 	}
 	if s.persistedCurrentSupply != s.currentSupply {
-		if err := database.PutUInt64(s.singletonDB, currentSupplyKey, s.currentSupply); err != nil {
+		if err := database.PutUInt64(s.singletonDB, CurrentSupplyKey, s.currentSupply); err != nil {
 			return fmt.Errorf("failed to write current supply: %w", err)
 		}
 		s.persistedCurrentSupply = s.currentSupply
 	}
 	if s.persistedLastAccepted != s.lastAccepted {
-		if err := database.PutID(s.singletonDB, lastAcceptedKey, s.lastAccepted); err != nil {
+		if err := database.PutID(s.singletonDB, LastAcceptedKey, s.lastAccepted); err != nil {
 			return fmt.Errorf("failed to write last accepted: %w", err)
 		}
 		s.persistedLastAccepted = s.lastAccepted
 	}
 
 	if s.indexedHeights != nil {
-		indexedHeightsBytes, err := block.GenesisCodec.Marshal(block.Version, s.indexedHeights)
+		indexedHeightsBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, s.indexedHeights)
 		if err != nil {
 			return err
 		}
-		if err := s.singletonDB.Put(heightsIndexedKey, indexedHeightsBytes); err != nil {
+		if err := s.singletonDB.Put(HeightsIndexedKey, indexedHeightsBytes); err != nil {
 			return fmt.Errorf("failed to write indexed range: %w", err)
 		}
 	}
@@ -2528,7 +2588,7 @@ func (s *state) PruneAndIndex(lock sync.Locker, log logging.Logger) error {
 			// could take an extremely long period of time; which we should not
 			// delay processing for.
 			pruneDuration := now.Sub(lastCommit)
-			sleepDuration := safemath.Min(
+			sleepDuration := min(
 				pruneCommitSleepMultiplier*pruneDuration,
 				pruneCommitSleepCap,
 			)

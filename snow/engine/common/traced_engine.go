@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -9,13 +9,13 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
+
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 var _ Engine = (*tracedEngine)(nil)
@@ -291,14 +291,14 @@ func (e *tracedEngine) AppResponse(ctx context.Context, nodeID ids.NodeID, reque
 	return e.engine.AppResponse(ctx, nodeID, requestID, response)
 }
 
-func (e *tracedEngine) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32) error {
+func (e *tracedEngine) AppRequestFailed(ctx context.Context, nodeID ids.NodeID, requestID uint32, appErr *AppError) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.AppRequestFailed", oteltrace.WithAttributes(
 		attribute.Stringer("nodeID", nodeID),
 		attribute.Int64("requestID", int64(requestID)),
 	))
 	defer span.End()
 
-	return e.engine.AppRequestFailed(ctx, nodeID, requestID)
+	return e.engine.AppRequestFailed(ctx, nodeID, requestID, appErr)
 }
 
 func (e *tracedEngine) AppGossip(ctx context.Context, nodeID ids.NodeID, msg []byte) error {
@@ -333,14 +333,14 @@ func (e *tracedEngine) CrossChainAppResponse(ctx context.Context, chainID ids.ID
 	return e.engine.CrossChainAppResponse(ctx, chainID, requestID, response)
 }
 
-func (e *tracedEngine) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32) error {
+func (e *tracedEngine) CrossChainAppRequestFailed(ctx context.Context, chainID ids.ID, requestID uint32, appErr *AppError) error {
 	ctx, span := e.tracer.Start(ctx, "tracedEngine.CrossChainAppRequestFailed", oteltrace.WithAttributes(
 		attribute.Stringer("chainID", chainID),
 		attribute.Int64("requestID", int64(requestID)),
 	))
 	defer span.End()
 
-	return e.engine.CrossChainAppRequestFailed(ctx, chainID, requestID)
+	return e.engine.CrossChainAppRequestFailed(ctx, chainID, requestID, appErr)
 }
 
 func (e *tracedEngine) Connected(ctx context.Context, nodeID ids.NodeID, nodeVersion *version.Application) error {

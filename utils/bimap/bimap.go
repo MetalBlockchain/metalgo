@@ -1,9 +1,25 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bimap
 
-import "github.com/MetalBlockchain/metalgo/utils"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+
+	"golang.org/x/exp/maps"
+
+	"github.com/MetalBlockchain/metalgo/utils"
+)
+
+var (
+	_ json.Marshaler   = (*BiMap[int, int])(nil)
+	_ json.Unmarshaler = (*BiMap[int, int])(nil)
+
+	nullBytes       = []byte("null")
+	errNotBijective = errors.New("map not bijective")
+)
 
 type Entry[K, V any] struct {
 	Key   K
@@ -96,7 +112,43 @@ func (m *BiMap[K, V]) DeleteValue(val V) (K, bool) {
 	return key, true
 }
 
+// Keys returns the keys of the map. The keys will be in an indeterminate order.
+func (m *BiMap[K, _]) Keys() []K {
+	return maps.Keys(m.keyToValue)
+}
+
+// Values returns the values of the map. The values will be in an indeterminate
+// order.
+func (m *BiMap[_, V]) Values() []V {
+	return maps.Values(m.keyToValue)
+}
+
 // Len return the number of entries in this map.
 func (m *BiMap[K, V]) Len() int {
 	return len(m.keyToValue)
+}
+
+func (m *BiMap[K, V]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.keyToValue)
+}
+
+func (m *BiMap[K, V]) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, nullBytes) {
+		return nil
+	}
+	var keyToValue map[K]V
+	if err := json.Unmarshal(b, &keyToValue); err != nil {
+		return err
+	}
+	valueToKey := make(map[V]K, len(keyToValue))
+	for k, v := range keyToValue {
+		valueToKey[v] = k
+	}
+	if len(keyToValue) != len(valueToKey) {
+		return errNotBijective
+	}
+
+	m.keyToValue = keyToValue
+	m.valueToKey = valueToKey
+	return nil
 }

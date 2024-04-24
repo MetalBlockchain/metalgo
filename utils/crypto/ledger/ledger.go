@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package ledger
@@ -6,14 +6,13 @@ package ledger
 import (
 	"fmt"
 
-	ledger "github.com/ava-labs/ledger-avalanche/go"
-
-	bip32 "github.com/tyler-smith/go-bip32"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/keychain"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/version"
+
+	ledger "github.com/ava-labs/ledger-avalanche/go"
+	bip32 "github.com/tyler-smith/go-bip32"
 )
 
 const (

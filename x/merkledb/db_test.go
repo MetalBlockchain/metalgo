@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -8,16 +8,13 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
@@ -31,8 +28,6 @@ import (
 
 const defaultHistoryLength = 300
 
-var emptyKey Key
-
 // newDB returns a new merkle database with the underlying type so that tests can access unexported fields
 func newDB(ctx context.Context, db database.Database, config Config) (*merkleDB, error) {
 	db, err := New(ctx, db, config)
@@ -44,13 +39,14 @@ func newDB(ctx context.Context, db database.Database, config Config) (*merkleDB,
 
 func newDefaultConfig() Config {
 	return Config{
-		EvictionBatchSize:         10,
-		HistoryLength:             defaultHistoryLength,
-		ValueNodeCacheSize:        units.MiB,
-		IntermediateNodeCacheSize: units.MiB,
-		Reg:                       prometheus.NewRegistry(),
-		Tracer:                    trace.Noop,
-		BranchFactor:              BranchFactor16,
+		IntermediateWriteBatchSize:  10,
+		HistoryLength:               defaultHistoryLength,
+		ValueNodeCacheSize:          units.MiB,
+		IntermediateNodeCacheSize:   units.MiB,
+		IntermediateWriteBufferSize: units.KiB,
+		Reg:                         prometheus.NewRegistry(),
+		Tracer:                      trace.Noop,
+		BranchFactor:                BranchFactor16,
 	}
 }
 
@@ -100,10 +96,12 @@ func Test_MerkleDB_GetValues_Safety(t *testing.T) {
 
 func Test_MerkleDB_DB_Interface(t *testing.T) {
 	for _, bf := range validBranchFactors {
-		for _, test := range database.Tests {
-			db, err := getBasicDBWithBranchFactor(bf)
-			require.NoError(t, err)
-			test(t, db)
+		for name, test := range database.Tests {
+			t.Run(fmt.Sprintf("%s_%d", name, bf), func(t *testing.T) {
+				db, err := getBasicDBWithBranchFactor(bf)
+				require.NoError(t, err)
+				test(t, db)
+			})
 		}
 	}
 }
@@ -112,10 +110,12 @@ func Benchmark_MerkleDB_DBInterface(b *testing.B) {
 	for _, size := range database.BenchmarkSizes {
 		keys, values := database.SetupBenchmark(b, size[0], size[1], size[2])
 		for _, bf := range validBranchFactors {
-			for _, bench := range database.Benchmarks {
-				db, err := getBasicDBWithBranchFactor(bf)
-				require.NoError(b, err)
-				bench(b, db, fmt.Sprintf("merkledb_%d", bf), keys, values)
+			for name, bench := range database.Benchmarks {
+				b.Run(fmt.Sprintf("merkledb_%d_%d_pairs_%d_keys_%d_values_%s", bf, size[0], size[1], size[2], name), func(b *testing.B) {
+					db, err := getBasicDBWithBranchFactor(bf)
+					require.NoError(b, err)
+					bench(b, db, keys, values)
+				})
 			}
 		}
 	}
@@ -153,7 +153,7 @@ func Test_MerkleDB_DB_Load_Root_From_DB(t *testing.T) {
 
 	require.NoError(db.Close())
 
-	// reloading the db, should set the root back to the one that was saved to [baseDB]
+	// reloading the db should set the root back to the one that was saved to [baseDB]
 	db, err = New(
 		context.Background(),
 		baseDB,
@@ -299,15 +299,15 @@ func Test_MerkleDB_Invalidate_Siblings_On_Commit(t *testing.T) {
 	sibling2, err := dbTrie.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
 
-	require.False(sibling1.(*trieView).isInvalid())
-	require.False(sibling2.(*trieView).isInvalid())
+	require.False(sibling1.(*view).isInvalid())
+	require.False(sibling2.(*view).isInvalid())
 
 	// Committing viewToCommit should invalidate siblings
 	require.NoError(viewToCommit.CommitToDB(context.Background()))
 
-	require.True(sibling1.(*trieView).isInvalid())
-	require.True(sibling2.(*trieView).isInvalid())
-	require.False(viewToCommit.(*trieView).isInvalid())
+	require.True(sibling1.(*view).isInvalid())
+	require.True(sibling2.(*view).isInvalid())
+	require.False(viewToCommit.(*view).isInvalid())
 }
 
 func Test_MerkleDB_CommitRangeProof_DeletesValuesInRange(t *testing.T) {
@@ -503,7 +503,7 @@ func TestDatabaseNewUntrackedView(t *testing.T) {
 	require.NoError(err)
 
 	// Create a new untracked view.
-	view, err := newTrieView(
+	view, err := newView(
 		db,
 		db,
 		ViewChanges{
@@ -563,7 +563,7 @@ func TestDatabaseCommitChanges(t *testing.T) {
 	// Committing an invalid view should fail.
 	invalidView, err := db.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	invalidView.(*trieView).invalidate()
+	invalidView.(*view).invalidate()
 	err = invalidView.CommitToDB(context.Background())
 	require.ErrorIs(err, ErrInvalid)
 
@@ -584,22 +584,22 @@ func TestDatabaseCommitChanges(t *testing.T) {
 		},
 	)
 	require.NoError(err)
-	require.IsType(&trieView{}, view1Intf)
-	view1 := view1Intf.(*trieView)
+	require.IsType(&view{}, view1Intf)
+	view1 := view1Intf.(*view)
 	view1Root, err := view1.GetMerkleRoot(context.Background())
 	require.NoError(err)
 
 	// Make a second view
 	view2Intf, err := db.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	require.IsType(&trieView{}, view2Intf)
-	view2 := view2Intf.(*trieView)
+	require.IsType(&view{}, view2Intf)
+	view2 := view2Intf.(*view)
 
 	// Make a view atop a view
 	view3Intf, err := view1.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	require.IsType(&trieView{}, view3Intf)
-	view3 := view3Intf.(*trieView)
+	require.IsType(&view{}, view3Intf)
+	view3 := view3Intf.(*view)
 
 	// view3
 	//  |
@@ -648,18 +648,18 @@ func TestDatabaseInvalidateChildrenExcept(t *testing.T) {
 	// Create children
 	view1Intf, err := db.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	require.IsType(&trieView{}, view1Intf)
-	view1 := view1Intf.(*trieView)
+	require.IsType(&view{}, view1Intf)
+	view1 := view1Intf.(*view)
 
 	view2Intf, err := db.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	require.IsType(&trieView{}, view2Intf)
-	view2 := view2Intf.(*trieView)
+	require.IsType(&view{}, view2Intf)
+	view2 := view2Intf.(*view)
 
 	view3Intf, err := db.NewView(context.Background(), ViewChanges{})
 	require.NoError(err)
-	require.IsType(&trieView{}, view3Intf)
-	view3 := view3Intf.(*trieView)
+	require.IsType(&view{}, view3Intf)
+	view3 := view3Intf.(*view)
 
 	db.invalidateChildrenExcept(view1)
 
@@ -804,12 +804,12 @@ func TestMerkleDBClear(t *testing.T) {
 	iter := db.NewIterator()
 	defer iter.Release()
 	require.False(iter.Next())
-	require.Equal(emptyRootID, db.getMerkleRoot())
-	require.Equal(emptyKey, db.sentinelNode.key)
+	require.Equal(ids.Empty, db.getMerkleRoot())
+	require.True(db.root.IsNothing())
 
 	// Assert caches are empty.
 	require.Zero(db.valueNodeDB.nodeCache.Len())
-	require.Zero(db.intermediateNodeDB.nodeCache.currentSize)
+	require.Zero(db.intermediateNodeDB.writeBuffer.currentSize)
 
 	// Assert history has only the clearing change.
 	require.Len(db.history.lastChanges, 1)
@@ -948,6 +948,10 @@ func runRandDBTest(require *require.Assertions, r *rand.Rand, rt randTest, token
 			}
 
 			rangeProof, err := db.GetRangeProofAtRoot(context.Background(), root, start, end, maxProofLen)
+			if root == ids.Empty {
+				require.ErrorIs(err, ErrEmptyProof)
+				continue
+			}
 			require.NoError(err)
 			require.LessOrEqual(len(rangeProof.KeyValues), maxProofLen)
 
@@ -981,6 +985,10 @@ func runRandDBTest(require *require.Assertions, r *rand.Rand, rt randTest, token
 				require.ErrorIs(err, errSameRoot)
 				continue
 			}
+			if root == ids.Empty {
+				require.ErrorIs(err, ErrEmptyProof)
+				continue
+			}
 			require.NoError(err)
 			require.LessOrEqual(len(changeProof.KeyChanges), maxProofLen)
 
@@ -1008,7 +1016,7 @@ func runRandDBTest(require *require.Assertions, r *rand.Rand, rt randTest, token
 			for key, value := range uncommittedKeyValues {
 				values[key] = value
 			}
-			maps.Clear(uncommittedKeyValues)
+			clear(uncommittedKeyValues)
 
 			for key := range uncommittedDeletes {
 				delete(values, key)
@@ -1241,4 +1249,41 @@ func insertRandomKeyValues(
 			}
 		}
 	}
+}
+
+func TestGetRangeProofAtRootEmptyRootID(t *testing.T) {
+	require := require.New(t)
+
+	db, err := getBasicDB()
+	require.NoError(err)
+
+	_, err = db.GetRangeProofAtRoot(
+		context.Background(),
+		ids.Empty,
+		maybe.Nothing[[]byte](),
+		maybe.Nothing[[]byte](),
+		10,
+	)
+	require.ErrorIs(err, ErrEmptyProof)
+}
+
+func TestGetChangeProofEmptyRootID(t *testing.T) {
+	require := require.New(t)
+
+	db, err := getBasicDB()
+	require.NoError(err)
+
+	require.NoError(db.Put([]byte("key"), []byte("value")))
+
+	rootID := db.getMerkleRoot()
+
+	_, err = db.GetChangeProof(
+		context.Background(),
+		rootID,
+		ids.Empty,
+		maybe.Nothing[[]byte](),
+		maybe.Nothing[[]byte](),
+		10,
+	)
+	require.ErrorIs(err, ErrEmptyProof)
 }

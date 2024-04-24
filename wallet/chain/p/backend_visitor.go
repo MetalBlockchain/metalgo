@@ -1,15 +1,15 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+
+	stdcontext "context"
 )
 
 var _ txs.Visitor = (*backendVisitor)(nil)
@@ -46,6 +46,10 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
+	b.b.setSubnetOwner(
+		b.txID,
+		tx.Owner,
+	)
 	return b.baseTx(&tx.BaseTx)
 }
 
@@ -54,7 +58,10 @@ func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx
 }
 
 func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	// TODO: Correctly track subnet owners in [getSubnetSigners]
+	b.b.setSubnetOwner(
+		tx.Subnet,
+		tx.Owner,
+	)
 	return b.baseTx(&tx.BaseTx)
 }
 

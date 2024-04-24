@@ -1,24 +1,25 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package set
 
 import (
 	"bytes"
-
-	stdjson "encoding/json"
+	"encoding/json"
+	"slices"
 
 	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
+
+	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 )
 
 // The minimum capacity of a set
 const minSetSize = 16
 
-var _ stdjson.Marshaler = (*Set[int])(nil)
+var _ json.Marshaler = (*Set[int])(nil)
 
 // Set is a set of elements.
 type Set[T comparable] map[T]struct{}
@@ -110,7 +111,7 @@ func (s *Set[T]) Remove(elts ...T) {
 
 // Clear empties this set
 func (s *Set[_]) Clear() {
-	maps.Clear(*s)
+	clear(*s)
 }
 
 // List converts this set into a list
@@ -135,11 +136,11 @@ func (s *Set[T]) Pop() (T, bool) {
 
 func (s *Set[T]) UnmarshalJSON(b []byte) error {
 	str := string(b)
-	if str == json.Null {
+	if str == avajson.Null {
 		return nil
 	}
 	var elts []T
-	if err := stdjson.Unmarshal(b, &elts); err != nil {
+	if err := json.Unmarshal(b, &elts); err != nil {
 		return err
 	}
 	s.Clear()
@@ -154,14 +155,14 @@ func (s Set[_]) MarshalJSON() ([]byte, error) {
 		err      error
 	)
 	for elt := range s {
-		eltBytes[i], err = stdjson.Marshal(elt)
+		eltBytes[i], err = json.Marshal(elt)
 		if err != nil {
 			return nil, err
 		}
 		i++
 	}
 	// Sort for determinism
-	utils.SortBytes(eltBytes)
+	slices.SortFunc(eltBytes, bytes.Compare)
 
 	// Build the JSON
 	var (

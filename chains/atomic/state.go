@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package atomic
@@ -7,12 +7,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/linkeddb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -111,7 +111,7 @@ func (s *state) SetValue(e *Element) error {
 		Traits:  e.Traits,
 	}
 
-	valueBytes, err := codecManager.Marshal(codecVersion, &dbElem)
+	valueBytes, err := Codec.Marshal(CodecVersion, &dbElem)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (s *state) RemoveValue(key []byte) error {
 
 		// The value doesn't exist, so we should optimistically delete it
 		dbElem := dbElement{Present: false}
-		valueBytes, err := codecManager.Marshal(codecVersion, &dbElem)
+		valueBytes, err := Codec.Marshal(CodecVersion, &dbElem)
 		if err != nil {
 			return err
 		}
@@ -188,7 +188,7 @@ func (s *state) loadValue(key []byte) (*dbElement, error) {
 
 	// The key was in the database
 	value := &dbElement{}
-	_, err = codecManager.Unmarshal(valueBytes, value)
+	_, err = Codec.Unmarshal(valueBytes, value)
 	return value, err
 }
 
@@ -207,7 +207,7 @@ func (s *state) getKeys(traits [][]byte, startTrait, startKey []byte, limit int)
 	lastKey := startKey
 	// Iterate over the traits in order appending all of the keys that possess
 	// the given [traits].
-	utils.SortBytes(traits)
+	slices.SortFunc(traits, bytes.Compare)
 	for _, trait := range traits {
 		switch bytes.Compare(trait, startTrait) {
 		case -1:

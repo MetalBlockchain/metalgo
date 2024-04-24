@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -6,12 +6,9 @@ package c
 import (
 	"math/big"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/MetalBlockchain/coreth/core/types"
 	"github.com/MetalBlockchain/coreth/plugin/evm"
+	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
@@ -21,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
@@ -37,7 +36,7 @@ var _ = e2e.DescribeCChain("[Interchain Workflow]", func() {
 		ethClient := e2e.NewEthClient(nodeURI)
 
 		ginkgo.By("allocating a pre-funded key to send from and a recipient key to deliver to")
-		senderKey := e2e.Env.AllocateFundedKey()
+		senderKey := e2e.Env.AllocatePreFundedKey()
 		senderEthAddress := evm.GetEthAddress(senderKey)
 		recipientKey, err := secp256k1.NewPrivateKey()
 		require.NoError(err)

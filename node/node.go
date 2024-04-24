@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -22,10 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"go.uber.org/zap"
-
-	coreth "github.com/MetalBlockchain/coreth/plugin/evm"
 
 	"github.com/MetalBlockchain/metalgo/api/admin"
 	"github.com/MetalBlockchain/metalgo/api/auth"
@@ -48,6 +45,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/indexer"
 	"github.com/MetalBlockchain/metalgo/ipcs"
 	"github.com/MetalBlockchain/metalgo/message"
+	"github.com/MetalBlockchain/metalgo/nat"
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/dialer"
 	"github.com/MetalBlockchain/metalgo/network/peer"
@@ -64,6 +62,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/dynamicip"
 	"github.com/MetalBlockchain/metalgo/utils/filesystem"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
@@ -73,21 +72,27 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms"
 	"github.com/MetalBlockchain/metalgo/vms/avm"
-	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
-	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/registry"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
-	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
 	ipcsapi "github.com/MetalBlockchain/metalgo/api/ipcs"
 	avmconfig "github.com/MetalBlockchain/metalgo/vms/avm/config"
 	platformconfig "github.com/MetalBlockchain/metalgo/vms/platformvm/config"
+	coreth "github.com/MetalBlockchain/coreth/plugin/evm"
+)
+
+const (
+	stakingPortName = constants.AppName + "-staking"
+	httpPortName    = constants.AppName + "-http"
+
+	ipResolutionTimeout = 30 * time.Second
 )
 
 var (
@@ -138,7 +143,15 @@ func New(
 		return nil, fmt.Errorf("problem creating vm logger: %w", err)
 	}
 
-	n.VMManager = vms.NewManager(n.VMFactoryLog, config.VMAliaser)
+	n.VMAliaser = ids.NewAliaser()
+	for vmID, aliases := range config.VMAliases {
+		for _, alias := range aliases {
+			if err := n.VMAliaser.Alias(vmID, alias); err != nil {
+				return nil, err
+			}
+		}
+	}
+	n.VMManager = vms.NewManager(n.VMFactoryLog, n.VMAliaser)
 
 	if err := n.initBootstrappers(); err != nil { // Configure the bootstrappers
 		return nil, fmt.Errorf("problem initializing node beacons: %w", err)
@@ -150,12 +163,8 @@ func New(
 		return nil, fmt.Errorf("couldn't initialize tracer: %w", err)
 	}
 
-	if n.Config.TraceConfig.Enabled {
-		n.Config.ConsensusRouter = router.Trace(n.Config.ConsensusRouter, n.tracer)
-	}
-
 	n.initMetrics()
-
+	n.initNAT()
 	if err := n.initAPIServer(); err != nil { // Start the API Server
 		return nil, fmt.Errorf("couldn't initialize API server: %w", err)
 	}
@@ -192,6 +201,7 @@ func New(
 
 	n.vdrs = validators.NewManager()
 	if !n.Config.SybilProtectionEnabled {
+		logger.Warn("sybil control is not enforced")
 		n.vdrs = newOverriddenManager(constants.PrimaryNetworkID, n.vdrs)
 	}
 	if err := n.initResourceManager(n.MetricsRegisterer); err != nil {
@@ -264,6 +274,12 @@ type Node struct {
 
 	// Storage for this node
 	DB database.Database
+
+	router     nat.Router
+	portMapper *nat.Mapper
+	ipUpdater  dynamicip.Updater
+
+	chainRouter router.Router
 
 	// Profiles the process. Nil if continuous profiling is disabled.
 	profiler profiler.ContinuousProfiler
@@ -347,6 +363,7 @@ type Node struct {
 	MetricsRegisterer *prometheus.Registry
 	MetricsGatherer   metrics.MultiGatherer
 
+	VMAliaser ids.Aliaser
 	VMManager vms.Manager
 
 	// VM endpoint registry
@@ -379,8 +396,6 @@ type Node struct {
 // Initialize the networking layer.
 // Assumes [n.vdrs], [n.CPUTracker], and [n.CPUTargeter] have been initialized.
 func (n *Node) initNetworking() error {
-	currentIPPort := n.Config.IPPort.IPPort()
-
 	// Providing either loopback address - `::1` for ipv6 and `127.0.0.1` for ipv4 - as the listen
 	// host will avoid the need for a firewall exception on recent MacOS:
 	//
@@ -398,8 +413,7 @@ func (n *Node) initNetworking() error {
 	//
 	// 1: https://apple.stackexchange.com/questions/393715/do-you-want-the-application-main-to-accept-incoming-network-connections-pop
 	// 2: https://github.com/golang/go/issues/56998
-	listenAddress := net.JoinHostPort(n.Config.ListenHost, strconv.FormatUint(uint64(currentIPPort.Port), 10))
-
+	listenAddress := net.JoinHostPort(n.Config.ListenHost, strconv.FormatUint(uint64(n.Config.ListenPort), 10))
 	listener, err := net.Listen(constants.NetworkType, listenAddress)
 	if err != nil {
 		return err
@@ -407,23 +421,67 @@ func (n *Node) initNetworking() error {
 	// Wrap listener so it will only accept a certain number of incoming connections per second
 	listener = throttling.NewThrottledListener(listener, n.Config.NetworkConfig.ThrottlerConfig.MaxInboundConnsPerSec)
 
-	ipPort, err := ips.ToIPPort(listener.Addr().String())
+	// Record the bound address to enable inclusion in process context file.
+	n.stakingAddress = listener.Addr().String()
+	ipPort, err := ips.ToIPPort(n.stakingAddress)
 	if err != nil {
-		n.Log.Info("initializing networking",
-			zap.Stringer("currentNodeIP", currentIPPort),
-		)
-	} else {
-		ipPort = ips.IPPort{
-			IP:   currentIPPort.IP,
-			Port: ipPort.Port,
+		return err
+	}
+
+	var dynamicIP ips.DynamicIPPort
+	switch {
+	case n.Config.PublicIP != "":
+		// Use the specified public IP.
+		ipPort.IP = net.ParseIP(n.Config.PublicIP)
+		if ipPort.IP == nil {
+			return fmt.Errorf("invalid IP Address: %s", n.Config.PublicIP)
 		}
-		n.Log.Info("initializing networking",
-			zap.Stringer("currentNodeIP", ipPort),
+		dynamicIP = ips.NewDynamicIPPort(ipPort.IP, ipPort.Port)
+		n.ipUpdater = dynamicip.NewNoUpdater()
+	case n.Config.PublicIPResolutionService != "":
+		// Use dynamic IP resolution.
+		resolver, err := dynamicip.NewResolver(n.Config.PublicIPResolutionService)
+		if err != nil {
+			return fmt.Errorf("couldn't create IP resolver: %w", err)
+		}
+
+		// Use that to resolve our public IP.
+		ctx, cancel := context.WithTimeout(context.Background(), ipResolutionTimeout)
+		ipPort.IP, err = resolver.Resolve(ctx)
+		cancel()
+		if err != nil {
+			return fmt.Errorf("couldn't resolve public IP: %w", err)
+		}
+		dynamicIP = ips.NewDynamicIPPort(ipPort.IP, ipPort.Port)
+		n.ipUpdater = dynamicip.NewUpdater(dynamicIP, resolver, n.Config.PublicIPResolutionFreq)
+	default:
+		ipPort.IP, err = n.router.ExternalIP()
+		if err != nil {
+			return fmt.Errorf("public IP / IP resolution service not given and failed to resolve IP with NAT: %w", err)
+		}
+		dynamicIP = ips.NewDynamicIPPort(ipPort.IP, ipPort.Port)
+		n.ipUpdater = dynamicip.NewNoUpdater()
+	}
+
+	if ipPort.IP.IsLoopback() || ipPort.IP.IsPrivate() {
+		n.Log.Warn("P2P IP is private, you will not be publicly discoverable",
+			zap.Stringer("ip", ipPort),
 		)
 	}
 
-	// Record the bound address to enable inclusion in process context file.
-	n.stakingAddress = listener.Addr().String()
+	// Regularly update our public IP and port mappings.
+	n.portMapper.Map(
+		ipPort.Port,
+		ipPort.Port,
+		stakingPortName,
+		dynamicIP,
+		n.Config.PublicIPResolutionFreq,
+	)
+	go n.ipUpdater.Dispatch(n.Log)
+
+	n.Log.Info("initializing networking",
+		zap.Stringer("ip", ipPort),
+	)
 
 	tlsKey, ok := n.Config.StakingTLSCert.PrivateKey.(crypto.Signer)
 	if !ok {
@@ -440,16 +498,41 @@ func (n *Node) initNetworking() error {
 		)
 	}
 
+	// We allow nodes to gossip unknown ACPs in case the current ACPs constant
+	// becomes out of date.
+	var unknownACPs set.Set[uint32]
+	for acp := range n.Config.NetworkConfig.SupportedACPs {
+		if !constants.CurrentACPs.Contains(acp) {
+			unknownACPs.Add(acp)
+		}
+	}
+	for acp := range n.Config.NetworkConfig.ObjectedACPs {
+		if !constants.CurrentACPs.Contains(acp) {
+			unknownACPs.Add(acp)
+		}
+	}
+	if unknownACPs.Len() > 0 {
+		n.Log.Warn("gossipping unknown ACPs",
+			zap.Reflect("acps", unknownACPs),
+		)
+	}
+
 	tlsConfig := peer.TLSConfig(n.Config.StakingTLSCert, n.tlsKeyLogWriterCloser)
+
+	// Create chain router
+	n.chainRouter = &router.ChainRouter{}
+	if n.Config.TraceConfig.Enabled {
+		n.chainRouter = router.Trace(n.chainRouter, n.tracer)
+	}
 
 	// Configure benchlist
 	n.Config.BenchlistConfig.Validators = n.vdrs
-	n.Config.BenchlistConfig.Benchable = n.Config.ConsensusRouter
+	n.Config.BenchlistConfig.Benchable = n.chainRouter
 	n.benchlistManager = benchlist.NewManager(&n.Config.BenchlistConfig)
 
 	n.uptimeCalculator = uptime.NewLockedCalculator()
 
-	consensusRouter := n.Config.ConsensusRouter
+	consensusRouter := n.chainRouter
 	if !n.Config.SybilProtectionEnabled {
 		// Sybil protection is disabled so we don't have a txID that added us as
 		// a validator. Because each validator needs a txID associated with it,
@@ -480,58 +563,50 @@ func (n *Node) initNetworking() error {
 	requiredConns := (3*numBootstrappers + 3) / 4
 
 	if requiredConns > 0 {
-		// Set a timer that will fire after a given timeout unless we connect
-		// to a sufficient portion of nodes. If the timeout fires, the node will
-		// shutdown.
-		timer := timer.NewTimer(func() {
-			// If the timeout fires and we're already shutting down, nothing to do.
-			if !n.shuttingDown.Get() {
+		onSufficientlyConnected := make(chan struct{})
+		consensusRouter = &beaconManager{
+			Router:                  consensusRouter,
+			beacons:                 n.bootstrappers,
+			requiredConns:           int64(requiredConns),
+			onSufficientlyConnected: onSufficientlyConnected,
+		}
+
+		// Log a warning if we aren't able to connect to a sufficient portion of
+		// nodes.
+		go func() {
+			timer := time.NewTimer(n.Config.BootstrapBeaconConnectionTimeout)
+			defer timer.Stop()
+
+			select {
+			case <-timer.C:
+				if n.shuttingDown.Get() {
+					return
+				}
 				n.Log.Warn("failed to connect to bootstrap nodes",
 					zap.Stringer("bootstrappers", n.bootstrappers),
 					zap.Duration("duration", n.Config.BootstrapBeaconConnectionTimeout),
 				)
+			case <-onSufficientlyConnected:
 			}
-		})
-
-		go timer.Dispatch()
-		timer.SetTimeoutIn(n.Config.BootstrapBeaconConnectionTimeout)
-
-		consensusRouter = &beaconManager{
-			Router:        consensusRouter,
-			timer:         timer,
-			beacons:       n.bootstrappers,
-			requiredConns: int64(requiredConns),
-		}
+		}()
 	}
-
-	// initialize gossip tracker
-	gossipTracker, err := peer.NewGossipTracker(n.MetricsRegisterer, n.networkNamespace)
-	if err != nil {
-		return err
-	}
-
-	// keep gossip tracker synchronized with the validator set
-	n.vdrs.RegisterCallbackListener(constants.PrimaryNetworkID, &peer.GossipTrackerCallback{
-		Log:           n.Log,
-		GossipTracker: gossipTracker,
-	})
 
 	// add node configs to network config
 	n.Config.NetworkConfig.Namespace = n.networkNamespace
 	n.Config.NetworkConfig.MyNodeID = n.ID
-	n.Config.NetworkConfig.MyIPPort = n.Config.IPPort
+	n.Config.NetworkConfig.MyIPPort = dynamicIP
 	n.Config.NetworkConfig.NetworkID = n.Config.NetworkID
 	n.Config.NetworkConfig.Validators = n.vdrs
 	n.Config.NetworkConfig.Beacons = n.bootstrappers
 	n.Config.NetworkConfig.TLSConfig = tlsConfig
 	n.Config.NetworkConfig.TLSKey = tlsKey
+	n.Config.NetworkConfig.BLSKey = n.Config.StakingSigningKey
 	n.Config.NetworkConfig.TrackedSubnets = n.Config.TrackedSubnets
 	n.Config.NetworkConfig.UptimeCalculator = n.uptimeCalculator
 	n.Config.NetworkConfig.UptimeRequirement = n.Config.UptimeRequirement
 	n.Config.NetworkConfig.ResourceTracker = n.resourceTracker
 	n.Config.NetworkConfig.CPUTargeter = n.cpuTargeter
 	n.Config.NetworkConfig.DiskTargeter = n.diskTargeter
-	n.Config.NetworkConfig.GossipTracker = gossipTracker
 
 	n.Net, err = network.NewNetwork(
 		&n.Config.NetworkConfig,
@@ -837,14 +912,74 @@ func (n *Node) initMetrics() {
 	n.MetricsGatherer = metrics.NewMultiGatherer()
 }
 
+func (n *Node) initNAT() {
+	n.Log.Info("initializing NAT")
+
+	if n.Config.PublicIP == "" && n.Config.PublicIPResolutionService == "" {
+		n.router = nat.GetRouter()
+		if !n.router.SupportsNAT() {
+			n.Log.Warn("UPnP and NAT-PMP router attach failed, " +
+				"you may not be listening publicly. " +
+				"Please confirm the settings in your router")
+		}
+	} else {
+		n.router = nat.NewNoRouter()
+	}
+
+	n.portMapper = nat.NewPortMapper(n.Log, n.router)
+}
+
 // initAPIServer initializes the server that handles HTTP calls
 func (n *Node) initAPIServer() error {
 	n.Log.Info("initializing API server")
+
+	// An empty host is treated as a wildcard to match all addresses, so it is
+	// considered public.
+	hostIsPublic := n.Config.HTTPHost == ""
+	if !hostIsPublic {
+		ip, err := ips.Lookup(n.Config.HTTPHost)
+		if err != nil {
+			n.Log.Fatal("failed to lookup HTTP host",
+				zap.String("host", n.Config.HTTPHost),
+				zap.Error(err),
+			)
+			return err
+		}
+		hostIsPublic = !ip.IsLoopback() && !ip.IsPrivate()
+
+		n.Log.Debug("finished HTTP host lookup",
+			zap.String("host", n.Config.HTTPHost),
+			zap.Stringer("ip", ip),
+			zap.Bool("isPublic", hostIsPublic),
+		)
+	}
 
 	listenAddress := net.JoinHostPort(n.Config.HTTPHost, strconv.FormatUint(uint64(n.Config.HTTPPort), 10))
 	listener, err := net.Listen("tcp", listenAddress)
 	if err != nil {
 		return err
+	}
+
+	addr := listener.Addr().String()
+	ipPort, err := ips.ToIPPort(addr)
+	if err != nil {
+		return err
+	}
+
+	// Don't open the HTTP port if the HTTP server is private
+	if hostIsPublic {
+		n.Log.Warn("HTTP server is binding to a potentially public host. "+
+			"You may be vulnerable to a DoS attack if your HTTP port is publicly accessible",
+			zap.String("host", n.Config.HTTPHost),
+		)
+
+		n.portMapper.Map(
+			ipPort.Port,
+			ipPort.Port,
+			httpPortName,
+			nil,
+			n.Config.PublicIPResolutionFreq,
+		)
 	}
 
 	protocol := "http"
@@ -918,11 +1053,10 @@ func (n *Node) initAPIServer() error {
 // Add the default VM aliases
 func (n *Node) addDefaultVMAliases() error {
 	n.Log.Info("adding the default VM aliases")
-	vmAliases := genesis.GetVMAliases()
 
-	for vmID, aliases := range vmAliases {
+	for vmID, aliases := range genesis.VMAliases {
 		for _, alias := range aliases {
-			if err := n.Config.VMAliaser.Alias(vmID, alias); err != nil {
+			if err := n.VMAliaser.Alias(vmID, alias); err != nil {
 				return err
 			}
 		}
@@ -965,7 +1099,7 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 	go n.Log.RecoverAndPanic(n.timeoutManager.Dispatch)
 
 	// Routes incoming messages from peers to the appropriate chain
-	err = n.Config.ConsensusRouter.Initialize(
+	err = n.chainRouter.Initialize(
 		n.ID,
 		n.Log,
 		n.timeoutManager,
@@ -982,51 +1116,58 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 		return fmt.Errorf("couldn't initialize chain router: %w", err)
 	}
 
-	n.chainManager = chains.New(&chains.ManagerConfig{
-		SybilProtectionEnabled:                  n.Config.SybilProtectionEnabled,
-		StakingTLSCert:                          n.Config.StakingTLSCert,
-		StakingBLSKey:                           n.Config.StakingSigningKey,
-		Log:                                     n.Log,
-		LogFactory:                              n.LogFactory,
-		VMManager:                               n.VMManager,
-		BlockAcceptorGroup:                      n.BlockAcceptorGroup,
-		TxAcceptorGroup:                         n.TxAcceptorGroup,
-		VertexAcceptorGroup:                     n.VertexAcceptorGroup,
-		DB:                                      n.DB,
-		MsgCreator:                              n.msgCreator,
-		Router:                                  n.Config.ConsensusRouter,
-		Net:                                     n.Net,
-		Validators:                              n.vdrs,
-		PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
-		NodeID:                                  n.ID,
-		NetworkID:                               n.Config.NetworkID,
-		Server:                                  n.APIServer,
-		Keystore:                                n.keystore,
-		AtomicMemory:                            n.sharedMemory,
-		AVAXAssetID:                             avaxAssetID,
-		XChainID:                                xChainID,
-		CChainID:                                cChainID,
-		CriticalChains:                          criticalChains,
-		TimeoutManager:                          n.timeoutManager,
-		Health:                                  n.health,
-		ShutdownNodeFunc:                        n.Shutdown,
-		MeterVMEnabled:                          n.Config.MeterVMEnabled,
-		Metrics:                                 n.MetricsGatherer,
-		SubnetConfigs:                           n.Config.SubnetConfigs,
-		ChainConfigs:                            n.Config.ChainConfigs,
-		FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
-		ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
-		BootstrapMaxTimeGetAncestors:            n.Config.BootstrapMaxTimeGetAncestors,
-		BootstrapAncestorsMaxContainersSent:     n.Config.BootstrapAncestorsMaxContainersSent,
-		BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
-		ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
-		ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
-		ResourceTracker:                         n.resourceTracker,
-		StateSyncBeacons:                        n.Config.StateSyncIDs,
-		TracingEnabled:                          n.Config.TraceConfig.Enabled,
-		Tracer:                                  n.tracer,
-		ChainDataDir:                            n.Config.ChainDataDir,
-	})
+	subnets, err := chains.NewSubnets(n.ID, n.Config.SubnetConfigs)
+	if err != nil {
+		return fmt.Errorf("failed to initialize subnets: %w", err)
+	}
+	n.chainManager = chains.New(
+		&chains.ManagerConfig{
+			SybilProtectionEnabled:                  n.Config.SybilProtectionEnabled,
+			StakingTLSCert:                          n.Config.StakingTLSCert,
+			StakingBLSKey:                           n.Config.StakingSigningKey,
+			Log:                                     n.Log,
+			LogFactory:                              n.LogFactory,
+			VMManager:                               n.VMManager,
+			BlockAcceptorGroup:                      n.BlockAcceptorGroup,
+			TxAcceptorGroup:                         n.TxAcceptorGroup,
+			VertexAcceptorGroup:                     n.VertexAcceptorGroup,
+			DB:                                      n.DB,
+			MsgCreator:                              n.msgCreator,
+			Router:                                  n.chainRouter,
+			Net:                                     n.Net,
+			Validators:                              n.vdrs,
+			PartialSyncPrimaryNetwork:               n.Config.PartialSyncPrimaryNetwork,
+			NodeID:                                  n.ID,
+			NetworkID:                               n.Config.NetworkID,
+			Server:                                  n.APIServer,
+			Keystore:                                n.keystore,
+			AtomicMemory:                            n.sharedMemory,
+			AVAXAssetID:                             avaxAssetID,
+			XChainID:                                xChainID,
+			CChainID:                                cChainID,
+			CriticalChains:                          criticalChains,
+			TimeoutManager:                          n.timeoutManager,
+			Health:                                  n.health,
+			ShutdownNodeFunc:                        n.Shutdown,
+			MeterVMEnabled:                          n.Config.MeterVMEnabled,
+			Metrics:                                 n.MetricsGatherer,
+			SubnetConfigs:                           n.Config.SubnetConfigs,
+			ChainConfigs:                            n.Config.ChainConfigs,
+			FrontierPollFrequency:                   n.Config.FrontierPollFrequency,
+			ConsensusAppConcurrency:                 n.Config.ConsensusAppConcurrency,
+			BootstrapMaxTimeGetAncestors:            n.Config.BootstrapMaxTimeGetAncestors,
+			BootstrapAncestorsMaxContainersSent:     n.Config.BootstrapAncestorsMaxContainersSent,
+			BootstrapAncestorsMaxContainersReceived: n.Config.BootstrapAncestorsMaxContainersReceived,
+			ApricotPhase4Time:                       version.GetApricotPhase4Time(n.Config.NetworkID),
+			ApricotPhase4MinPChainHeight:            version.ApricotPhase4MinPChainHeight[n.Config.NetworkID],
+			ResourceTracker:                         n.resourceTracker,
+			StateSyncBeacons:                        n.Config.StateSyncIDs,
+			TracingEnabled:                          n.Config.TraceConfig.Enabled,
+			Tracer:                                  n.tracer,
+			ChainDataDir:                            n.Config.ChainDataDir,
+			Subnets:                                 subnets,
+		},
+	)
 
 	// Notify the API server when new chains are created
 	n.chainManager.AddRegistrant(n.APIServer)
@@ -1046,16 +1187,20 @@ func (n *Node) initVMs() error {
 		vdrs = validators.NewManager()
 	}
 
-	vmRegisterer := registry.NewVMRegisterer(registry.VMRegistererConfig{
-		APIServer:    n.APIServer,
-		Log:          n.Log,
-		VMFactoryLog: n.VMFactoryLog,
-		VMManager:    n.VMManager,
-	})
+	durangoTime := version.GetDurangoTime(n.Config.NetworkID)
+	if err := txs.InitCodec(durangoTime); err != nil {
+		return err
+	}
+	if err := block.InitCodec(durangoTime); err != nil {
+		return err
+	}
+	if err := coreth.InitCodec(durangoTime); err != nil {
+		return err
+	}
 
 	// Register the VMs that Avalanche supports
 	err := utils.Err(
-		vmRegisterer.Register(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
+		n.VMManager.RegisterFactory(context.TODO(), constants.PlatformVMID, &platformvm.Factory{
 			Config: platformconfig.Config{
 				Chains:                        n.chainManager,
 				Validators:                    vdrs,
@@ -1084,20 +1229,18 @@ func (n *Node) initVMs() error {
 				ApricotPhase5Time:             version.GetApricotPhase5Time(n.Config.NetworkID),
 				BanffTime:                     version.GetBanffTime(n.Config.NetworkID),
 				CortinaTime:                   version.GetCortinaTime(n.Config.NetworkID),
-				DurangoTime:                   version.GetDurangoTime(n.Config.NetworkID),
+				DurangoTime:                   durangoTime,
 				UseCurrentHeight:              n.Config.UseCurrentHeight,
 			},
 		}),
-		vmRegisterer.Register(context.TODO(), constants.AVMID, &avm.Factory{
+		n.VMManager.RegisterFactory(context.TODO(), constants.AVMID, &avm.Factory{
 			Config: avmconfig.Config{
 				TxFee:            n.Config.TxFee,
 				CreateAssetTxFee: n.Config.CreateAssetTxFee,
+				DurangoTime:      durangoTime,
 			},
 		}),
-		vmRegisterer.Register(context.TODO(), constants.EVMID, &coreth.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), secp256k1fx.ID, &secp256k1fx.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), nftfx.ID, &nftfx.Factory{}),
-		n.VMManager.RegisterFactory(context.TODO(), propertyfx.ID, &propertyfx.Factory{}),
+		n.VMManager.RegisterFactory(context.TODO(), constants.EVMID, &coreth.Factory{}),
 	)
 	if err != nil {
 		return err
@@ -1115,7 +1258,7 @@ func (n *Node) initVMs() error {
 			CPUTracker:      n.resourceManager,
 			RuntimeTracker:  n.runtimeManager,
 		}),
-		VMRegisterer: vmRegisterer,
+		VMManager: n.VMManager,
 	})
 
 	// register any vms that need to be installed as plugins from disk
@@ -1200,6 +1343,7 @@ func (n *Node) initAdminAPI() error {
 	service, err := admin.NewService(
 		admin.Config{
 			Log:          n.Log,
+			DB:           n.DB,
 			ChainManager: n.chainManager,
 			HTTPServer:   n.APIServer,
 			ProfileDir:   n.Config.ProfilerConfig.Dir,
@@ -1269,6 +1413,7 @@ func (n *Node) initInfoAPI() error {
 			VMManager:                     n.VMManager,
 		},
 		n.Log,
+		n.vdrs,
 		n.chainManager,
 		n.VMManager,
 		n.Config.NetworkConfig.MyIPPort,
@@ -1305,7 +1450,7 @@ func (n *Node) initHealthAPI() error {
 		return fmt.Errorf("couldn't register network health check: %w", err)
 	}
 
-	err = healthChecker.RegisterHealthCheck("router", n.Config.ConsensusRouter, health.ApplicationTag)
+	err = healthChecker.RegisterHealthCheck("router", n.chainRouter, health.ApplicationTag)
 	if err != nil {
 		return fmt.Errorf("couldn't register router health check: %w", err)
 	}
@@ -1548,6 +1693,8 @@ func (n *Node) shutdown() {
 			zap.Error(err),
 		)
 	}
+	n.portMapper.UnmapAllPorts()
+	n.ipUpdater.Stop()
 	if err := n.indexer.Close(); err != nil {
 		n.Log.Debug("error closing tx indexer",
 			zap.Error(err),

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package getter
@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -20,7 +18,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/mocks"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -29,7 +26,7 @@ var errUnknownBlock = errors.New("unknown block")
 
 type StateSyncEnabledMock struct {
 	*block.TestVM
-	*mocks.MockStateSyncableVM
+	*block.MockStateSyncableVM
 }
 
 func newTest(t *testing.T) (common.AllGetsServer, StateSyncEnabledMock, *common.SenderTest) {
@@ -37,7 +34,7 @@ func newTest(t *testing.T) (common.AllGetsServer, StateSyncEnabledMock, *common.
 
 	vm := StateSyncEnabledMock{
 		TestVM:              &block.TestVM{},
-		MockStateSyncableVM: mocks.NewMockStateSyncableVM(ctrl),
+		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
 	}
 
 	sender := &common.SenderTest{

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package syncer
@@ -12,7 +12,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/math"
 )
 
 type Config struct {
@@ -67,7 +66,7 @@ func NewConfig(
 		if err != nil {
 			return Config{}, fmt.Errorf("failed to calculate total weight of state sync beacons for subnet %s: %w", ctx.SubnetID, err)
 		}
-		sampleK = int(math.Min(uint64(sampleK), stateSyncingWeight))
+		sampleK = int(min(uint64(sampleK), stateSyncingWeight))
 		alpha = stateSyncingWeight/2 + 1 // must be > 50%
 	}
 	return Config{

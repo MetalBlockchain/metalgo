@@ -23,7 +23,7 @@ source ./scripts/constants.sh
 #################################
 echo "building e2e.test"
 # to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
+go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
 ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 ./tests/e2e/e2e.test --help
 
@@ -34,7 +34,7 @@ ACK_GINKGO_RC=true ginkgo build ./tests/e2e
 if [[ -n "${E2E_USE_EXISTING_NETWORK:-}" && -n "${TMPNET_NETWORK_DIR:-}" ]]; then
   E2E_ARGS="--use-existing-network"
 else
-  METALGO_PATH="$(realpath ${METALGO_PATH:-./build/metalgo})"
+  METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
   E2E_ARGS="--metalgo-path=${METALGO_PATH}"
 fi
 
@@ -60,4 +60,4 @@ fi
 
 #################################
 # - Execute in random order to identify unwanted dependency
-ginkgo -p -v --randomize-all ./tests/e2e/e2e.test -- ${E2E_ARGS} "${@}"
+ginkgo ${GINKGO_ARGS} -v --randomize-all ./tests/e2e/e2e.test -- "${E2E_ARGS[@]}" "${@}"

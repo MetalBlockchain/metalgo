@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -128,10 +128,10 @@ func TestSetSample(t *testing.T) {
 	require.Empty(peers)
 
 	peers = set.Sample(1, NoPrecondition)
-	require.Equal(peers, []Peer{peer1})
+	require.Equal([]Peer{peer1}, peers)
 
 	peers = set.Sample(2, NoPrecondition)
-	require.Equal(peers, []Peer{peer1})
+	require.Equal([]Peer{peer1}, peers)
 
 	// Case: 2 peers
 	set.Add(peer2)

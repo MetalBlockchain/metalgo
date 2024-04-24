@@ -1,16 +1,16 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/metric"
 )
 
 var _ Creator = (*creator)(nil)
@@ -32,7 +32,7 @@ func NewCreator(
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {
-	namespace := fmt.Sprintf("%s_codec", parentNamespace)
+	namespace := metric.AppendNamespace(parentNamespace, "codec")
 	builder, err := newMsgBuilder(
 		log,
 		namespace,

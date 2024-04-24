@@ -1,12 +1,10 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
 	"time"
-
-	ginkgo "github.com/onsi/ginkgo/v2"
 
 	"github.com/stretchr/testify/require"
 
@@ -16,11 +14,15 @@ import (
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	ginkgo "github.com/onsi/ginkgo/v2"
 )
 
 // PChainWorkflow is an integration test for normal P-Chain operations
@@ -68,20 +70,19 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 				require.NoError(err)
 				require.GreaterOrEqual(pBalance, minBalance)
 			})
-			// create validator data
-			validatorStartTimeDiff := 30 * time.Second
-			vdrStartTime := time.Now().Add(validatorStartTimeDiff)
 
 			// Use a random node ID to ensure that repeated test runs
 			// will succeed against a network that persists across runs.
 			validatorID, err := ids.ToNodeID(utils.RandomBytes(ids.NodeIDLen))
 			require.NoError(err)
 
-			vdr := &txs.Validator{
-				NodeID: validatorID,
-				Start:  uint64(vdrStartTime.Unix()),
-				End:    uint64(vdrStartTime.Add(72 * time.Hour).Unix()),
-				Wght:   minValStake,
+			vdr := &txs.SubnetValidator{
+				Validator: txs.Validator{
+					NodeID: validatorID,
+					End:    uint64(time.Now().Add(72 * time.Hour).Unix()),
+					Wght:   minValStake,
+				},
+				Subnet: constants.PrimaryNetworkID,
 			}
 			rewardOwner := &secp256k1fx.OutputOwners{
 				Threshold: 1,
@@ -89,9 +90,16 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			}
 			shares := uint32(20000) // TODO: retrieve programmatically
 
+			sk, err := bls.NewSecretKey()
+			require.NoError(err)
+			pop := signer.NewProofOfPossession(sk)
+
 			ginkgo.By("issue add validator tx", func() {
-				_, err := pWallet.IssueAddValidatorTx(
+				_, err := pWallet.IssueAddPermissionlessValidatorTx(
 					vdr,
+					pop,
+					avaxAssetID,
+					rewardOwner,
 					rewardOwner,
 					shares,
 					e2e.WithDefaultContext(),
@@ -100,8 +108,9 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 			})
 
 			ginkgo.By("issue add delegator tx", func() {
-				_, err := pWallet.IssueAddDelegatorTx(
+				_, err := pWallet.IssueAddPermissionlessDelegatorTx(
 					vdr,
+					avaxAssetID,
 					rewardOwner,
 					e2e.WithDefaultContext(),
 				)

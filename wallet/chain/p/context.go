@@ -1,15 +1,20 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
-	stdcontext "context"
-
 	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm"
+
+	stdcontext "context"
 )
+
+const Alias = "P"
 
 var _ Context = (*context)(nil)
 
@@ -143,4 +148,16 @@ func (c *context) AddSubnetValidatorFee() uint64 {
 
 func (c *context) AddSubnetDelegatorFee() uint64 {
 	return c.addSubnetDelegatorFee
+}
+
+func newSnowContext(c Context) (*snow.Context, error) {
+	lookup := ids.NewAliaser()
+	return &snow.Context{
+		NetworkID:   c.NetworkID(),
+		SubnetID:    constants.PrimaryNetworkID,
+		ChainID:     constants.PlatformChainID,
+		AVAXAssetID: c.AVAXAssetID(),
+		Log:         logging.NoLog{},
+		BCLookup:    lookup,
+	}, lookup.Alias(constants.PlatformChainID, Alias)
 }

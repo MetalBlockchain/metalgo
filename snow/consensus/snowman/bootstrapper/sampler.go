@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
@@ -35,7 +35,7 @@ func Sample[T comparable](elements map[T]uint64, maxSize int) (set.Set[T], error
 		return nil, err
 	}
 
-	maxSize = int(math.Min(uint64(maxSize), totalWeight))
+	maxSize = int(min(uint64(maxSize), totalWeight))
 	indices, err := sampler.Sample(maxSize)
 	if err != nil {
 		return nil, err

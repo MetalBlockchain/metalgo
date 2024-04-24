@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -8,6 +8,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
@@ -39,6 +40,10 @@ type Manager interface {
 	// VerifyTx verifies that the transaction can be issued based on the currently
 	// preferred state. This should *not* be used to verify transactions in a block.
 	VerifyTx(tx *txs.Tx) error
+
+	// VerifyUniqueInputs verifies that the inputs are not duplicated in the
+	// provided blk or any of its ancestors pinned in memory.
+	VerifyUniqueInputs(blkID ids.ID, inputs set.Set[ids.ID]) error
 }
 
 func NewManager(
@@ -107,9 +112,9 @@ func (m *manager) NewBlock(blk block.Block) snowman.Block {
 	}
 }
 
-func (m *manager) SetPreference(blockID ids.ID) (updated bool) {
-	updated = m.preferred == blockID
-	m.preferred = blockID
+func (m *manager) SetPreference(blkID ids.ID) bool {
+	updated := m.preferred != blkID
+	m.preferred = blkID
 	return updated
 }
 
@@ -122,10 +127,36 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		return ErrChainNotSynced
 	}
 
-	return tx.Unsigned.Visit(&executor.MempoolTxVerifier{
-		Backend:       m.txExecutorBackend,
-		ParentID:      m.preferred,
-		StateVersions: m,
-		Tx:            tx,
+	stateDiff, err := state.NewDiff(m.preferred, m)
+	if err != nil {
+		return err
+	}
+
+	nextBlkTime, _, err := executor.NextBlockTime(stateDiff, m.txExecutorBackend.Clk)
+	if err != nil {
+		return err
+	}
+
+	_, err = executor.AdvanceTimeTo(m.txExecutorBackend, stateDiff, nextBlkTime)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Unsigned.Visit(&executor.StandardTxExecutor{
+		Backend: m.txExecutorBackend,
+		State:   stateDiff,
+		Tx:      tx,
 	})
+	// We ignore [errFutureStakeTime] here because the time will be advanced
+	// when this transaction is issued.
+	//
+	// TODO: Remove this check post-Durango.
+	if errors.Is(err, executor.ErrFutureStakeTime) {
+		return nil
+	}
+	return err
+}
+
+func (m *manager) VerifyUniqueInputs(blkID ids.ID, inputs set.Set[ids.ID]) error {
+	return m.backend.verifyUniqueInputs(blkID, inputs)
 }

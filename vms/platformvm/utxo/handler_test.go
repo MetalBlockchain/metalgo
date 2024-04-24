@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utxo
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
@@ -39,8 +39,10 @@ func TestVerifySpendUTXOs(t *testing.T) {
 	require.NoError(t, fx.InitializeVM(&secp256k1fx.TestVM{}))
 	require.NoError(t, fx.Bootstrapped())
 
+	ctx := snowtest.Context(t, snowtest.PChainID)
+
 	h := &handler{
-		ctx: snow.DefaultContextTest(),
+		ctx: ctx,
 		clk: &mockable.Clock{},
 		fx:  fx,
 	}

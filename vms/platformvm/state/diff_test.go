@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/database"
@@ -38,7 +37,7 @@ func TestDiffCreation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	lastAcceptedID := ids.GenerateTestID()
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 	versions := NewMockVersions(ctrl)
 	versions.EXPECT().GetState(lastAcceptedID).AnyTimes().Return(state, true)
 
@@ -52,7 +51,7 @@ func TestDiffCurrentSupply(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	lastAcceptedID := ids.GenerateTestID()
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 	versions := NewMockVersions(ctrl)
 	versions.EXPECT().GetState(lastAcceptedID).AnyTimes().Return(state, true)
 
@@ -250,7 +249,7 @@ func TestDiffSubnet(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 
 	// Initialize parent with one subnet
 	parentStateCreateSubnetTx := &txs.Tx{
@@ -298,7 +297,7 @@ func TestDiffChain(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 	subnetID := ids.GenerateTestID()
 
 	// Initialize parent with one chain
@@ -397,7 +396,7 @@ func TestDiffRewardUTXO(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 
 	txID := ids.GenerateTestID()
 
@@ -523,7 +522,7 @@ func TestDiffSubnetOwner(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 
 	states := NewMockVersions(ctrl)
 	lastAcceptedID := ids.GenerateTestID()
@@ -585,7 +584,7 @@ func TestDiffStacking(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	state, _ := newInitializedState(require)
+	state := newInitializedState(require)
 
 	states := NewMockVersions(ctrl)
 	lastAcceptedID := ids.GenerateTestID()
@@ -637,7 +636,7 @@ func TestDiffStacking(t *testing.T) {
 	require.Equal(owner1, owner)
 
 	// Create a second diff on first diff and verify that subnet owner returns correctly
-	stackedDiff, err := wrapState(statesDiff)
+	stackedDiff, err := NewDiffOn(statesDiff)
 	require.NoError(err)
 	owner, err = stackedDiff.GetSubnetOwner(subnetID)
 	require.NoError(err)
@@ -673,18 +672,4 @@ func TestDiffStacking(t *testing.T) {
 	owner, err = state.GetSubnetOwner(subnetID)
 	require.NoError(err)
 	require.Equal(owner3, owner)
-}
-
-type stateGetter struct {
-	state Chain
-}
-
-func (s stateGetter) GetState(ids.ID) (Chain, bool) {
-	return s.state, true
-}
-
-func wrapState(parentState Chain) (Diff, error) {
-	return NewDiff(ids.Empty, stateGetter{
-		state: parentState,
-	})
 }

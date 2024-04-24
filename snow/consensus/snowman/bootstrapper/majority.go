@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-
 	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/ids"

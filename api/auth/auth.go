@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package auth
@@ -14,8 +14,6 @@ import (
 	"sync"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
-
 	"github.com/gorilla/rpc/v2"
 
 	"github.com/MetalBlockchain/metalgo/utils/json"
@@ -23,6 +21,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/password"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -41,7 +41,7 @@ const (
 var (
 	errNoToken               = errors.New("auth token not provided")
 	errAuthHeaderNotParsable = fmt.Errorf(
-		"couldn't parse auth token. Header \"%s\" should be \"%sTOKEN.GOES.HERE\"",
+		`couldn't parse auth token. Header "%s" should be "%sTOKEN.GOES.HERE"`,
 		headerKey,
 		headerValStart,
 	)

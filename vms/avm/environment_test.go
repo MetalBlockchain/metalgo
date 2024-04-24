@@ -1,15 +1,14 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"math/rand"
 	"testing"
-
-	stdjson "encoding/json"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -20,13 +19,11 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils/cb58"
+	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
@@ -38,6 +35,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
+	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 	keystoreutils "github.com/MetalBlockchain/metalgo/vms/components/keystore"
 )
 
@@ -67,25 +65,16 @@ var (
 		},
 	}
 
-	chainID = ids.ID{5, 4, 3, 2, 1}
 	assetID = ids.ID{1, 2, 3}
 
-	keys  []*secp256k1.PrivateKey
-	addrs []ids.ShortID // addrs[i] corresponds to keys[i]
-
-	errMissing = errors.New("missing")
+	keys  = secp256k1.TestKeys()[:3] // TODO: Remove [:3]
+	addrs []ids.ShortID              // addrs[i] corresponds to keys[i]
 )
 
 func init() {
-	for _, key := range []string{
-		"24jUJ9vZexUM6expyMcT48LBx27k1m7xpraoV62oSQAHdziao5",
-		"2MMvUMsxx6zsHSNXJdFD8yc5XkancvwyKPwpw4xUK3TCGDuNBY",
-		"cxb7KpGWhDMALTjNNSJ7UQkkomPesyWAPUaWRGdyeBNzR6f35",
-	} {
-		keyBytes, _ := cb58.Decode(key)
-		pk, _ := secp256k1.ToPrivateKey(keyBytes)
-		keys = append(keys, pk)
-		addrs = append(addrs, pk.PublicKey().Address())
+	addrs = make([]ids.ShortID, len(keys))
+	for i, key := range keys {
+		addrs[i] = key.Address()
 	}
 }
 
@@ -131,7 +120,8 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	}
 
 	genesisBytes := buildGenesisTestWithArgs(tb, genesisArgs)
-	ctx := newContext(tb)
+
+	ctx := snowtest.Context(tb, snowtest.XChainID)
 
 	baseDB := memdb.New()
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDB))
@@ -167,13 +157,12 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		Config: vmStaticConfig,
 	}
 
-	vmDynamicConfig := Config{
-		IndexTransactions: true,
-	}
+	vmDynamicConfig := DefaultConfig
+	vmDynamicConfig.IndexTransactions = true
 	if c.vmDynamicConfig != nil {
 		vmDynamicConfig = *c.vmDynamicConfig
 	}
-	configBytes, err := stdjson.Marshal(vmDynamicConfig)
+	configBytes, err := json.Marshal(vmDynamicConfig)
 	require.NoError(err)
 
 	require.NoError(vm.Initialize(
@@ -232,40 +221,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	return env
 }
 
-func newContext(tb testing.TB) *snow.Context {
-	require := require.New(tb)
-
-	genesisBytes := buildGenesisTest(tb)
-	tx := getCreateTxFromGenesisTest(tb, genesisBytes, "AVAX")
-
-	ctx := snow.DefaultContextTest()
-	ctx.NetworkID = constants.UnitTestID
-	ctx.ChainID = chainID
-	ctx.AVAXAssetID = tx.ID()
-	ctx.XChainID = ids.Empty.Prefix(0)
-	ctx.CChainID = ids.Empty.Prefix(1)
-	aliaser := ctx.BCLookup.(ids.Aliaser)
-
-	require.NoError(aliaser.Alias(chainID, "X"))
-	require.NoError(aliaser.Alias(chainID, chainID.String()))
-	require.NoError(aliaser.Alias(constants.PlatformChainID, "P"))
-	require.NoError(aliaser.Alias(constants.PlatformChainID, constants.PlatformChainID.String()))
-
-	ctx.ValidatorState = &validators.TestState{
-		GetSubnetIDF: func(_ context.Context, chainID ids.ID) (ids.ID, error) {
-			subnetID, ok := map[ids.ID]ids.ID{
-				constants.PlatformChainID: ctx.SubnetID,
-				chainID:                   ctx.SubnetID,
-			}[chainID]
-			if !ok {
-				return ids.Empty, errMissing
-			}
-			return subnetID, nil
-		},
-	}
-	return ctx
-}
-
 // Returns:
 //
 //  1. tx in genesis that creates asset
@@ -273,9 +228,12 @@ func newContext(tb testing.TB) *snow.Context {
 func getCreateTxFromGenesisTest(tb testing.TB, genesisBytes []byte, assetName string) *txs.Tx {
 	require := require.New(tb)
 
-	parser, err := txs.NewParser([]fxs.Fx{
-		&secp256k1fx.Fx{},
-	})
+	parser, err := txs.NewParser(
+		time.Time{},
+		[]fxs.Fx{
+			&secp256k1fx.Fx{},
+		},
+	)
 	require.NoError(err)
 
 	cm := parser.GenesisCodec()
@@ -296,7 +254,7 @@ func getCreateTxFromGenesisTest(tb testing.TB, genesisBytes []byte, assetName st
 	tx := &txs.Tx{
 		Unsigned: &assetTx.CreateAssetTx,
 	}
-	require.NoError(parser.InitializeGenesisTx(tx))
+	require.NoError(tx.Initialize(parser.GenesisCodec()))
 	return tx
 }
 
@@ -320,7 +278,7 @@ func buildGenesisTestWithArgs(tb testing.TB, args *BuildGenesisArgs) []byte {
 	return b
 }
 
-func newTx(tb testing.TB, genesisBytes []byte, vm *VM, assetName string) *txs.Tx {
+func newTx(tb testing.TB, genesisBytes []byte, chainID ids.ID, parser txs.Parser, assetName string) *txs.Tx {
 	require := require.New(tb)
 
 	createTx := getCreateTxFromGenesisTest(tb, genesisBytes, assetName)
@@ -345,14 +303,14 @@ func newTx(tb testing.TB, genesisBytes []byte, vm *VM, assetName string) *txs.Tx
 			}},
 		},
 	}}
-	require.NoError(tx.SignSECP256K1Fx(vm.parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}))
+	require.NoError(tx.SignSECP256K1Fx(parser.Codec(), [][]*secp256k1.PrivateKey{{keys[0]}}))
 	return tx
 }
 
 // Sample from a set of addresses and return them raw and formatted as strings.
 // The size of the sample is between 1 and len(addrs)
 // If len(addrs) == 0, returns nil
-func sampleAddrs(tb testing.TB, vm *VM, addrs []ids.ShortID) ([]ids.ShortID, []string) {
+func sampleAddrs(tb testing.TB, addressFormatter avax.AddressManager, addrs []ids.ShortID) ([]ids.ShortID, []string) {
 	require := require.New(tb)
 
 	sampledAddrs := []ids.ShortID{}
@@ -366,7 +324,7 @@ func sampleAddrs(tb testing.TB, vm *VM, addrs []ids.ShortID) ([]ids.ShortID, []s
 	require.NoError(err)
 	for _, index := range indices {
 		addr := addrs[index]
-		addrStr, err := vm.FormatLocalAddress(addr)
+		addrStr, err := addressFormatter.FormatLocalAddress(addr)
 		require.NoError(err)
 
 		sampledAddrs = append(sampledAddrs, addr)
@@ -396,15 +354,15 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},
@@ -451,11 +409,11 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 					},
@@ -486,15 +444,15 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},
@@ -506,15 +464,15 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 				InitialState: map[string][]interface{}{
 					"fixedCap": {
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr0Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr1Str,
 						},
 						Holder{
-							Amount:  json.Uint64(startBalance),
+							Amount:  avajson.Uint64(startBalance),
 							Address: addr2Str,
 						},
 					},
@@ -524,30 +482,31 @@ func makeCustomAssetGenesis(tb testing.TB) *BuildGenesisArgs {
 	}
 }
 
-// issueAndAccept expects the context lock to be held
+// issueAndAccept expects the context lock not to be held
 func issueAndAccept(
 	require *require.Assertions,
 	vm *VM,
 	issuer <-chan common.Message,
 	tx *txs.Tx,
 ) {
-	txID, err := vm.IssueTx(tx.Bytes())
+	txID, err := vm.issueTx(tx)
 	require.NoError(err)
 	require.Equal(tx.ID(), txID)
 
 	buildAndAccept(require, vm, issuer, txID)
 }
 
-// buildAndAccept expects the context lock to be held
+// buildAndAccept expects the context lock not to be held
 func buildAndAccept(
 	require *require.Assertions,
 	vm *VM,
 	issuer <-chan common.Message,
 	txID ids.ID,
 ) {
-	vm.ctx.Lock.Unlock()
 	require.Equal(common.PendingTxs, <-issuer)
+
 	vm.ctx.Lock.Lock()
+	defer vm.ctx.Lock.Unlock()
 
 	blkIntf, err := vm.BuildBlock(context.Background())
 	require.NoError(err)

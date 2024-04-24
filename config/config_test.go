@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -14,7 +14,6 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/chains"
@@ -413,7 +412,7 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 				config, ok := given[id]
 				require.True(ok)
 
-				require.Equal(true, config.ValidatorOnly)
+				require.True(config.ValidatorOnly)
 				require.Equal(16, config.ConsensusParameters.AlphaConfidence)
 				// must still respect defaults
 				require.Equal(20, config.ConsensusParameters.K)
@@ -523,7 +522,7 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 				id, _ := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 				config, ok := given[id]
 				require.True(ok)
-				require.Equal(true, config.ValidatorOnly)
+				require.True(config.ValidatorOnly)
 				require.Equal(16, config.ConsensusParameters.AlphaPreference)
 				require.Equal(20, config.ConsensusParameters.AlphaConfidence)
 				require.Equal(30, config.ConsensusParameters.K)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2023, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -10,26 +10,28 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
-	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet/local"
 	"github.com/MetalBlockchain/metalgo/version"
 )
 
 const cliVersion = "0.0.1"
 
 var (
-	errAvalancheGoRequired = fmt.Errorf("--metalgo-path or %s are required", local.AvalancheGoPathEnvName)
-	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", local.NetworkDirEnvName)
+	errAvalancheGoRequired = fmt.Errorf("--metalgo-path or %s are required", tmpnet.AvalancheGoPathEnvName)
+	errNetworkDirRequired  = fmt.Errorf("--network-dir or %s are required", tmpnet.NetworkDirEnvName)
 )
 
 func main() {
+	var networkDir string
 	rootCmd := &cobra.Command{
 		Use:   "tmpnetctl",
 		Short: "tmpnetctl commands",
 	}
+	rootCmd.PersistentFlags().StringVar(&networkDir, "network-dir", os.Getenv(tmpnet.NetworkDirEnvName), "The path to the configuration directory of a temporary network")
 
 	versionCmd := &cobra.Command{
 		Use:   "version",
@@ -46,29 +48,37 @@ func main() {
 	rootCmd.AddCommand(versionCmd)
 
 	var (
-		rootDir        string
-		execPath       string
-		nodeCount      uint8
-		fundedKeyCount uint8
+		rootDir         string
+		avalancheGoPath string
+		pluginDir       string
+		nodeCount       uint8
 	)
 	startNetworkCmd := &cobra.Command{
 		Use:   "start-network",
-		Short: "Start a new local network",
+		Short: "Start a new temporary network",
 		RunE: func(*cobra.Command, []string) error {
-			if len(execPath) == 0 {
+			if len(avalancheGoPath) == 0 {
 				return errAvalancheGoRequired
 			}
 
 			// Root dir will be defaulted on start if not provided
 
-			network := &local.LocalNetwork{
-				LocalConfig: local.LocalConfig{
-					ExecPath: execPath,
-				},
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), local.DefaultNetworkStartTimeout)
+			network := &tmpnet.Network{}
+
+			// Extreme upper bound, should never take this long
+			networkStartTimeout := 2 * time.Minute
+
+			ctx, cancel := context.WithTimeout(context.Background(), networkStartTimeout)
 			defer cancel()
-			network, err := local.StartNetwork(ctx, os.Stdout, rootDir, network, int(nodeCount), int(fundedKeyCount))
+			err := tmpnet.StartNewNetwork(
+				ctx,
+				os.Stdout,
+				network,
+				rootDir,
+				avalancheGoPath,
+				pluginDir,
+				int(nodeCount),
+			)
 			if err != nil {
 				return err
 			}
@@ -84,37 +94,51 @@ func main() {
 				return err
 			}
 
-			fmt.Fprintf(os.Stdout, "\nConfigure tmpnetctl to target this network by default with one of the following statements:")
-			fmt.Fprintf(os.Stdout, "\n - source %s\n", network.EnvFilePath())
+			fmt.Fprintf(os.Stdout, "\nConfigure tmpnetctl to target this network by default with one of the following statements:\n")
+			fmt.Fprintf(os.Stdout, " - source %s\n", network.EnvFilePath())
 			fmt.Fprintf(os.Stdout, " - %s\n", network.EnvFileContents())
-			fmt.Fprintf(os.Stdout, " - export %s=%s\n", local.NetworkDirEnvName, latestSymlinkPath)
+			fmt.Fprintf(os.Stdout, " - export %s=%s\n", tmpnet.NetworkDirEnvName, latestSymlinkPath)
 
 			return nil
 		},
 	}
-	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(local.RootDirEnvName), "The path to the root directory for local networks")
-	startNetworkCmd.PersistentFlags().StringVar(&execPath, "metalgo-path", os.Getenv(local.AvalancheGoPathEnvName), "The path to an avalanchego binary")
+	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(tmpnet.RootDirEnvName), "The path to the root directory for temporary networks")
+	startNetworkCmd.PersistentFlags().StringVar(&avalancheGoPath, "metalgo-path", os.Getenv(tmpnet.AvalancheGoPathEnvName), "The path to a metalgo binary")
+	startNetworkCmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", os.ExpandEnv("$HOME/.avalanchego/plugins"), "[optional] the dir containing VM plugins")
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
-	startNetworkCmd.PersistentFlags().Uint8Var(&fundedKeyCount, "funded-key-count", tmpnet.DefaultFundedKeyCount, "Number of funded keys the network should start with")
 	rootCmd.AddCommand(startNetworkCmd)
 
-	var networkDir string
 	stopNetworkCmd := &cobra.Command{
 		Use:   "stop-network",
-		Short: "Stop a local network",
+		Short: "Stop a temporary network",
 		RunE: func(*cobra.Command, []string) error {
 			if len(networkDir) == 0 {
 				return errNetworkDirRequired
 			}
-			if err := local.StopNetwork(networkDir); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
+			defer cancel()
+			if err := tmpnet.StopNetwork(ctx, networkDir); err != nil {
 				return err
 			}
 			fmt.Fprintf(os.Stdout, "Stopped network configured at: %s\n", networkDir)
 			return nil
 		},
 	}
-	stopNetworkCmd.PersistentFlags().StringVar(&networkDir, "network-dir", os.Getenv(local.NetworkDirEnvName), "The path to the configuration directory of a local network")
 	rootCmd.AddCommand(stopNetworkCmd)
+
+	restartNetworkCmd := &cobra.Command{
+		Use:   "restart-network",
+		Short: "Restart a temporary network",
+		RunE: func(*cobra.Command, []string) error {
+			if len(networkDir) == 0 {
+				return errNetworkDirRequired
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), tmpnet.DefaultNetworkTimeout)
+			defer cancel()
+			return tmpnet.RestartNetwork(ctx, os.Stdout, networkDir)
+		},
+	}
+	rootCmd.AddCommand(restartNetworkCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "tmpnetctl failed: %v\n", err)
