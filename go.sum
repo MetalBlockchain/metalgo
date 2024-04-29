@@ -50,8 +50,8 @@ github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:kGUq
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69mGp/UtRPn422BH4/Y4Q3SLUrD9KHuDkm8iodFc=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
-github.com/MetalBlockchain/coreth v0.13.0-rc.0-1713887907 h1:TWjhzHlDS3Xc8aLx84EFSZV8CIqh8RJ7utgsoTP+9B8=
-github.com/MetalBlockchain/coreth v0.13.0-rc.0-1713887907/go.mod h1:srxoonSNNkYFOWZ1i5HSDcBlROZsY8ivqNR4rN4SZcM=
+github.com/MetalBlockchain/coreth v0.13.1-rc.6 h1:xVdWnFLQUHBOJHZpzc/BbZdlVkyo+y2ncST7k3wKc+8=
+github.com/MetalBlockchain/coreth v0.13.1-rc.6/go.mod h1:qOlIyZU7ZNbsijOblX7+RsksiCyCEFtt48AExVY4LGU=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
