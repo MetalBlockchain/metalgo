@@ -380,6 +380,7 @@ func TestUnverifiedParentPanicRegression(t *testing.T) {
 		BanffTime:              latestForkTime,
 		CortinaTime:            mockable.MaxTime,
 		DurangoTime:            mockable.MaxTime,
+		EUpgradeTime:           mockable.MaxTime,
 	}}
 
 	ctx := snowtest.Context(t, snowtest.PChainID)
@@ -2235,7 +2236,7 @@ func checkValidatorBlsKeyIsSet(
 		return errors.New("unexpected BLS key")
 	case expectedBlsKey != nil && val.PublicKey == nil:
 		return errors.New("missing BLS key")
-	case !bytes.Equal(bls.SerializePublicKey(expectedBlsKey), bls.SerializePublicKey(val.PublicKey)):
+	case !bytes.Equal(bls.PublicKeyToUncompressedBytes(expectedBlsKey), bls.PublicKeyToUncompressedBytes(val.PublicKey)):
 		return errors.New("incorrect BLS key")
 	default:
 		return nil

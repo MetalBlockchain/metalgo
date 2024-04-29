@@ -4,29 +4,34 @@
 package p
 
 import (
+	"context"
+	"errors"
+
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-
-	stdcontext "context"
 )
 
-var _ txs.Visitor = (*backendVisitor)(nil)
+var (
+	_ txs.Visitor = (*backendVisitor)(nil)
+
+	ErrUnsupportedTxType = errors.New("unsupported tx type")
+)
 
 // backendVisitor handles accepting of transactions for the backend
 type backendVisitor struct {
 	b    *backend
-	ctx  stdcontext.Context
+	ctx  context.Context
 	txID ids.ID
 }
 
 func (*backendVisitor) AdvanceTimeTx(*txs.AdvanceTimeTx) error {
-	return errUnsupportedTxType
+	return ErrUnsupportedTxType
 }
 
 func (*backendVisitor) RewardValidatorTx(*txs.RewardValidatorTx) error {
-	return errUnsupportedTxType
+	return ErrUnsupportedTxType
 }
 
 func (b *backendVisitor) AddValidatorTx(tx *txs.AddValidatorTx) error {

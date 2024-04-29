@@ -6,7 +6,6 @@ package summary
 import (
 	"errors"
 	"math"
-	"time"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
@@ -21,7 +20,7 @@ var (
 )
 
 func init() {
-	lc := linearcodec.NewDefault(time.Time{})
+	lc := linearcodec.NewDefault()
 	Codec = codec.NewManager(math.MaxInt32)
 	if err := Codec.RegisterCodec(CodecVersion, lc); err != nil {
 		panic(err)

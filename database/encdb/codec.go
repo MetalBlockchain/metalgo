@@ -4,8 +4,6 @@
 package encdb
 
 import (
-	"time"
-
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 )
@@ -15,7 +13,7 @@ const CodecVersion = 0
 var Codec codec.Manager
 
 func init() {
-	lc := linearcodec.NewDefault(time.Time{})
+	lc := linearcodec.NewDefault()
 	Codec = codec.NewDefaultManager()
 
 	if err := Codec.RegisterCodec(CodecVersion, lc); err != nil {

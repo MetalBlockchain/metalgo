@@ -5,7 +5,6 @@ package keystore
 
 import (
 	"math"
-	"time"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
@@ -20,9 +19,9 @@ var (
 )
 
 func init() {
-	c := linearcodec.NewDefault(time.Time{})
+	c := linearcodec.NewDefault()
 	Codec = codec.NewDefaultManager()
-	lc := linearcodec.NewDefault(time.Time{})
+	lc := linearcodec.NewDefault()
 	LegacyCodec = codec.NewManager(math.MaxInt32)
 
 	err := utils.Err(

@@ -18,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/proto/pb/sdk"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -359,6 +361,7 @@ func TestPushGossiperNew(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				Metrics{},
 				tt.gossipParams,
 				tt.regossipParams,
@@ -517,6 +520,20 @@ func TestPushGossiper(t *testing.T) {
 			)
 			require.NoError(err)
 			client := network.NewClient(0)
+			validators := p2p.NewValidators(
+				&p2p.Peers{},
+				logging.NoLog{},
+				constants.PrimaryNetworkID,
+				&validators.TestState{
+					GetCurrentHeightF: func(context.Context) (uint64, error) {
+						return 1, nil
+					},
+					GetValidatorSetF: func(context.Context, uint64, ids.ID) (map[ids.NodeID]*validators.GetValidatorOutput, error) {
+						return nil, nil
+					},
+				},
+				time.Hour,
+			)
 			metrics, err := NewMetrics(prometheus.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
@@ -529,6 +546,7 @@ func TestPushGossiper(t *testing.T) {
 			gossiper, err := NewPushGossiper[*testTx](
 				marshaller,
 				FullSet[*testTx]{},
+				validators,
 				client,
 				metrics,
 				BranchingFactor{
