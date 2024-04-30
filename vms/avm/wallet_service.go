@@ -14,7 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/api"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -27,7 +27,7 @@ var errMissingUTXO = errors.New("missing utxo")
 
 type WalletService struct {
 	vm         *VM
-	pendingTxs linkedhashmap.LinkedHashmap[ids.ID, *txs.Tx]
+	pendingTxs *linked.Hashmap[ids.ID, *txs.Tx]
 }
 
 func (w *WalletService) decided(txID ids.ID) {

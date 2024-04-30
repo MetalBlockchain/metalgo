@@ -6,6 +6,7 @@ package state
 import (
 	"time"
 
+	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
@@ -17,7 +18,7 @@ import (
 // [preDelegateeRewardMetadata].
 //
 // CodecVersionLen + UpDurationLen + LastUpdatedLen + PotentialRewardLen
-const preDelegateeRewardSize = wrappers.ShortLen + 3*wrappers.LongLen
+const preDelegateeRewardSize = codec.VersionSize + 3*wrappers.LongLen
 
 var _ validatorState = (*metadata)(nil)
 
