@@ -22,7 +22,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/chains"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/ipcs"
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/dialer"
 	"github.com/MetalBlockchain/metalgo/network/throttling"
@@ -39,7 +38,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/password"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -55,8 +53,6 @@ const (
 	chainUpgradeFileName = "upgrade"
 	subnetConfigFileExt  = ".json"
 
-	authDeprecationMsg                   = "Auth API is deprecated"
-	ipcDeprecationMsg                    = "IPC API is deprecated"
 	keystoreDeprecationMsg               = "keystore API is deprecated"
 	acceptedFrontierGossipDeprecationMsg = "push-based accepted frontier gossip is deprecated"
 	peerListPushGossipDeprecationMsg     = "push-based peer list gossip is deprecated"
@@ -67,14 +63,6 @@ var (
 	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
 	commitThresholdDeprecationMsg = fmt.Sprintf("use --%s instead", SnowCommitThresholdKey)
 	deprecatedKeys                = map[string]string{
-		APIAuthRequiredKey:     authDeprecationMsg,
-		APIAuthPasswordKey:     authDeprecationMsg,
-		APIAuthPasswordFileKey: authDeprecationMsg,
-
-		IpcAPIEnabledKey: ipcDeprecationMsg,
-		IpcsChainIDsKey:  ipcDeprecationMsg,
-		IpcsPathKey:      ipcDeprecationMsg,
-
 		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
 
 		ConsensusGossipAcceptedFrontierValidatorSizeKey:    acceptedFrontierGossipDeprecationMsg,
@@ -97,7 +85,6 @@ var (
 	errConflictingImplicitACPOpinion          = errors.New("objecting to enabled ACP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
-	errAuthPasswordTooWeak                    = errors.New("API auth password is not strong enough")
 	errInvalidUptimeRequirement               = errors.New("uptime requirement must be in the range [0, 1]")
 	errMinValidatorStakeAboveMax              = errors.New("minimum validator stake can't be greater than maximum validator stake")
 	errInvalidDelegationFee                   = errors.New("delegation fee must be in the range [0, 1,000,000]")
@@ -167,45 +154,6 @@ func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	return loggingConfig, err
 }
 
-func getAPIAuthConfig(v *viper.Viper) (node.APIAuthConfig, error) {
-	config := node.APIAuthConfig{
-		APIRequireAuthToken: v.GetBool(APIAuthRequiredKey),
-	}
-	if !config.APIRequireAuthToken {
-		return config, nil
-	}
-
-	if v.IsSet(APIAuthPasswordKey) {
-		config.APIAuthPassword = v.GetString(APIAuthPasswordKey)
-	} else {
-		passwordFilePath := v.GetString(APIAuthPasswordFileKey) // picks flag value or default
-		passwordBytes, err := os.ReadFile(passwordFilePath)
-		if err != nil {
-			return node.APIAuthConfig{}, fmt.Errorf("API auth password file %q failed to be read: %w", passwordFilePath, err)
-		}
-		config.APIAuthPassword = strings.TrimSpace(string(passwordBytes))
-	}
-
-	if !password.SufficientlyStrong(config.APIAuthPassword, password.OK) {
-		return node.APIAuthConfig{}, errAuthPasswordTooWeak
-	}
-	return config, nil
-}
-
-func getIPCConfig(v *viper.Viper) node.IPCConfig {
-	config := node.IPCConfig{
-		IPCAPIEnabled: v.GetBool(IpcAPIEnabledKey),
-		IPCPath:       ipcs.DefaultBaseURL,
-	}
-	if v.IsSet(IpcsChainIDsKey) {
-		config.IPCDefaultChainIDs = strings.Split(v.GetString(IpcsChainIDsKey), ",")
-	}
-	if v.IsSet(IpcsPathKey) {
-		config.IPCPath = GetExpandedArg(v, IpcsPathKey)
-	}
-	return config
-}
-
 func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 	var (
 		httpsKey  []byte
@@ -242,7 +190,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 		}
 	}
 
-	config := node.HTTPConfig{
+	return node.HTTPConfig{
 		HTTPConfig: server.HTTPConfig{
 			ReadTimeout:       v.GetDuration(HTTPReadTimeoutKey),
 			ReadHeaderTimeout: v.GetDuration(HTTPReadHeaderTimeoutKey),
@@ -269,14 +217,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 		HTTPAllowedHosts:   v.GetStringSlice(HTTPAllowedHostsKey),
 		ShutdownTimeout:    v.GetDuration(HTTPShutdownTimeoutKey),
 		ShutdownWait:       v.GetDuration(HTTPShutdownWaitKey),
-	}
-
-	config.APIAuthConfig, err = getAPIAuthConfig(v)
-	if err != nil {
-		return node.HTTPConfig{}, err
-	}
-	config.IPCConfig = getIPCConfig(v)
-	return config, nil
+	}, nil
 }
 
 func getRouterHealthConfig(v *viper.Viper, halflife time.Duration) (router.HealthConfig, error) {
@@ -330,9 +271,6 @@ func getGossipConfig(v *viper.Viper) subnets.GossipConfig {
 		OnAcceptValidatorSize:            uint(v.GetUint32(ConsensusGossipOnAcceptValidatorSizeKey)),
 		OnAcceptNonValidatorSize:         uint(v.GetUint32(ConsensusGossipOnAcceptNonValidatorSizeKey)),
 		OnAcceptPeerSize:                 uint(v.GetUint32(ConsensusGossipOnAcceptPeerSizeKey)),
-		AppGossipValidatorSize:           uint(v.GetUint32(AppGossipValidatorSizeKey)),
-		AppGossipNonValidatorSize:        uint(v.GetUint32(AppGossipNonValidatorSizeKey)),
-		AppGossipPeerSize:                uint(v.GetUint32(AppGossipPeerSizeKey)),
 	}
 }
 
