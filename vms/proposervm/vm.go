@@ -44,6 +44,8 @@ const (
 	// blocks.
 	DefaultNumHistoricalBlocks uint64 = 0
 
+	DefaultDisableBlockThrottle bool = false
+
 	checkIndexedFrequency = 10 * time.Second
 	innerBlkCacheSize     = 64 * units.MiB
 )
@@ -55,7 +57,7 @@ var (
 
 	// TODO: remove after the X-chain supports height indexing.
 	mainnetXChainID = ids.FromStringOrPanic("UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE")
-	tahoeXChainID    = ids.FromStringOrPanic("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
+	tahoeXChainID   = ids.FromStringOrPanic("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
 
 	dbPrefix = []byte("proposervm")
 )
@@ -158,7 +160,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 	vm.State = baseState
-	vm.Windower = proposer.New(chainCtx.ValidatorState, chainCtx.SubnetID, chainCtx.ChainID)
+	vm.Windower = proposer.New(chainCtx.ValidatorState, chainCtx.SubnetID, chainCtx.ChainID, vm.DisableBlockThrottle)
 	vm.Tree = tree.New()
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",

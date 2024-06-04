@@ -32,6 +32,9 @@ type Config struct {
 
 	// Block certificate
 	StakingCertLeaf *staking.Certificate
+
+	// Disable block throttling logic enforced by Snowman++
+	DisableBlockThrottle bool
 }
 
 func (c *Config) IsDurangoActivated(timestamp time.Time) bool {

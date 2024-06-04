@@ -49,6 +49,8 @@ type Config struct {
 	// TODO: Move this flag once the proposervm is configurable on a per-chain
 	// basis.
 	ProposerNumHistoricalBlocks uint64 `json:"proposerNumHistoricalBlocks" yaml:"proposerNumHistoricalBlocks"`
+
+	DisableBlockThrottle bool `json:"disableBlockThrottle" yaml:"disableBlockThrottle"`
 }
 
 func (c *Config) Valid() error {

@@ -98,17 +98,19 @@ type Windower interface {
 // windower interfaces with P-Chain and it is responsible for calculating the
 // delay for the block submission window of a given validator
 type windower struct {
-	state       validators.State
-	subnetID    ids.ID
-	chainSource uint64
+	state                validators.State
+	subnetID             ids.ID
+	chainSource          uint64
+	disableBlockThrottle bool
 }
 
-func New(state validators.State, subnetID, chainID ids.ID) Windower {
+func New(state validators.State, subnetID, chainID ids.ID, disableBlockThrottle bool) Windower {
 	w := wrappers.Packer{Bytes: chainID[:]}
 	return &windower{
-		state:       state,
-		subnetID:    subnetID,
-		chainSource: w.UnpackLong(),
+		state:                state,
+		subnetID:             subnetID,
+		chainSource:          w.UnpackLong(),
+		disableBlockThrottle: disableBlockThrottle,
 	}
 }
 
@@ -145,6 +147,11 @@ func (w *windower) Proposers(ctx context.Context, blockHeight, pChainHeight uint
 }
 
 func (w *windower) Delay(ctx context.Context, blockHeight, pChainHeight uint64, validatorID ids.NodeID, maxWindows int) (time.Duration, error) {
+	// Even though we disable block throttling, we want to maintain a realistic delay
+	if w.disableBlockThrottle {
+		return 200 * time.Millisecond, nil
+	}
+
 	if validatorID == ids.EmptyNodeID {
 		return time.Duration(maxWindows) * WindowDuration, nil
 	}
@@ -170,6 +177,10 @@ func (w *windower) ExpectedProposer(
 	pChainHeight,
 	slot uint64,
 ) (ids.NodeID, error) {
+	if w.disableBlockThrottle {
+		return ids.EmptyNodeID, ErrAnyoneCanPropose
+	}
+
 	source := prng.NewMT19937_64()
 	sampler, validators, err := w.makeSampler(ctx, pChainHeight, source)
 	if err != nil {
@@ -195,6 +206,9 @@ func (w *windower) MinDelayForProposer(
 	nodeID ids.NodeID,
 	startSlot uint64,
 ) (time.Duration, error) {
+	if w.disableBlockThrottle {
+		return 200 * time.Millisecond, nil
+	}
 	source := prng.NewMT19937_64()
 	sampler, validators, err := w.makeSampler(ctx, pChainHeight, source)
 	if err != nil {
