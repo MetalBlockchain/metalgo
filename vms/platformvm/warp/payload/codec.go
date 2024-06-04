@@ -4,8 +4,6 @@
 package payload
 
 import (
-	"time"
-
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 	"github.com/MetalBlockchain/metalgo/utils"
@@ -22,7 +20,7 @@ var Codec codec.Manager
 
 func init() {
 	Codec = codec.NewManager(MaxMessageSize)
-	lc := linearcodec.NewDefault(time.Time{})
+	lc := linearcodec.NewDefault()
 
 	err := utils.Err(
 		lc.RegisterType(&Hash{}),

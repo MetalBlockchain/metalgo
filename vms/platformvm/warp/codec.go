@@ -5,7 +5,6 @@ package warp
 
 import (
 	"math"
-	"time"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
@@ -18,7 +17,7 @@ var Codec codec.Manager
 
 func init() {
 	Codec = codec.NewManager(math.MaxInt)
-	lc := linearcodec.NewDefault(time.Time{})
+	lc := linearcodec.NewDefault()
 
 	err := utils.Err(
 		lc.RegisterType(&BitSetSignature{}),

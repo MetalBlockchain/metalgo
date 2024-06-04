@@ -9,8 +9,6 @@ import (
 	"sync"
 )
 
-const LegacyAppName = "metal"
-
 var (
 	errDifferentMajor = errors.New("different major version")
 

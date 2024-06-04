@@ -1,11 +1,9 @@
 // Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package x
+package builder
 
 import (
-	"time"
-
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
@@ -25,7 +23,6 @@ var Parser block.Parser
 func init() {
 	var err error
 	Parser, err = block.NewParser(
-		time.Time{},
 		[]fxs.Fx{
 			&secp256k1fx.Fx{},
 			&nftfx.Fx{},
