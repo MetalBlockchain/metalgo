@@ -115,6 +115,18 @@ func New(state validators.State, subnetID, chainID ids.ID, disableBlockThrottle 
 }
 
 func (w *windower) Proposers(ctx context.Context, blockHeight, pChainHeight uint64, maxWindows int) ([]ids.NodeID, error) {
+	if w.disableBlockThrottle {
+		validatorsMap, err := w.state.GetValidatorSet(ctx, pChainHeight, w.subnetID)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeIDs := make([]ids.NodeID, len(validatorsMap))
+		for i := range validatorsMap {
+			nodeIDs = append(nodeIDs, i)
+		}
+		return nodeIDs, nil
+	}
 	// Note: The 32-bit prng is used here for legacy reasons. All other usages
 	// of a prng in this file should use the 64-bit version.
 	source := prng.NewMT19937()
