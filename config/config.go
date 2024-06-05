@@ -1049,6 +1049,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 	for _, subnetID := range subnetIDs {
 		filePath := filepath.Join(subnetConfigPath, subnetID.String()+subnetConfigFileExt)
 		fileInfo, err := os.Stat(filePath)
+		fmt.Println(filePath)
 		switch {
 		case errors.Is(err, os.ErrNotExist):
 			// this subnet config does not exist, move to the next one
@@ -1067,7 +1068,10 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 
 		config := getDefaultSubnetConfig(v)
 		if err := json.Unmarshal(file, &config); err != nil {
+			fmt.Println("error unmarshalling")
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
+		} else {
+			fmt.Println("unmarshalled fine")
 		}
 
 		if config.ConsensusParameters.Alpha != nil {
@@ -1076,6 +1080,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 		}
 
 		if err := config.Valid(); err != nil {
+			fmt.Println("config is not valid")
 			return nil, err
 		}
 
