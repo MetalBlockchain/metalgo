@@ -159,6 +159,7 @@ func (w *windower) Proposers(ctx context.Context, blockHeight, pChainHeight uint
 }
 
 func (w *windower) Delay(ctx context.Context, blockHeight, pChainHeight uint64, validatorID ids.NodeID, maxWindows int) (time.Duration, error) {
+	fmt.Println("Delay: %s has flag %v", w.subnetID.String(), w.disableBlockThrottle)
 	// Even though we disable block throttling, we want to maintain a realistic delay
 	if w.disableBlockThrottle {
 		return 0, nil
@@ -189,6 +190,7 @@ func (w *windower) ExpectedProposer(
 	pChainHeight,
 	slot uint64,
 ) (ids.NodeID, error) {
+	fmt.Println("ExpectedProposer: %s has flag %v", w.subnetID.String(), w.disableBlockThrottle)
 	if w.disableBlockThrottle {
 		return ids.EmptyNodeID, ErrAnyoneCanPropose
 	}
@@ -218,6 +220,7 @@ func (w *windower) MinDelayForProposer(
 	nodeID ids.NodeID,
 	startSlot uint64,
 ) (time.Duration, error) {
+	fmt.Println("MinDelayForProposer: %s has flag %v", w.subnetID.String(), w.disableBlockThrottle)
 	if w.disableBlockThrottle {
 		return 0, ErrAnyoneCanPropose
 	}
