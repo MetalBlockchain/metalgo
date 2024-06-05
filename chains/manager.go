@@ -694,8 +694,7 @@ func (m *manager) createAvalancheChain(
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 		disableBlockThrottle = subnetCfg.DisableBlockThrottle
-	} else {
-		m.Log.Info("could not find subnet configuration for subnet", zap.String("subnetID", ctx.SubnetID.String()))
+		fmt.Println("%v", subnetCfg)
 	}
 	m.Log.Info("creating proposervm wrapper",
 		zap.Time("activationTime", m.ApricotPhase4Time),
