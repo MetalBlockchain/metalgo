@@ -1034,7 +1034,6 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 
 // getSubnetConfigs reads SubnetConfigs to node config map
 func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
-	fmt.Println("testing")
 	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
 	if err != nil {
 		return nil, err
@@ -1071,9 +1070,9 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 		if err := json.Unmarshal(file, &config); err != nil {
 			fmt.Println("error unmarshalling")
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
-		} else {
-			fmt.Println("unmarshalled fine")
 		}
+
+		fmt.Println("disable block throttle is %v", config.DisableBlockThrottle)
 
 		if config.ConsensusParameters.Alpha != nil {
 			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
@@ -1081,7 +1080,6 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 		}
 
 		if err := config.Valid(); err != nil {
-			fmt.Println("config is not valid")
 			return nil, err
 		}
 
