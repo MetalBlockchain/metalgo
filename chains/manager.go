@@ -694,7 +694,6 @@ func (m *manager) createAvalancheChain(
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
 		disableBlockThrottle = subnetCfg.DisableBlockThrottle
-		fmt.Println("%v", subnetCfg)
 	}
 	m.Log.Info("creating proposervm wrapper",
 		zap.Time("activationTime", m.ApricotPhase4Time),

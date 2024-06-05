@@ -1091,6 +1091,7 @@ func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 		ValidatorOnly:               false,
 		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
 		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
+		DisableBlockThrottle:        false,
 	}
 }
 
