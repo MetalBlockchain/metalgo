@@ -161,7 +161,7 @@ func (w *windower) Proposers(ctx context.Context, blockHeight, pChainHeight uint
 func (w *windower) Delay(ctx context.Context, blockHeight, pChainHeight uint64, validatorID ids.NodeID, maxWindows int) (time.Duration, error) {
 	// Even though we disable block throttling, we want to maintain a realistic delay
 	if w.disableBlockThrottle {
-		return 200 * time.Millisecond, nil
+		return 0, nil
 	}
 
 	if validatorID == ids.EmptyNodeID {
@@ -219,7 +219,7 @@ func (w *windower) MinDelayForProposer(
 	startSlot uint64,
 ) (time.Duration, error) {
 	if w.disableBlockThrottle {
-		return 200 * time.Millisecond, nil
+		return 0, nil
 	}
 	source := prng.NewMT19937_64()
 	sampler, validators, err := w.makeSampler(ctx, pChainHeight, source)
