@@ -1034,18 +1034,21 @@ func (m *manager) createSnowmanChain(
 	}
 
 	var (
-		minBlockDelay       = proposervm.DefaultMinBlockDelay
-		numHistoricalBlocks = proposervm.DefaultNumHistoricalBlocks
+		minBlockDelay        = proposervm.DefaultMinBlockDelay
+		numHistoricalBlocks  = proposervm.DefaultNumHistoricalBlocks
+		disableBlockThrottle = proposervm.DefaultDisableBlockThrottle
 	)
 	if subnetCfg, ok := m.SubnetConfigs[ctx.SubnetID]; ok {
 		minBlockDelay = subnetCfg.ProposerMinBlockDelay
 		numHistoricalBlocks = subnetCfg.ProposerNumHistoricalBlocks
+		disableBlockThrottle = subnetCfg.DisableBlockThrottle
 	}
 	m.Log.Info("creating proposervm wrapper",
 		zap.Time("activationTime", m.ApricotPhase4Time),
 		zap.Uint64("minPChainHeight", m.ApricotPhase4MinPChainHeight),
 		zap.Duration("minBlockDelay", minBlockDelay),
 		zap.Uint64("numHistoricalBlocks", numHistoricalBlocks),
+		zap.Bool("disableBlockThrottle", disableBlockThrottle),
 	)
 
 	chainAlias := m.PrimaryAliasOrDefault(ctx.ChainID)
@@ -1056,13 +1059,14 @@ func (m *manager) createSnowmanChain(
 	vm = proposervm.New(
 		vm,
 		proposervm.Config{
-			ActivationTime:      m.ApricotPhase4Time,
-			DurangoTime:         version.GetDurangoTime(m.NetworkID),
-			MinimumPChainHeight: m.ApricotPhase4MinPChainHeight,
-			MinBlkDelay:         minBlockDelay,
-			NumHistoricalBlocks: numHistoricalBlocks,
-			StakingLeafSigner:   m.StakingTLSSigner,
-			StakingCertLeaf:     m.StakingTLSCert,
+			ActivationTime:       m.ApricotPhase4Time,
+			DurangoTime:          version.GetDurangoTime(m.NetworkID),
+			MinimumPChainHeight:  m.ApricotPhase4MinPChainHeight,
+			MinBlkDelay:          minBlockDelay,
+			NumHistoricalBlocks:  numHistoricalBlocks,
+			StakingLeafSigner:    m.StakingTLSSigner,
+			StakingCertLeaf:      m.StakingTLSCert,
+			DisableBlockThrottle: disableBlockThrottle,
 		},
 	)
 

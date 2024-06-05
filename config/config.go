@@ -1072,8 +1072,6 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
 		}
 
-		fmt.Println("disable block throttle is %v", config.DisableBlockThrottle)
-
 		if config.ConsensusParameters.Alpha != nil {
 			config.ConsensusParameters.AlphaPreference = *config.ConsensusParameters.Alpha
 			config.ConsensusParameters.AlphaConfidence = config.ConsensusParameters.AlphaPreference
