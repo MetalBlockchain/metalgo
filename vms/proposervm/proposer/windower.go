@@ -219,7 +219,7 @@ func (w *windower) MinDelayForProposer(
 	startSlot uint64,
 ) (time.Duration, error) {
 	if w.disableBlockThrottle {
-		return 0, nil
+		return 0, ErrAnyoneCanPropose
 	}
 	source := prng.NewMT19937_64()
 	sampler, validators, err := w.makeSampler(ctx, pChainHeight, source)
