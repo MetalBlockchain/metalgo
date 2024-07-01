@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/config"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
@@ -46,8 +47,8 @@ func DefaultFlags() FlagsMap {
 		config.HealthCheckFreqKey:               "2s",
 		config.AdminAPIEnabledKey:               true,
 		config.IndexEnabledKey:                  true,
-		config.LogDisplayLevelKey:               "INFO",
-		config.LogLevelKey:                      "DEBUG",
+		config.LogDisplayLevelKey:               logging.Off.String(), // Display logging not needed since nodes run headless
+		config.LogLevelKey:                      logging.Debug.String(),
 		config.MinStakeDurationKey:              DefaultMinStakeDuration.String(),
 	}
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/setmap"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
@@ -76,7 +76,7 @@ type Mempool interface {
 // consensus
 type mempool struct {
 	lock           sync.RWMutex
-	unissuedTxs    linkedhashmap.LinkedHashmap[ids.ID, *txs.Tx]
+	unissuedTxs    *linked.Hashmap[ids.ID, *txs.Tx]
 	consumedUTXOs  *setmap.SetMap[ids.ID, ids.ID] // TxID -> Consumed UTXOs
 	bytesAvailable int
 	droppedTxIDs   *cache.LRU[ids.ID, error] // TxID -> verification error
@@ -93,7 +93,7 @@ func New(
 	toEngine chan<- common.Message,
 ) (Mempool, error) {
 	m := &mempool{
-		unissuedTxs:    linkedhashmap.New[ids.ID, *txs.Tx](),
+		unissuedTxs:    linked.NewHashmap[ids.ID, *txs.Tx](),
 		consumedUTXOs:  setmap.New[ids.ID, ids.ID](),
 		bytesAvailable: maxMempoolSize,
 		droppedTxIDs:   &cache.LRU[ids.ID, error]{Size: droppedTxIDsCacheSize},
@@ -174,6 +174,9 @@ func (m *mempool) Add(tx *txs.Tx) error {
 }
 
 func (m *mempool) Get(txID ids.ID) (*txs.Tx, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	return m.unissuedTxs.Get(txID)
 }
 
@@ -203,6 +206,9 @@ func (m *mempool) Remove(txs ...*txs.Tx) {
 }
 
 func (m *mempool) Peek() (*txs.Tx, bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	_, tx, exists := m.unissuedTxs.Oldest()
 	return tx, exists
 }
@@ -240,6 +246,9 @@ func (m *mempool) GetDropReason(txID ids.ID) error {
 }
 
 func (m *mempool) RequestBuildBlock(emptyBlockPermitted bool) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	if !emptyBlockPermitted && m.unissuedTxs.Len() == 0 {
 		return
 	}

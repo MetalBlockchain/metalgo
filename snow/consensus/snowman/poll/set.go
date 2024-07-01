@@ -14,7 +14,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/bag"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 )
@@ -48,7 +48,7 @@ type set struct {
 	durPolls metric.Averager
 	factory  Factory
 	// maps requestID -> poll
-	polls linkedhashmap.LinkedHashmap[uint32, pollHolder]
+	polls *linked.Hashmap[uint32, pollHolder]
 }
 
 // NewSet returns a new empty set of polls
@@ -82,7 +82,7 @@ func NewSet(
 		numPolls: numPolls,
 		durPolls: durPolls,
 		factory:  factory,
-		polls:    linkedhashmap.New[uint32, pollHolder](),
+		polls:    linked.NewHashmap[uint32, pollHolder](),
 	}, nil
 }
 

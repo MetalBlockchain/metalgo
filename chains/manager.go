@@ -29,10 +29,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap/queue"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/state"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common/queue"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/syncer"
@@ -85,10 +85,10 @@ var (
 	VertexDBPrefix              = []byte("vertex")
 	VertexBootstrappingDBPrefix = []byte("vertex_bs")
 	TxBootstrappingDBPrefix     = []byte("tx_bs")
-	BlockBootstrappingDBPrefix  = []byte("block_bs")
+	BlockBootstrappingDBPrefix  = []byte("interval_block_bs")
 
 	// Bootstrapping prefixes for ChainVMs
-	ChainBootstrappingDBPrefix = []byte("bs")
+	ChainBootstrappingDBPrefix = []byte("interval_bs")
 
 	errUnknownVMType           = errors.New("the vm should have type avalanche.DAGVM or snowman.ChainVM")
 	errCreatePlatformVM        = errors.New("attempted to create a chain running the PlatformVM")
@@ -579,10 +579,6 @@ func (m *manager) createAvalancheChain(
 	if err != nil {
 		return nil, err
 	}
-	blockBlocker, err := queue.NewWithMissing(blockBootstrappingDB, "block", ctx.Registerer)
-	if err != nil {
-		return nil, err
-	}
 
 	// Passes messages from the avalanche engines to the network
 	avalancheMessageSender, err := sender.New(
@@ -837,7 +833,7 @@ func (m *manager) createAvalancheChain(
 		BootstrapTracker:               sb,
 		Timer:                          h,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		Blocked:                        blockBlocker,
+		DB:                             blockBootstrappingDB,
 		VM:                             vmWrappingProposerVM,
 	}
 	var snowmanBootstrapper common.BootstrapableEngine
@@ -951,11 +947,6 @@ func (m *manager) createSnowmanChain(
 	prefixDB := prefixdb.New(ctx.ChainID[:], meterDB)
 	vmDB := prefixdb.New(VMDBPrefix, prefixDB)
 	bootstrappingDB := prefixdb.New(ChainBootstrappingDBPrefix, prefixDB)
-
-	blocked, err := queue.NewWithMissing(bootstrappingDB, "block", ctx.Registerer)
-	if err != nil {
-		return nil, err
-	}
 
 	// Passes messages from the consensus engine to the network
 	messageSender, err := sender.New(
@@ -1175,7 +1166,7 @@ func (m *manager) createSnowmanChain(
 		BootstrapTracker:               sb,
 		Timer:                          h,
 		AncestorsMaxContainersReceived: m.BootstrapAncestorsMaxContainersReceived,
-		Blocked:                        blocked,
+		DB:                             bootstrappingDB,
 		VM:                             vm,
 		Bootstrapped:                   bootstrapFunc,
 	}
