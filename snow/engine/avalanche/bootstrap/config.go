@@ -5,22 +5,24 @@ package bootstrap
 
 import (
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap/queue"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
 )
 
 type Config struct {
 	common.AllGetsServer
 
-	Ctx     *snow.ConsensusContext
-	Beacons validators.Manager
+	Ctx *snow.ConsensusContext
 
 	StartupTracker tracker.Startup
 	Sender         common.Sender
+
+	// PeerTracker manages the set of nodes that we fetch the next block from.
+	PeerTracker *p2p.PeerTracker
 
 	// This node will only consider the first [AncestorsMaxContainersReceived]
 	// containers in an ancestors message it receives.

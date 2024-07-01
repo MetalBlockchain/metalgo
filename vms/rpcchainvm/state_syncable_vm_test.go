@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
-	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -41,7 +41,7 @@ var (
 	}
 
 	// last accepted blocks data before and after summary is accepted
-	preSummaryBlk = &snowman.TestBlock{
+	preSummaryBlk = &snowmantest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'f', 'i', 'r', 's', 't', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,
@@ -50,7 +50,7 @@ var (
 		ParentV: ids.ID{'p', 'a', 'r', 'e', 'n', 't', 'B', 'l', 'k'},
 	}
 
-	summaryBlk = &snowman.TestBlock{
+	summaryBlk = &snowmantest.Block{
 		TestDecidable: choices.TestDecidable{
 			IDV:     ids.ID{'s', 'u', 'm', 'm', 'a', 'r', 'y', 'B', 'l', 'K'},
 			StatusV: choices.Accepted,

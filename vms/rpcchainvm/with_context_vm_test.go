@@ -14,6 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 )
@@ -40,7 +41,7 @@ type ContextEnabledVMMock struct {
 }
 
 type ContextEnabledBlockMock struct {
-	*snowman.MockBlock
+	*snowmantest.MockBlock
 	*block.MockWithVerifyContext
 }
 
@@ -56,7 +57,7 @@ func contextEnabledTestPlugin(t *testing.T, loadExpectations bool) block.ChainVM
 
 	if loadExpectations {
 		ctxBlock := ContextEnabledBlockMock{
-			MockBlock:             snowman.NewMockBlock(ctrl),
+			MockBlock:             snowmantest.NewMockBlock(ctrl),
 			MockWithVerifyContext: block.NewMockWithVerifyContext(ctrl),
 		}
 		gomock.InOrder(

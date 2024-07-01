@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
+	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
@@ -20,10 +20,13 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/subnets"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
 	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/MetalBlockchain/metalgo/version"
 
+	p2ppb "github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	commontracker "github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
 )
 
@@ -61,7 +64,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			require.NoError(err)
 
 			peerTracker := commontracker.NewPeers()
-			vdrs.RegisterCallbackListener(ctx.SubnetID, peerTracker)
+			vdrs.RegisterSetCallbackListener(ctx.SubnetID, peerTracker)
 
 			sb := subnets.New(
 				ctx.NodeID,
@@ -69,6 +72,16 @@ func TestHealthCheckSubnet(t *testing.T) {
 					ConsensusParameters: test.consensusParams,
 				},
 			)
+
+			p2pTracker, err := p2p.NewPeerTracker(
+				logging.NoLog{},
+				"",
+				prometheus.NewRegistry(),
+				nil,
+				version.CurrentApp,
+			)
+			require.NoError(err)
+
 			handlerIntf, err := New(
 				ctx,
 				vdrs,
@@ -79,6 +92,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 				validators.UnhandledSubnetConnector,
 				sb,
 				peerTracker,
+				p2pTracker,
 			)
 			require.NoError(err)
 
@@ -103,7 +117,7 @@ func TestHealthCheckSubnet(t *testing.T) {
 			})
 
 			ctx.State.Set(snow.EngineState{
-				Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
 				State: snow.NormalOp, // assumed bootstrap is done
 			})
 

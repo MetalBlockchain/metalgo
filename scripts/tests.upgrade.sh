@@ -16,9 +16,8 @@ fi
 # local network, this flag must be updated to the last compatible
 # version with the latest code.
 #
-# v1.10.18 includes restrictions on ports sent over the p2p network along with
-# proposervm and P-chain rule changes on the local network.
-DEFAULT_VERSION="1.10.18"
+# v1.11.0 activates Durango.
+DEFAULT_VERSION="1.11.0"
 
 VERSION="${1:-${DEFAULT_VERSION}}"
 if [[ -z "${VERSION}" ]]; then

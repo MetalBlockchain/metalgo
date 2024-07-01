@@ -5,6 +5,7 @@ package bootstrap
 
 import (
 	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
@@ -23,6 +24,9 @@ type Config struct {
 	Sender           common.Sender
 	BootstrapTracker common.BootstrapTracker
 	Timer            common.Timer
+
+	// PeerTracker manages the set of nodes that we fetch the next block from.
+	PeerTracker *p2p.PeerTracker
 
 	// This node will only consider the first [AncestorsMaxContainersReceived]
 	// containers in an ancestors message it receives.
