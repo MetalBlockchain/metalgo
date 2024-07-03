@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/vms/example/xsvm"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/genesis"
 )
 
@@ -35,7 +35,7 @@ func NewXSVMOrPanic(name string, key *secp256k1.PrivateKey, nodes ...*tmpnet.Nod
 		Name: name,
 		Chains: []*tmpnet.Chain{
 			{
-				VMID:         xsvm.ID,
+				VMID:         constants.XSVMID,
 				Genesis:      genesisBytes,
 				PreFundedKey: key,
 			},
