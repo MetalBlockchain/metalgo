@@ -6,7 +6,6 @@ package chains
 import (
 	"context"
 
-	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
@@ -29,7 +28,6 @@ type initializeOnLinearizeVM struct {
 	vmToInitialize common.VM
 	vmToLinearize  *linearizeOnInitializeVM
 
-	registerer   metrics.MultiGatherer
 	ctx          *snow.Context
 	db           database.Database
 	genesisBytes []byte
@@ -42,7 +40,6 @@ type initializeOnLinearizeVM struct {
 
 func (vm *initializeOnLinearizeVM) Linearize(ctx context.Context, stopVertexID ids.ID) error {
 	vm.vmToLinearize.stopVertexID = stopVertexID
-	vm.ctx.Metrics = vm.registerer
 	return vm.vmToInitialize.Initialize(
 		ctx,
 		vm.ctx,

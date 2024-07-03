@@ -12,11 +12,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+
+	walletsigner "github.com/MetalBlockchain/metalgo/wallet/chain/p/signer"
 )
 
 func TestAtomicTxImports(t *testing.T) {
@@ -62,14 +63,16 @@ func TestAtomicTxImports(t *testing.T) {
 		}}},
 	}))
 
-	tx, err := env.txBuilder.NewImportTx(
+	builder, signer := env.factory.NewWallet(recipientKey)
+	utx, err := builder.NewImportTx(
 		env.ctx.XChainID,
 		&secp256k1fx.OutputOwners{
 			Threshold: 1,
 			Addrs:     []ids.ShortID{recipientKey.PublicKey().Address()},
 		},
-		[]*secp256k1.PrivateKey{recipientKey},
 	)
+	require.NoError(err)
+	tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 	require.NoError(err)
 
 	require.NoError(env.Builder.Add(tx))

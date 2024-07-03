@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto"
 	"net"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -22,9 +23,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -106,7 +107,10 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	require.NoError(err)
 	nodeID := ids.NodeIDFromCert(cert)
 
-	ip := ips.NewDynamicIPPort(net.IPv6loopback, 1)
+	ip := utils.NewAtomic(netip.AddrPortFrom(
+		netip.IPv6Loopback(),
+		1,
+	))
 	tls := tlsCert.PrivateKey.(crypto.Signer)
 	bls, err := bls.NewSecretKey()
 	require.NoError(err)

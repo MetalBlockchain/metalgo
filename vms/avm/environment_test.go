@@ -24,7 +24,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -32,6 +31,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs/txstest"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -77,12 +77,6 @@ var (
 
 	keys  = secp256k1.TestKeys()[:3] // TODO: Remove [:3]
 	addrs []ids.ShortID              // addrs[i] corresponds to keys[i]
-
-	noFeesTestConfig = &config.Config{
-		EUpgradeTime:     mockable.MaxTime,
-		TxFee:            0,
-		CreateAssetTxFee: 0,
-	}
 )
 
 func init() {
@@ -110,13 +104,12 @@ type envConfig struct {
 }
 
 type environment struct {
-	genesisBytes  []byte
-	genesisTx     *txs.Tx
-	sharedMemory  *atomic.Memory
-	issuer        chan common.Message
-	vm            *VM
-	service       *Service
-	walletService *WalletService
+	genesisBytes []byte
+	genesisTx    *txs.Tx
+	sharedMemory *atomic.Memory
+	issuer       chan common.Message
+	vm           *VM
+	txBuilder    *txstest.Builder
 }
 
 // setup the testing environment
@@ -210,13 +203,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		sharedMemory: m,
 		issuer:       issuer,
 		vm:           vm,
-		service: &Service{
-			vm: vm,
-		},
-		walletService: &WalletService{
-			vm:         vm,
-			pendingTxs: linked.NewHashmap[ids.ID, *txs.Tx](),
-		},
+		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
 	}
 
 	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
@@ -230,6 +217,14 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	}
 
 	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+
+	tb.Cleanup(func() {
+		env.vm.ctx.Lock.Lock()
+		defer env.vm.ctx.Lock.Unlock()
+
+		require.NoError(env.vm.Shutdown(context.Background()))
+	})
+
 	return env
 }
 

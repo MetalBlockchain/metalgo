@@ -16,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -110,7 +109,7 @@ func ExampleNewTestNetwork() {
 	// gossip will enable connecting to all the remaining nodes in the network.
 	bootstrappers := genesis.SampleBootstrappers(constants.TahoeID, 5)
 	for _, bootstrapper := range bootstrappers {
-		network.ManuallyTrack(bootstrapper.ID, ips.IPPort(bootstrapper.IP))
+		network.ManuallyTrack(bootstrapper.ID, bootstrapper.IP)
 	}
 
 	// Typically network.StartClose() should be called based on receiving a

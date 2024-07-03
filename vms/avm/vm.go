@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
@@ -33,7 +34,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
-	"github.com/MetalBlockchain/metalgo/vms/avm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/avm/network"
 	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -47,6 +47,7 @@ import (
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/block/builder"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	extensions "github.com/MetalBlockchain/metalgo/vms/avm/fxs"
+	avmmetrics "github.com/MetalBlockchain/metalgo/vms/avm/metrics"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
 	xmempool "github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 )
@@ -66,7 +67,7 @@ type VM struct {
 
 	config.Config
 
-	metrics metrics.Metrics
+	metrics avmmetrics.Metrics
 
 	avax.AddressManager
 	ids.Aliaser
@@ -173,16 +174,15 @@ func (vm *VM) Initialize(
 		zap.Reflect("config", avmConfig),
 	)
 
-	registerer := prometheus.NewRegistry()
-	if err := ctx.Metrics.Register("", registerer); err != nil {
+	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
+	if err != nil {
 		return err
 	}
-	vm.registerer = registerer
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = metrics.New(registerer)
+	vm.metrics, err = avmmetrics.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}

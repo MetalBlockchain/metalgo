@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto"
 	"net"
+	"net/netip"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,9 +20,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -47,7 +48,7 @@ const maxMessageToSend = 1024
 //     peer.
 func StartTestPeer(
 	ctx context.Context,
-	ip ips.IPPort,
+	ip netip.AddrPort,
 	networkID uint32,
 	router router.InboundHandler,
 ) (Peer, error) {
@@ -98,7 +99,6 @@ func StartTestPeer(
 		return nil, err
 	}
 
-	signerIP := ips.NewDynamicIPPort(net.IPv6zero, 1)
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
 	blsKey, err := bls.NewSecretKey()
 	if err != nil {
@@ -123,7 +123,14 @@ func StartTestPeer(
 			MaxClockDifference:   time.Minute,
 			ResourceTracker:      resourceTracker,
 			UptimeCalculator:     uptime.NoOpCalculator,
-			IPSigner:             NewIPSigner(signerIP, tlsKey, blsKey),
+			IPSigner: NewIPSigner(
+				utils.NewAtomic(netip.AddrPortFrom(
+					netip.IPv6Loopback(),
+					1,
+				)),
+				tlsKey,
+				blsKey,
+			),
 		},
 		conn,
 		cert,

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/netip"
 
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
@@ -17,8 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -37,7 +38,7 @@ type Info struct {
 	Parameters
 	log          logging.Logger
 	validators   validators.Manager
-	myIP         ips.DynamicIPPort
+	myIP         *utils.Atomic[netip.AddrPort]
 	networking   network.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
@@ -67,7 +68,7 @@ func NewService(
 	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,
-	myIP ips.DynamicIPPort,
+	myIP *utils.Atomic[netip.AddrPort],
 	network network.Network,
 	benchlist benchlist.Manager,
 ) (http.Handler, error) {
@@ -144,7 +145,7 @@ type GetNetworkIDReply struct {
 
 // GetNodeIPReply are the results from calling GetNodeIP
 type GetNodeIPReply struct {
-	IP string `json:"ip"`
+	IP netip.AddrPort `json:"ip"`
 }
 
 // GetNodeIP returns the IP of this node
@@ -154,7 +155,7 @@ func (i *Info) GetNodeIP(_ *http.Request, _ *struct{}, reply *GetNodeIPReply) er
 		zap.String("method", "getNodeIP"),
 	)
 
-	reply.IP = i.myIP.IPPort().String()
+	reply.IP = i.myIP.Get()
 	return nil
 }
 

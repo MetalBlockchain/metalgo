@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/MetalBlockchain/metalgo/api/keystore/gkeystore"
+	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/chains/atomic/gsharedmemory"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/rpcdb"
@@ -135,15 +136,19 @@ func (vm *VMClient) Initialize(
 	}
 
 	// Register metrics
-	registerer := prometheus.NewRegistry()
+	serverReg, err := metrics.MakeAndRegister(
+		chainCtx.Metrics,
+		"rpcchainvm",
+	)
+	if err != nil {
+		return err
+	}
 	vm.grpcServerMetrics = grpc_prometheus.NewServerMetrics()
-	if err := registerer.Register(vm.grpcServerMetrics); err != nil {
+	if err := serverReg.Register(vm.grpcServerMetrics); err != nil {
 		return err
 	}
-	if err := chainCtx.Metrics.Register("rpcchainvm", registerer); err != nil {
-		return err
-	}
-	if err := chainCtx.Metrics.Register("", vm); err != nil {
+
+	if err := chainCtx.Metrics.Register("plugin", vm); err != nil {
 		return err
 	}
 
@@ -225,7 +230,7 @@ func (vm *VMClient) Initialize(
 	}
 
 	vm.State, err = chain.NewMeteredState(
-		registerer,
+		serverReg,
 		&chain.Config{
 			DecidedCacheSize:      decidedCacheSize,
 			MissingCacheSize:      missingCacheSize,

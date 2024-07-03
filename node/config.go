@@ -5,6 +5,7 @@ package node
 
 import (
 	"crypto/tls"
+	"net/netip"
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/api/server"
@@ -18,7 +19,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -85,8 +85,8 @@ type StakingConfig struct {
 }
 
 type StateSyncConfig struct {
-	StateSyncIDs []ids.NodeID `json:"stateSyncIDs"`
-	StateSyncIPs []ips.IPPort `json:"stateSyncIPs"`
+	StateSyncIDs []ids.NodeID     `json:"stateSyncIDs"`
+	StateSyncIPs []netip.AddrPort `json:"stateSyncIPs"`
 }
 
 type BootstrapConfig struct {
