@@ -37,17 +37,18 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/avm/network"
 	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/avm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/index"
 	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/block/builder"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	extensions "github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
+	xmempool "github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 )
 
 const assetToFxCacheSize = 1024
@@ -401,7 +402,7 @@ func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<
 		return err
 	}
 
-	mempool, err := mempool.New("mempool", vm.registerer, toEngine)
+	mempool, err := xmempool.New("mempool", vm.registerer, toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}

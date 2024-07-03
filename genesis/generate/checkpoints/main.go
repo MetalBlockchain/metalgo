@@ -114,7 +114,6 @@ func getCheckpoints(
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(container.ID.String())
 
 		checkpoints.Add(container.ID)
 	}

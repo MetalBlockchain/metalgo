@@ -16,7 +16,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/p2p/gossip"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
+
+	pmempool "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 var (
@@ -64,7 +66,7 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-	mempool mempool.Mempool,
+	mempool pmempool.Mempool,
 	registerer prometheus.Registerer,
 	log logging.Logger,
 	txVerifier TxVerifier,
@@ -82,7 +84,7 @@ func newGossipMempool(
 }
 
 type gossipMempool struct {
-	mempool.Mempool
+	pmempool.Mempool
 	log        logging.Logger
 	txVerifier TxVerifier
 

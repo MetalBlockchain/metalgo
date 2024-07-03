@@ -10,6 +10,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 
 	// TahoeParams are the params used for the tahoe testnet
 	TahoeParams = Params{
-		TxFeeConfig: TxFeeConfig{
+		StaticConfig: fee.StaticConfig{
 			TxFee:                         units.MilliAvax,
 			CreateAssetTxFee:              10 * units.MilliAvax,
 			CreateSubnetTxFee:             100 * units.MilliAvax,

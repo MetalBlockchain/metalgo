@@ -40,14 +40,15 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 
 	snowmanblock "github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/block/builder"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
+	pmempool "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 	pvalidators "github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
 )
 
@@ -166,7 +167,7 @@ func (vm *VM) Initialize(
 		Bootstrapped: &vm.bootstrapped,
 	}
 
-	mempool, err := mempool.New("mempool", registerer, toEngine)
+	mempool, err := pmempool.New("mempool", registerer, toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -471,19 +472,25 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	}, err
 }
 
-func (vm *VM) Connected(_ context.Context, nodeID ids.NodeID, _ *version.Application) error {
-	return vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID)
+func (vm *VM) Connected(ctx context.Context, nodeID ids.NodeID, version *version.Application) error {
+	if err := vm.uptimeManager.Connect(nodeID, constants.PrimaryNetworkID); err != nil {
+		return err
+	}
+	return vm.Network.Connected(ctx, nodeID, version)
 }
 
 func (vm *VM) ConnectedSubnet(_ context.Context, nodeID ids.NodeID, subnetID ids.ID) error {
 	return vm.uptimeManager.Connect(nodeID, subnetID)
 }
 
-func (vm *VM) Disconnected(_ context.Context, nodeID ids.NodeID) error {
+func (vm *VM) Disconnected(ctx context.Context, nodeID ids.NodeID) error {
 	if err := vm.uptimeManager.Disconnect(nodeID); err != nil {
 		return err
 	}
-	return vm.state.Commit()
+	if err := vm.state.Commit(); err != nil {
+		return err
+	}
+	return vm.Network.Disconnected(ctx, nodeID)
 }
 
 func (vm *VM) CodecRegistry() codec.Registry {
