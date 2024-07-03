@@ -17,6 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/api"
@@ -124,7 +125,7 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	)
 	return map[string]http.Handler{
 		"": server,
-	}, server.RegisterService(api, Name)
+	}, server.RegisterService(api, constants.XSVMName)
 }
 
 func (*VM) HealthCheck(context.Context) (interface{}, error) {

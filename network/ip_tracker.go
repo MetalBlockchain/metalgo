@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -42,25 +41,21 @@ var _ validators.SetCallbackListener = (*ipTracker)(nil)
 
 func newIPTracker(
 	log logging.Logger,
-	namespace string,
 	registerer prometheus.Registerer,
 ) (*ipTracker, error) {
-	bloomNamespace := metric.AppendNamespace(namespace, "ip_bloom")
-	bloomMetrics, err := bloom.NewMetrics(bloomNamespace, registerer)
+	bloomMetrics, err := bloom.NewMetrics("ip_bloom", registerer)
 	if err != nil {
 		return nil, err
 	}
 	tracker := &ipTracker{
 		log: log,
 		numTrackedIPs: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "tracked_ips",
-			Help:      "Number of IPs this node is willing to dial",
+			Name: "tracked_ips",
+			Help: "Number of IPs this node is willing to dial",
 		}),
 		numGossipableIPs: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "gossipable_ips",
-			Help:      "Number of IPs this node is willing to gossip",
+			Name: "gossipable_ips",
+			Help: "Number of IPs this node is willing to gossip",
 		}),
 		bloomMetrics:         bloomMetrics,
 		mostRecentTrackedIPs: make(map[ids.NodeID]*ips.ClaimedIPPort),

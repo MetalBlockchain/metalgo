@@ -3,19 +3,10 @@
 
 package xsvm
 
-import (
-	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/version"
-)
+import "github.com/MetalBlockchain/metalgo/version"
 
-const Name = "xsvm"
-
-var (
-	ID = ids.ID{'x', 's', 'v', 'm'}
-
-	Version = &version.Semantic{
-		Major: 1,
-		Minor: 0,
-		Patch: 4,
-	}
-)
+var Version = &version.Semantic{
+	Major: 1,
+	Minor: 0,
+	Patch: 4,
+}

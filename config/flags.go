@@ -15,7 +15,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/database/leveldb"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
-	"github.com/MetalBlockchain/metalgo/database/pebble"
+	"github.com/MetalBlockchain/metalgo/database/pebbledb"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/trace"
@@ -109,7 +109,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	fs.Uint64(AddSubnetDelegatorFeeKey, genesis.LocalParams.AddSubnetDelegatorFee, "Transaction fee, in nAVAX, for transactions that add new subnet delegators")
 
 	// Database
-	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebble.Name))
+	fs.String(DBTypeKey, leveldb.Name, fmt.Sprintf("Database type to use. Must be one of {%s, %s, %s}", leveldb.Name, memdb.Name, pebbledb.Name))
 	fs.Bool(DBReadOnlyKey, false, "If true, database writes are to memory and never persisted. May still initialize database directory/files on disk if they don't exist")
 	fs.String(DBPathKey, defaultDBDir, "Path to database directory")
 	fs.String(DBConfigFileKey, "", fmt.Sprintf("Path to database config file. Ignored if %s is specified", DBConfigContentKey))

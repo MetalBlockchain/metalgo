@@ -11,8 +11,8 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/vms/example/xsvm"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 
@@ -33,7 +33,7 @@ func main() {
 			},
 		},
 	}
-	vmID := xsvm.ID
+	vmID := constants.XSVMID
 	name := "let there"
 
 	subnetID, err := ids.FromString(subnetIDStr)

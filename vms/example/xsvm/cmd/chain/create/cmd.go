@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/vms/example/xsvm"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/genesis"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
@@ -72,7 +72,7 @@ func createFunc(c *cobra.Command, args []string) error {
 	createChainTxID, err := pWallet.IssueCreateChainTx(
 		config.SubnetID,
 		genesisBytes,
-		xsvm.ID,
+		constants.XSVMID,
 		nil,
 		config.Name,
 		common.WithContext(ctx),
