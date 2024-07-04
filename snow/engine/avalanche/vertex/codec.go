@@ -4,10 +4,11 @@
 package vertex
 
 import (
+	"errors"
+
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
 	"github.com/MetalBlockchain/metalgo/codec/reflectcodec"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 )
 
@@ -26,7 +27,7 @@ func init() {
 	lc1 := linearcodec.New([]string{reflectcodec.DefaultTagName + "V1"})
 
 	Codec = codec.NewManager(maxSize)
-	err := utils.Err(
+	err := errors.Join(
 		Codec.RegisterCodec(CodecVersion, lc0),
 		Codec.RegisterCodec(CodecVersionWithStopVtx, lc1),
 	)

@@ -26,7 +26,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -320,7 +319,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.onShutdownCtxCancel()
 	vm.awaitShutdown.Wait()
 
-	return utils.Err(
+	return errors.Join(
 		vm.state.Close(),
 		vm.baseDB.Close(),
 	)
@@ -641,7 +640,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	if assetID, err := ids.FromString(asset); err == nil {
 		return assetID, nil
 	}
-	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
+	return ids.Empty, fmt.Errorf("asset '%s' not found", asset)
 }
 
 // Invariant: onAccept is called when [tx] is being marked as accepted, but

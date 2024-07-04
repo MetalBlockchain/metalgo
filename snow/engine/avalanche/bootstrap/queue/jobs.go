@@ -5,6 +5,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer"
 )
@@ -424,7 +424,7 @@ func (jm *JobsWithMissing) cleanRunnableStack(ctx context.Context) error {
 		}
 	}
 
-	return utils.Err(
+	return errors.Join(
 		runnableJobsIter.Error(),
 		jm.Commit(),
 	)

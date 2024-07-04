@@ -5,6 +5,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/linkeddb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -153,7 +153,7 @@ func (s *state) Clear() error {
 		return err
 	}
 
-	return utils.Err(
+	return errors.Join(
 		runJobsIter.Error(),
 		jobsIter.Error(),
 		depsIter.Error(),

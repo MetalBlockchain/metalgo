@@ -13,7 +13,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -178,7 +177,7 @@ func newMsgBuilder(
 
 		maxMessageTimeout: maxMessageTimeout,
 	}
-	return mb, utils.Err(
+	return mb, errors.Join(
 		metrics.Register(mb.count),
 		metrics.Register(mb.duration),
 	)

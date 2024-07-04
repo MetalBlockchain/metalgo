@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/heap"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -133,7 +132,7 @@ func NewAdaptiveTimeoutManager(
 	tm.timer = NewTimer(tm.timeout)
 	tm.averager = math.NewAverager(float64(config.InitialTimeout), config.TimeoutHalflife, tm.clock.Time())
 
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(tm.networkTimeoutMetric),
 		reg.Register(tm.avgLatency),
 		reg.Register(tm.numTimeouts),

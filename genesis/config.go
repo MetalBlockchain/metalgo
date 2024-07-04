@@ -177,7 +177,7 @@ func init() {
 	unparsedTahoeConfig := UnparsedConfig{}
 	unparsedLocalConfig := UnparsedConfig{}
 
-	err := utils.Err(
+	err := errors.Join(
 		json.Unmarshal(mainnetGenesisConfigJSON, &unparsedMainnetConfig),
 		json.Unmarshal(tahoeGenesisConfigJSON, &unparsedTahoeConfig),
 		json.Unmarshal(localGenesisConfigJSON, &unparsedLocalConfig),

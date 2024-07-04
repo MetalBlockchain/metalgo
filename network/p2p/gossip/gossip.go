@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/bloom"
 	"github.com/MetalBlockchain/metalgo/utils/buffer"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -150,7 +149,7 @@ func NewMetrics(
 			typeLabels,
 		),
 	}
-	err := utils.Err(
+	err := errors.Join(
 		metrics.Register(m.count),
 		metrics.Register(m.bytes),
 		metrics.Register(m.tracking),

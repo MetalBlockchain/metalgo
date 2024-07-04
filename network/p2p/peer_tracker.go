@@ -4,6 +4,7 @@
 package p2p
 
 import (
+	"errors"
 	"math"
 	"math/rand"
 	"sync"
@@ -13,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/heap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -113,7 +113,7 @@ func NewPeerTracker(
 		},
 	}
 
-	err := utils.Err(
+	err := errors.Join(
 		registerer.Register(t.metrics.numTrackedPeers),
 		registerer.Register(t.metrics.numResponsivePeers),
 		registerer.Register(t.metrics.averageBandwidth),

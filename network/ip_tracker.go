@@ -5,6 +5,7 @@ package network
 
 import (
 	"crypto/rand"
+	"errors"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/bloom"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
@@ -63,7 +63,7 @@ func newIPTracker(
 		connected:            make(map[ids.NodeID]*ips.ClaimedIPPort),
 		gossipableIndices:    make(map[ids.NodeID]int),
 	}
-	err = utils.Err(
+	err = errors.Join(
 		registerer.Register(tracker.numTrackedIPs),
 		registerer.Register(tracker.numGossipableIPs),
 	)

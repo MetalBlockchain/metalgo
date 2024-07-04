@@ -14,7 +14,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/chains"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -30,8 +29,8 @@ import (
 const (
 	totalRounds = 50
 
-	blksProcessingMetric = "metal_X_blks_processing"
-	blksAcceptedMetric   = "metal_X_blks_accepted_count"
+	blksProcessingMetric = "metal_snowman_blks_processing"
+	blksAcceptedMetric   = "metal_snowman_blks_accepted_count"
 )
 
 var xChainMetricLabels = prometheus.Labels{
@@ -114,7 +113,9 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx AVAX]", func() {
 				)
 				require.NoError(err)
 				for _, uri := range rpcEps {
-					tests.Outf("{{green}}metrics at %q:{{/}} %v\n", uri, metricsBeforeTx[uri])
+					for _, metric := range []string{blksProcessingMetric, blksAcceptedMetric} {
+						tests.Outf("{{green}}%s at %q:{{/}} %v\n", metric, uri, metricsBeforeTx[uri][metric])
+					}
 				}
 
 				testBalances := make([]uint64, 0)
@@ -236,16 +237,12 @@ RECEIVER  NEW BALANCE (AFTER) : %21d AVAX
 				txID := tx.ID()
 				for _, u := range rpcEps {
 					xc := avm.NewClient(u, "X")
-					status, err := xc.ConfirmTx(e2e.DefaultContext(), txID, 2*time.Second)
-					require.NoError(err)
-					require.Equal(choices.Accepted, status)
+					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 				}
 
 				for _, u := range rpcEps {
 					xc := avm.NewClient(u, "X")
-					status, err := xc.ConfirmTx(e2e.DefaultContext(), txID, 2*time.Second)
-					require.NoError(err)
-					require.Equal(choices.Accepted, status)
+					require.NoError(avm.AwaitTxAccepted(xc, e2e.DefaultContext(), txID, 2*time.Second))
 
 					mm, err := tests.GetNodeMetrics(e2e.DefaultContext(), u)
 					require.NoError(err)

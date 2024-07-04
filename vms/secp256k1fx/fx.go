@@ -9,7 +9,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
@@ -60,7 +59,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 		},
 	}
 	c := fx.VM.CodecRegistry()
-	return utils.Err(
+	return errors.Join(
 		c.RegisterType(&TransferInput{}),
 		c.RegisterType(&MintOutput{}),
 		c.RegisterType(&TransferOutput{}),

@@ -4,6 +4,7 @@
 package network
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/peer"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
@@ -135,7 +135,7 @@ func newMetrics(
 		peerConnectedStartTimes: make(map[ids.NodeID]float64),
 	}
 
-	err := utils.Err(
+	err := errors.Join(
 		registerer.Register(m.numTracked),
 		registerer.Register(m.numPeers),
 		registerer.Register(m.numSubnetPeers),

@@ -15,7 +15,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 )
@@ -99,7 +98,7 @@ func newIndex(
 
 // Close this index
 func (i *index) Close() error {
-	return utils.Err(
+	return errors.Join(
 		i.indexToContainer.Close(),
 		i.containerToIndex.Close(),
 		i.vDB.Close(),

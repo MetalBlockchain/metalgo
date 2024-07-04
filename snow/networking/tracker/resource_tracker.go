@@ -4,6 +4,7 @@
 package tracker
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -316,7 +316,7 @@ func newCPUTrackerMetrics(reg prometheus.Registerer) (*trackerMetrics, error) {
 			Help: "Available space remaining (bytes) on the database volume",
 		}),
 	}
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(m.processingTimeMetric),
 		reg.Register(m.cpuMetric),
 		reg.Register(m.diskReadsMetric),

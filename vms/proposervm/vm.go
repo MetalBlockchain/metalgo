@@ -23,7 +23,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -234,7 +233,7 @@ func (vm *VM) Initialize(
 		Buckets: []float64{0.5, 1.5, 2.5},
 	})
 
-	return utils.Err(
+	return errors.Join(
 		vm.Config.Registerer.Register(vm.proposerBuildSlotGauge),
 		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram),
 	)

@@ -5,13 +5,13 @@ package tracker
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -126,7 +126,7 @@ func NewMeteredPeers(reg prometheus.Registerer) (Peers, error) {
 		Name: "num_validators",
 		Help: "Total number of validators",
 	})
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(percentConnected),
 		reg.Register(totalWeight),
 		reg.Register(numValidators),

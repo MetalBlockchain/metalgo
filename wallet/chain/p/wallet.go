@@ -5,13 +5,11 @@ package p
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
@@ -521,17 +519,9 @@ func (w *wallet) IssueTx(
 		return w.Backend.AcceptTx(ctx, tx)
 	}
 
-	txStatus, err := w.client.AwaitTxDecided(ctx, txID, ops.PollFrequency())
-	if err != nil {
+	if err := platformvm.AwaitTxAccepted(w.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
 	}
 
-	if err := w.Backend.AcceptTx(ctx, tx); err != nil {
-		return err
-	}
-
-	if txStatus.Status != status.Committed {
-		return fmt.Errorf("%w: %s", ErrNotCommitted, txStatus.Reason)
-	}
-	return nil
+	return w.Backend.AcceptTx(ctx, tx)
 }

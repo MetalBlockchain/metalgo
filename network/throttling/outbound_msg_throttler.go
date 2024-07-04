@@ -4,13 +4,14 @@
 package throttling
 
 import (
+	"errors"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/message"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
@@ -196,7 +197,7 @@ func (m *outboundMsgThrottlerMetrics) initialize(registerer prometheus.Registere
 		Name: "throttler_outbound_awaiting_release",
 		Help: "Number of messages waiting to be sent",
 	})
-	return utils.Err(
+	return errors.Join(
 		registerer.Register(m.acquireSuccesses),
 		registerer.Register(m.acquireFailures),
 		registerer.Register(m.remainingAtLargeBytes),

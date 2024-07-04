@@ -6,6 +6,7 @@ package p2p
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"strconv"
 	"sync"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -81,7 +81,7 @@ func NewNetwork(
 		),
 	}
 
-	err := utils.Err(
+	err := errors.Join(
 		registerer.Register(metrics.msgTime),
 		registerer.Register(metrics.msgCount),
 	)

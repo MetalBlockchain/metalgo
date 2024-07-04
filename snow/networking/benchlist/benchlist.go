@@ -4,6 +4,7 @@
 package benchlist
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -15,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/heap"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -130,7 +130,7 @@ func NewBenchlist(
 		maxPortion:             maxPortion,
 	}
 
-	err := utils.Err(
+	err := errors.Join(
 		reg.Register(benchlist.numBenched),
 		reg.Register(benchlist.weightBenched),
 	)
