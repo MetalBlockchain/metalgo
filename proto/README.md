@@ -1,9 +1,9 @@
-# Avalanche gRPC
+# Metal Blockchain gRPC
 
 Now Serving: **Protocol Version 35**
 
 Protobuf files are hosted at
-[https://buf.build/ava-labs/avalanche](https://buf.build/ava-labs/avalanche) and
+[https://buf.build/metalblockchain/metalgo](https://buf.build/metalblockchain/metalgo) and
 can be used as dependencies in other projects.
 
 Protobuf linting and generation for this project is managed by
@@ -28,9 +28,9 @@ subnet vm must use the same protocol version to be compatible.
 
 ## Publishing to Buf Schema Registry
 
-- Checkout appropriate tag in AvalancheGo `git checkout v1.10.1`
+- Checkout appropriate tag in MetalGo `git checkout v1.11.3`
 - Change to proto/ directory `cd proto`.
 - Publish new tag to buf registry. `buf push -t v26`
 
-Note: Publishing requires auth to the ava-labs org in buf
-https://buf.build/ava-labs/repositories
+Note: Publishing requires auth to the metalblockchain org in buf
+https://buf.build/metalblockchain/repositories
