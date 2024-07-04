@@ -70,13 +70,13 @@
   args:
     chdir: "{{ repo_folder }}"
 
-- name: Configure avalanche 
+- name: Configure metal 
   template:
     src: templates/conf.json.j2
     dest: /etc/metalgo/conf.json
     mode: 0644
 
-- name: Enable Avalanche
+- name: Enable Metal
   systemd:
     name: metalgo
     enabled: yes

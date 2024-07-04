@@ -1,11 +1,11 @@
 [Unit]
-Description=Avalanche go client
+Description=Metal go client
 After=syslog.target network.target
 
 [Service]
-User=avalanche
+User=metal
 Type=simple
-Environment=HOME=/home/avalanche
+Environment=HOME=/home/metal
 ExecStart=/usr/local/bin/metalgo --config-file /etc/metalgo/conf.json
 KillMode=process
 KillSignal=SIGINT
