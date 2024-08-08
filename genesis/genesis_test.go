@@ -356,7 +356,7 @@ func TestGenesis(t *testing.T) {
 		},
 		{
 			config:     &unmodifiedLocalConfig,
-			expectedID: "23DnViuN2kgePiBN4JxZXh1VrfXca2rwUp6XrKgNGdj3TSQjiN",
+			expectedID: "2eTomovrqWq9d5AtLqfewx7tan5pwYhzYUPkQuhEJoMjkW2kFs",
 		},
 	}
 	for _, test := range tests {
