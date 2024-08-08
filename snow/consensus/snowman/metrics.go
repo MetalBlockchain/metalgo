@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
@@ -184,7 +183,7 @@ func (m *metrics) Accepted(
 	if !ok {
 		m.log.Error("unable to measure latency",
 			zap.Stringer("blkID", blkID),
-			zap.Stringer("status", choices.Accepted),
+			zap.String("status", "accepted"),
 		)
 		return
 	}
@@ -210,7 +209,7 @@ func (m *metrics) Rejected(blkID ids.ID, pollNumber uint64, blockSize int) {
 	if !ok {
 		m.log.Error("unable to measure latency",
 			zap.Stringer("blkID", blkID),
-			zap.Stringer("status", choices.Rejected),
+			zap.String("status", "rejected"),
 		)
 		return
 	}

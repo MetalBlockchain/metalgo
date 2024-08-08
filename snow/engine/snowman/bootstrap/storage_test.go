@@ -13,12 +13,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/bootstrap/interval"
+	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -277,10 +277,10 @@ func TestExecute(t *testing.T) {
 				test.lastAcceptedHeight,
 			))
 			for _, height := range test.expectedProcessingHeights {
-				require.Equal(choices.Processing, blocks[height].Status())
+				require.Equal(snowtest.Undecided, blocks[height].Status)
 			}
 			for _, height := range test.expectedAcceptedHeights {
-				require.Equal(choices.Accepted, blocks[height].Status())
+				require.Equal(snowtest.Accepted, blocks[height].Status)
 			}
 
 			if test.haltable.Halted() {

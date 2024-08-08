@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
+//go:build test
+
 package snowmantest
 
 import (
@@ -9,7 +11,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
+	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils"
 )
 
@@ -30,9 +32,9 @@ var (
 func BuildChild(parent *Block) *Block {
 	blkID := ids.GenerateTestID()
 	return &Block{
-		TestDecidable: choices.TestDecidable{
-			IDV:     blkID,
-			StatusV: choices.Processing,
+		Decidable: snowtest.Decidable{
+			IDV:    blkID,
+			Status: snowtest.Undecided,
 		},
 		ParentV:    parent.ID(),
 		HeightV:    parent.Height() + 1,
@@ -47,9 +49,9 @@ func BuildChain(length int) []*Block {
 	}
 
 	genesis := &Block{
-		TestDecidable: choices.TestDecidable{
-			IDV:     GenesisID,
-			StatusV: choices.Accepted,
+		Decidable: snowtest.Decidable{
+			IDV:    GenesisID,
+			Status: snowtest.Accepted,
 		},
 		HeightV:    GenesisHeight,
 		TimestampV: GenesisTimestamp,
@@ -68,7 +70,7 @@ func BuildDescendants(parent *Block, length int) []*Block {
 }
 
 type Block struct {
-	choices.TestDecidable
+	snowtest.Decidable
 
 	ParentV    ids.ID
 	HeightV    uint64

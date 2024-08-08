@@ -3,9 +3,9 @@
 set -euo pipefail
 
 # e.g.,
-# ./scripts/tests.upgrade.sh                                                # Use default version
-# ./scripts/tests.upgrade.sh 1.10.18                                        # Specify a version
-# METALGO_PATH=./path/to/avalanchego ./scripts/tests.upgrade.sh 1.10.18 # Customization of avalanchego path
+# ./scripts/tests.upgrade.sh                                               # Use default version
+# ./scripts/tests.upgrade.sh 1.11.0                                        # Specify a version
+# METALGO_PATH=./path/to/avalanchego ./scripts/tests.upgrade.sh 1.11.0 # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.upgrade.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -66,7 +66,7 @@ source ./scripts/constants.sh
 echo "building upgrade.test"
 # to install the ginkgo binary (required for test build and run)
 go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
+ACK_GINKGO_RC=true ginkgo build --tags test ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################

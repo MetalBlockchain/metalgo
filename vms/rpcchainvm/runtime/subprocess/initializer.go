@@ -16,6 +16,8 @@ var _ runtime.Initializer = (*initializer)(nil)
 
 // Subprocess VM Runtime intializer.
 type initializer struct {
+	path string
+
 	once sync.Once
 	// Address of the RPC Chain VM server
 	vmAddr string
@@ -25,8 +27,9 @@ type initializer struct {
 	initialized chan struct{}
 }
 
-func newInitializer() *initializer {
+func newInitializer(path string) *initializer {
 	return &initializer{
+		path:        path,
 		initialized: make(chan struct{}),
 	}
 }
@@ -38,6 +41,7 @@ func (i *initializer) Initialize(_ context.Context, protocolVersion uint, vmAddr
 				runtime.ErrProtocolVersionMismatch,
 				version.Current,
 				version.RPCChainVMProtocol,
+				i.path,
 				protocolVersion,
 			)
 		}

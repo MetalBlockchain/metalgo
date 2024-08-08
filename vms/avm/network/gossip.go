@@ -14,6 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/network/p2p/gossip"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
@@ -51,7 +52,7 @@ func (t txGossipHandler) AppRequest(
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, error) {
+) ([]byte, *common.AppError) {
 	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }
 

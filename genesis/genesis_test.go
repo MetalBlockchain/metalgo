@@ -343,28 +343,27 @@ func TestGenesisFromFlag(t *testing.T) {
 
 func TestGenesis(t *testing.T) {
 	tests := []struct {
-		networkID  uint32
+		config     *Config
 		expectedID string
 	}{
 		{
-			networkID:  constants.MainnetID,
+			config:     &MainnetConfig,
 			expectedID: "2QWBywoaRDBk7Z1YmnGm4W2Mid5CUqBHGWdiHg45uRTJTQ8TDD",
 		},
 		{
-			networkID:  constants.TahoeID,
+			config:     &TahoeConfig,
 			expectedID: "tZW9eSc1k8bMxQusjYSVucoJQhuRaWimezf5feGQFxiPgk85q",
 		},
 		{
-			networkID:  constants.LocalID,
-			expectedID: "LSxVrtM25cDTLmMcjeZRXBYCrof6sAKyGh2SUfN7SezxsN62x",
+			config:     &unmodifiedLocalConfig,
+			expectedID: "23DnViuN2kgePiBN4JxZXh1VrfXca2rwUp6XrKgNGdj3TSQjiN",
 		},
 	}
 	for _, test := range tests {
-		t.Run(constants.NetworkIDToNetworkName[test.networkID], func(t *testing.T) {
+		t.Run(constants.NetworkIDToNetworkName[test.config.NetworkID], func(t *testing.T) {
 			require := require.New(t)
 
-			config := GetConfig(test.networkID)
-			genesisBytes, _, err := FromConfig(config)
+			genesisBytes, _, err := FromConfig(test.config)
 			require.NoError(err)
 
 			var genesisID ids.ID = hashing.ComputeHash256Array(genesisBytes)

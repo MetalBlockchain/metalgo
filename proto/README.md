@@ -1,6 +1,6 @@
 # Metal Blockchain gRPC
 
-Now Serving: **Protocol Version 35**
+Now Serving: **Protocol Version 36**
 
 Protobuf files are hosted at
 [https://buf.build/metalblockchain/metalgo](https://buf.build/metalblockchain/metalgo) and

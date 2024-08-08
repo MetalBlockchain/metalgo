@@ -16,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
@@ -48,9 +47,9 @@ func helperBuildStateSyncTestObjects(t *testing.T) (*fullVM, *VM) {
 	) error {
 		return nil
 	}
-	innerVM.LastAcceptedF = func(context.Context) (ids.ID, error) {
-		return snowmantest.GenesisID, nil
-	}
+	innerVM.LastAcceptedF = snowmantest.MakeLastAcceptedBlockF(
+		[]*snowmantest.Block{snowmantest.Genesis},
+	)
 	innerVM.GetBlockF = func(context.Context, ids.ID) (snowman.Block, error) {
 		return snowmantest.Genesis, nil
 	}
@@ -187,7 +186,6 @@ func TestStateSyncGetOngoingSyncStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -271,7 +269,6 @@ func TestStateSyncGetLastStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -358,7 +355,6 @@ func TestStateSyncGetStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -430,7 +426,6 @@ func TestParseStateSummary(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
@@ -563,7 +558,6 @@ func TestStateSummaryAcceptOlderBlock(t *testing.T) {
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   choices.Accepted,
 		},
 	}
 	require.NoError(vm.acceptPostForkBlock(proBlk))
