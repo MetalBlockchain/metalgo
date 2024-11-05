@@ -21,6 +21,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/c"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
 
 	pbuilder "github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
@@ -79,7 +80,7 @@ func FetchState(
 	xClient := avm.NewClient(uri, "X")
 	cClient := evm.NewCChainClient(uri)
 
-	pCTX, err := pbuilder.NewContextFromClients(ctx, infoClient, xClient)
+	pCTX, err := p.NewContextFromClients(ctx, infoClient, xClient, pClient)
 	if err != nil {
 		return nil, err
 	}

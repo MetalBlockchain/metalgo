@@ -17,6 +17,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/blockmock"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
@@ -169,7 +170,7 @@ func TestRuntimeSubprocessBootstrap(t *testing.T) {
 			require := require.New(t)
 
 			ctrl := gomock.NewController(t)
-			vm := block.NewMockChainVM(ctrl)
+			vm := blockmock.NewChainVM(ctrl)
 
 			listener, err := grpcutils.NewListener()
 			require.NoError(err)

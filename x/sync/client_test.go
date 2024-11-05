@@ -17,11 +17,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/commonmock"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/maybe"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
+	"github.com/MetalBlockchain/metalgo/x/sync/syncmock"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
 )
@@ -62,7 +63,7 @@ func sendRangeProofRequest(
 		numAttempts int
 
 		// Sends messages from server to client.
-		sender = common.NewMockSender(ctrl)
+		sender = commonmock.NewSender(ctrl)
 
 		// Serves the range proof.
 		server = NewNetworkServer(sender, serverDB, logging.NoLog{})
@@ -73,7 +74,7 @@ func sendRangeProofRequest(
 		// "receives" the response from the server. In reality,
 		// it just invokes the server's method and receives
 		// the response on [serverResponseChan].
-		networkClient = NewMockNetworkClient(ctrl)
+		networkClient = syncmock.NewNetworkClient(ctrl)
 
 		serverResponseChan = make(chan []byte, 1)
 
@@ -361,7 +362,7 @@ func sendChangeProofRequest(
 		numAttempts int
 
 		// Sends messages from server to client.
-		sender = common.NewMockSender(ctrl)
+		sender = commonmock.NewSender(ctrl)
 
 		// Serves the change proof.
 		server = NewNetworkServer(sender, serverDB, logging.NoLog{})
@@ -372,7 +373,7 @@ func sendChangeProofRequest(
 		// "receives" the response from the server. In reality,
 		// it just invokes the server's method and receives
 		// the response on [serverResponseChan].
-		networkClient = NewMockNetworkClient(ctrl)
+		networkClient = syncmock.NewNetworkClient(ctrl)
 
 		serverResponseChan = make(chan []byte, 1)
 
@@ -744,7 +745,7 @@ func TestAppRequestSendFailed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	networkClient := NewMockNetworkClient(ctrl)
+	networkClient := syncmock.NewNetworkClient(ctrl)
 
 	client, err := NewClient(
 		&ClientConfig{

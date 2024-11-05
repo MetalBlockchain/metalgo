@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -19,14 +18,15 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
@@ -40,14 +40,7 @@ import (
 	keystoreutils "github.com/MetalBlockchain/metalgo/vms/components/keystore"
 )
 
-type fork uint8
-
 const (
-	durango fork = iota
-	eUpgrade
-
-	latest = durango
-
 	testTxFee    uint64 = 1000
 	startBalance uint64 = 50000
 
@@ -93,7 +86,7 @@ type user struct {
 }
 
 type envConfig struct {
-	fork             fork
+	fork             upgradetest.Fork
 	isCustomFeeAsset bool
 	keystoreUsers    []*user
 	vmStaticConfig   *config.Config
@@ -153,7 +146,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		require.NoError(keystoreUser.Close())
 	}
 
-	vmStaticConfig := staticConfig(tb, c.fork)
+	vmStaticConfig := config.Config{
+		Upgrades:         upgradetest.GetConfig(c.fork),
+		TxFee:            testTxFee,
+		CreateAssetTxFee: testTxFee,
+	}
 	if c.vmStaticConfig != nil {
 		vmStaticConfig = *c.vmStaticConfig
 	}
@@ -191,7 +188,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			},
 			c.additionalFxs...,
 		),
-		&common.SenderTest{},
+		&enginetest.Sender{},
 	))
 
 	stopVertexID := ids.GenerateTestID()
@@ -226,24 +223,6 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	})
 
 	return env
-}
-
-func staticConfig(tb testing.TB, f fork) config.Config {
-	c := config.Config{
-		TxFee:            testTxFee,
-		CreateAssetTxFee: testTxFee,
-		EUpgradeTime:     mockable.MaxTime,
-	}
-
-	switch f {
-	case eUpgrade:
-		c.EUpgradeTime = time.Time{}
-	case durango:
-	default:
-		require.FailNow(tb, "unhandled fork", f)
-	}
-
-	return c
 }
 
 // Returns:

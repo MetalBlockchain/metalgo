@@ -14,6 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
@@ -27,7 +28,7 @@ import (
 func TestIndexTransaction_Ordered(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
+	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
 
 	key := keys[0]
@@ -66,7 +67,7 @@ func TestIndexTransaction_Ordered(t *testing.T) {
 func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
+	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
 
 	addressTxMap := map[ids.ShortID]*txs.Tx{}
@@ -109,7 +110,7 @@ func TestIndexTransaction_MultipleTransactions(t *testing.T) {
 func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
+	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
 
 	addrs := make([]ids.ShortID, len(keys))
@@ -147,7 +148,7 @@ func TestIndexTransaction_MultipleAddresses(t *testing.T) {
 func TestIndexer_Read(t *testing.T) {
 	require := require.New(t)
 
-	env := setup(t, &envConfig{fork: durango})
+	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
 
 	// generate test address and asset IDs

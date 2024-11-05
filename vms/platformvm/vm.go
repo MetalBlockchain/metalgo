@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"time"
 
@@ -140,7 +139,8 @@ func (vm *VM) Initialize(
 		vm.db,
 		genesisBytes,
 		registerer,
-		&vm.Config,
+		vm.Config.Validators,
+		vm.Config.UpgradeConfig,
 		execConfig,
 		vm.ctx,
 		vm.metrics,
@@ -269,7 +269,7 @@ func (vm *VM) pruneMempool() error {
 	// Packing all of the transactions in order performs additional checks that
 	// the MempoolTxVerifier doesn't include. So, evicting transactions from
 	// here is expected to happen occasionally.
-	blockTxs, err := vm.Builder.PackBlockTxs(math.MaxInt)
+	blockTxs, err := vm.Builder.PackAllBlockTxs()
 	if err != nil {
 		return err
 	}

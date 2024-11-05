@@ -4,25 +4,23 @@
 package executor
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/txstest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
-
-	walletsigner "github.com/MetalBlockchain/metalgo/wallet/chain/p/signer"
 )
 
 func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
-	ap3Time := defaultGenesisTime.Add(time.Hour)
+	ap3Time := genesistest.DefaultValidatorStartTime.Add(time.Hour)
 	tests := []struct {
 		name        string
 		time        time.Time
@@ -31,7 +29,7 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 	}{
 		{
 			name:        "pre-fork - correctly priced",
-			time:        defaultGenesisTime,
+			time:        genesistest.DefaultValidatorStartTime,
 			fee:         0,
 			expectedErr: nil,
 		},
@@ -52,27 +50,27 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			env := newEnvironment(t, apricotPhase3)
+			env := newEnvironment(t, upgradetest.ApricotPhase3)
 			env.config.UpgradeConfig.ApricotPhase3Time = ap3Time
 			env.ctx.Lock.Lock()
 			defer env.ctx.Lock.Unlock()
 
 			env.state.SetTimestamp(test.time) // to duly set fee
 
-			addrs := set.NewSet[ids.ShortID](len(preFundedKeys))
-			for _, key := range preFundedKeys {
+			addrs := set.NewSet[ids.ShortID](len(genesistest.DefaultFundedKeys))
+			for _, key := range genesistest.DefaultFundedKeys {
 				addrs.Add(key.Address())
 			}
 
-			cfg := *env.config
-			cfg.StaticFeeConfig.CreateSubnetTxFee = test.fee
-			factory := txstest.NewWalletFactory(env.ctx, &cfg, env.state)
-			builder, signer := factory.NewWallet(preFundedKeys...)
-			utx, err := builder.NewCreateSubnetTx(
+			config := *env.config
+			config.StaticFeeConfig.CreateSubnetTxFee = test.fee
+			wallet := newWallet(t, env, walletConfig{
+				config: &config,
+			})
+
+			tx, err := wallet.IssueCreateSubnetTx(
 				&secp256k1fx.OutputOwners{},
 			)
-			require.NoError(err)
-			tx, err := walletsigner.SignUnsigned(context.Background(), signer, utx)
 			require.NoError(err)
 
 			stateDiff, err := state.NewDiff(lastAcceptedID, env)
@@ -80,9 +78,7 @@ func TestCreateSubnetTxAP3FeeChange(t *testing.T) {
 
 			stateDiff.SetTimestamp(test.time)
 
-			feeCalculator, err := state.PickFeeCalculator(env.config, stateDiff)
-			require.NoError(err)
-
+			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
 			executor := StandardTxExecutor{
 				Backend:       &env.backend,
 				FeeCalculator: feeCalculator,

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -15,22 +16,26 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx/fxmock"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
@@ -42,54 +47,59 @@ import (
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
 )
 
-var (
-	initialTxID             = ids.GenerateTestID()
-	initialNodeID           = ids.GenerateTestNodeID()
-	initialTime             = time.Now().Round(time.Second)
-	initialValidatorEndTime = initialTime.Add(28 * 24 * time.Hour)
-)
+var defaultValidatorNodeID = ids.GenerateTestNodeID()
 
-func TestStateInitialization(t *testing.T) {
-	require := require.New(t)
-	s, db := newUninitializedState(require)
-
-	shouldInit, err := s.shouldInit()
-	require.NoError(err)
-	require.True(shouldInit)
-
-	require.NoError(s.doneInit())
-	require.NoError(s.Commit())
-
-	s = newStateFromDB(require, db)
-
-	shouldInit, err = s.shouldInit()
-	require.NoError(err)
-	require.False(shouldInit)
+func newTestState(t testing.TB, db database.Database) *state {
+	s, err := New(
+		db,
+		genesistest.NewBytes(t, genesistest.Config{
+			NodeIDs: []ids.NodeID{defaultValidatorNodeID},
+		}),
+		prometheus.NewRegistry(),
+		validators.NewManager(),
+		upgradetest.GetConfig(upgradetest.Latest),
+		&config.DefaultExecutionConfig,
+		&snow.Context{
+			NetworkID: constants.UnitTestID,
+			NodeID:    ids.GenerateTestNodeID(),
+			Log:       logging.NoLog{},
+		},
+		metrics.Noop,
+		reward.NewCalculator(reward.Config{
+			MaxConsumptionRate: .12 * reward.PercentDenominator,
+			MinConsumptionRate: .1 * reward.PercentDenominator,
+			MintingPeriod:      365 * 24 * time.Hour,
+			SupplyCap:          720 * units.MegaAvax,
+		}),
+	)
+	require.NoError(t, err)
+	require.IsType(t, (*state)(nil), s)
+	return s.(*state)
 }
 
 func TestStateSyncGenesis(t *testing.T) {
 	require := require.New(t)
-	state := newInitializedState(require)
+	state := newTestState(t, memdb.New())
 
-	staker, err := state.GetCurrentValidator(constants.PrimaryNetworkID, initialNodeID)
+	staker, err := state.GetCurrentValidator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.NoError(err)
 	require.NotNil(staker)
-	require.Equal(initialNodeID, staker.NodeID)
+	require.Equal(defaultValidatorNodeID, staker.NodeID)
 
-	delegatorIterator, err := state.GetCurrentDelegatorIterator(constants.PrimaryNetworkID, initialNodeID)
+	delegatorIterator, err := state.GetCurrentDelegatorIterator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.NoError(err)
-	assertIteratorsEqual(t, EmptyIterator, delegatorIterator)
+	assertIteratorsEqual(t, iterator.Empty[*Staker]{}, delegatorIterator)
 
 	stakerIterator, err := state.GetCurrentStakerIterator()
 	require.NoError(err)
-	assertIteratorsEqual(t, NewSliceIterator(staker), stakerIterator)
+	assertIteratorsEqual(t, iterator.FromSlice(staker), stakerIterator)
 
-	_, err = state.GetPendingValidator(constants.PrimaryNetworkID, initialNodeID)
+	_, err = state.GetPendingValidator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
-	delegatorIterator, err = state.GetPendingDelegatorIterator(constants.PrimaryNetworkID, initialNodeID)
+	delegatorIterator, err = state.GetPendingDelegatorIterator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.NoError(err)
-	assertIteratorsEqual(t, EmptyIterator, delegatorIterator)
+	assertIteratorsEqual(t, iterator.Empty[*Staker]{}, delegatorIterator)
 }
 
 // Whenever we store a staker, a whole bunch a data structures are updated
@@ -138,7 +148,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutCurrentValidator(staker)
+				r.NoError(s.PutCurrentValidator(staker))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 				return staker
@@ -149,15 +159,16 @@ func TestPersistStakers(t *testing.T) {
 				r.Equal(staker, retrievedStaker)
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Len(valsMap, 1)
-				valOut, found := valsMap[staker.NodeID]
-				r.True(found)
-				r.Equal(&validators.GetValidatorOutput{
-					NodeID:    staker.NodeID,
-					PublicKey: staker.PublicKey,
-					Weight:    staker.Weight,
-				}, valOut)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.Contains(valsMap, staker.NodeID)
+				r.Equal(
+					&validators.GetValidatorOutput{
+						NodeID:    staker.NodeID,
+						PublicKey: staker.PublicKey,
+						Weight:    staker.Weight,
+					},
+					valsMap[staker.NodeID],
+				)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.SubnetID)
@@ -232,7 +243,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutCurrentValidator(val)
+				r.NoError(s.PutCurrentValidator(val))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 
@@ -254,10 +265,9 @@ func TestPersistStakers(t *testing.T) {
 				val, err := s.GetCurrentValidator(staker.SubnetID, staker.NodeID)
 				r.NoError(err)
 
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Len(valsMap, 1)
-				valOut, found := valsMap[staker.NodeID]
-				r.True(found)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.Contains(valsMap, staker.NodeID)
+				valOut := valsMap[staker.NodeID]
 				r.Equal(valOut.NodeID, staker.NodeID)
 				r.Equal(valOut.Weight, val.Weight+staker.Weight)
 			},
@@ -298,7 +308,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutPendingValidator(staker)
+				r.NoError(s.PutPendingValidator(staker))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 				return staker
@@ -310,8 +320,8 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators are not showed in validators set
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Empty(valsMap)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
@@ -365,7 +375,7 @@ func TestPersistStakers(t *testing.T) {
 				del, err := NewPendingStaker(addPermDelTx.ID(), utxDel)
 				r.NoError(err)
 
-				s.PutPendingValidator(val)
+				r.NoError(s.PutPendingValidator(val))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 
@@ -385,8 +395,8 @@ func TestPersistStakers(t *testing.T) {
 				r.Equal(staker, retrievedDelegator)
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Empty(valsMap)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(*require.Assertions, *state, *Staker) {},
 			checkDiffs:            func(*require.Assertions, *state, *Staker, uint64) {},
@@ -418,7 +428,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutCurrentValidator(staker)
+				r.NoError(s.PutCurrentValidator(staker))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 
@@ -432,8 +442,8 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
 				// deleted validators are not showed in the validators set anymore
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Empty(valsMap)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
@@ -507,7 +517,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutCurrentValidator(val)
+				r.NoError(s.PutCurrentValidator(val))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 
 				s.PutCurrentDelegator(del)
@@ -529,10 +539,9 @@ func TestPersistStakers(t *testing.T) {
 				val, err := s.GetCurrentValidator(staker.SubnetID, staker.NodeID)
 				r.NoError(err)
 
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Len(valsMap, 1)
-				valOut, found := valsMap[staker.NodeID]
-				r.True(found)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.Contains(valsMap, staker.NodeID)
+				valOut := valsMap[staker.NodeID]
 				r.Equal(valOut.NodeID, staker.NodeID)
 				r.Equal(valOut.Weight, val.Weight)
 			},
@@ -573,7 +582,7 @@ func TestPersistStakers(t *testing.T) {
 				)
 				r.NoError(err)
 
-				s.PutPendingValidator(staker)
+				r.NoError(s.PutPendingValidator(staker))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 				r.NoError(s.Commit())
 
@@ -587,8 +596,8 @@ func TestPersistStakers(t *testing.T) {
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Empty(valsMap)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
@@ -640,7 +649,7 @@ func TestPersistStakers(t *testing.T) {
 				del, err := NewPendingStaker(addPermDelTx.ID(), utxDel)
 				r.NoError(err)
 
-				s.PutPendingValidator(val)
+				r.NoError(s.PutPendingValidator(val))
 				s.AddTx(addPermValTx, status.Committed) // this is currently needed to reload the staker
 
 				s.PutPendingDelegator(del)
@@ -658,8 +667,8 @@ func TestPersistStakers(t *testing.T) {
 				delIt.Release()
 			},
 			checkValidatorsSet: func(r *require.Assertions, s *state, staker *Staker) {
-				valsMap := s.cfg.Validators.GetMap(staker.SubnetID)
-				r.Empty(valsMap)
+				valsMap := s.validators.GetMap(staker.SubnetID)
+				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(*require.Assertions, *state, *Staker) {},
 			checkDiffs:            func(*require.Assertions, *state, *Staker, uint64) {},
@@ -672,7 +681,8 @@ func TestPersistStakers(t *testing.T) {
 			t.Run(fmt.Sprintf("%s - subnetID %s", name, subnetID), func(t *testing.T) {
 				require := require.New(t)
 
-				state, db := newUninitializedState(require)
+				db := memdb.New()
+				state := newTestState(t, db)
 
 				// create and store the staker
 				staker := test.storeStaker(require, subnetID, state)
@@ -684,116 +694,16 @@ func TestPersistStakers(t *testing.T) {
 				test.checkDiffs(require, state, staker, 0 /*height*/)
 
 				// rebuild the state
-				rebuiltState := newStateFromDB(require, db)
-
-				// load relevant quantities
-				require.NoError(rebuiltState.loadCurrentValidators())
-				require.NoError(rebuiltState.loadPendingValidators())
-				require.NoError(rebuiltState.initValidatorSets())
+				rebuiltState := newTestState(t, db)
 
 				// check again that all relevant data are still available in rebuilt state
-				test.checkStakerInState(require, state, staker)
-				test.checkValidatorsSet(require, state, staker)
-				test.checkValidatorUptimes(require, state, staker)
-				test.checkDiffs(require, state, staker, 0 /*height*/)
+				test.checkStakerInState(require, rebuiltState, staker)
+				test.checkValidatorsSet(require, rebuiltState, staker)
+				test.checkValidatorUptimes(require, rebuiltState, staker)
+				test.checkDiffs(require, rebuiltState, staker, 0 /*height*/)
 			})
 		}
 	}
-}
-
-func newInitializedState(require *require.Assertions) State {
-	s, _ := newUninitializedState(require)
-
-	initialValidator := &txs.AddValidatorTx{
-		Validator: txs.Validator{
-			NodeID: initialNodeID,
-			Start:  uint64(initialTime.Unix()),
-			End:    uint64(initialValidatorEndTime.Unix()),
-			Wght:   units.Avax,
-		},
-		StakeOuts: []*avax.TransferableOutput{
-			{
-				Asset: avax.Asset{ID: initialTxID},
-				Out: &secp256k1fx.TransferOutput{
-					Amt: units.Avax,
-				},
-			},
-		},
-		RewardsOwner:     &secp256k1fx.OutputOwners{},
-		DelegationShares: reward.PercentDenominator,
-	}
-	initialValidatorTx := &txs.Tx{Unsigned: initialValidator}
-	require.NoError(initialValidatorTx.Initialize(txs.Codec))
-
-	initialChain := &txs.CreateChainTx{
-		SubnetID:   constants.PrimaryNetworkID,
-		ChainName:  "x",
-		VMID:       constants.AVMID,
-		SubnetAuth: &secp256k1fx.Input{},
-	}
-	initialChainTx := &txs.Tx{Unsigned: initialChain}
-	require.NoError(initialChainTx.Initialize(txs.Codec))
-
-	genesisBlkID := ids.GenerateTestID()
-	genesisState := &genesis.Genesis{
-		UTXOs: []*genesis.UTXO{
-			{
-				UTXO: avax.UTXO{
-					UTXOID: avax.UTXOID{
-						TxID:        initialTxID,
-						OutputIndex: 0,
-					},
-					Asset: avax.Asset{ID: initialTxID},
-					Out: &secp256k1fx.TransferOutput{
-						Amt: units.Schmeckle,
-					},
-				},
-				Message: nil,
-			},
-		},
-		Validators: []*txs.Tx{
-			initialValidatorTx,
-		},
-		Chains: []*txs.Tx{
-			initialChainTx,
-		},
-		Timestamp:     uint64(initialTime.Unix()),
-		InitialSupply: units.Schmeckle + units.Avax,
-	}
-
-	genesisBlk, err := block.NewApricotCommitBlock(genesisBlkID, 0)
-	require.NoError(err)
-	require.NoError(s.syncGenesis(genesisBlk, genesisState))
-
-	return s
-}
-
-func newUninitializedState(require *require.Assertions) (*state, database.Database) {
-	db := memdb.New()
-	return newStateFromDB(require, db), db
-}
-
-func newStateFromDB(require *require.Assertions, db database.Database) *state {
-	execCfg, _ := config.GetExecutionConfig(nil)
-	state, err := newState(
-		db,
-		metrics.Noop,
-		&config.Config{
-			Validators: validators.NewManager(),
-		},
-		execCfg,
-		&snow.Context{},
-		prometheus.NewRegistry(),
-		reward.NewCalculator(reward.Config{
-			MaxConsumptionRate: .12 * reward.PercentDenominator,
-			MinConsumptionRate: .1 * reward.PercentDenominator,
-			MintingPeriod:      365 * 24 * time.Hour,
-			SupplyCap:          720 * units.MegaAvax,
-		}),
-	)
-	require.NoError(err)
-	require.NotNil(state)
-	return state
 }
 
 func createPermissionlessValidatorTx(r *require.Assertions, subnetID ids.ID, validatorsData txs.Validator) *txs.AddPermissionlessValidatorTx {
@@ -1071,7 +981,7 @@ func TestValidatorWeightDiff(t *testing.T) {
 func TestStateAddRemoveValidator(t *testing.T) {
 	require := require.New(t)
 
-	state := newInitializedState(require)
+	state := newTestState(t, memdb.New())
 
 	var (
 		numNodes  = 3
@@ -1189,7 +1099,7 @@ func TestStateAddRemoveValidator(t *testing.T) {
 	for currentIndex, diff := range diffs {
 		for _, added := range diff.addedValidators {
 			added := added
-			state.PutCurrentValidator(&added)
+			require.NoError(state.PutCurrentValidator(&added))
 		}
 		for _, added := range diff.addedDelegators {
 			added := added
@@ -1326,7 +1236,7 @@ func TestParsedStateBlock(t *testing.T) {
 func TestReindexBlocks(t *testing.T) {
 	var (
 		require = require.New(t)
-		s       = newInitializedState(require).(*state)
+		s       = newTestState(t, memdb.New())
 		blks    = makeBlocks(require)
 	)
 
@@ -1367,12 +1277,12 @@ func TestReindexBlocks(t *testing.T) {
 func TestStateSubnetOwner(t *testing.T) {
 	require := require.New(t)
 
-	state := newInitializedState(require)
+	state := newTestState(t, memdb.New())
 	ctrl := gomock.NewController(t)
 
 	var (
-		owner1 = fx.NewMockOwner(ctrl)
-		owner2 = fx.NewMockOwner(ctrl)
+		owner1 = fxmock.NewOwner(ctrl)
+		owner2 = fxmock.NewOwner(ctrl)
 
 		createSubnetTx = &txs.Tx{
 			Unsigned: &txs.CreateSubnetTx{
@@ -1399,6 +1309,56 @@ func TestStateSubnetOwner(t *testing.T) {
 	owner, err = state.GetSubnetOwner(subnetID)
 	require.NoError(err)
 	require.Equal(owner2, owner)
+}
+
+func TestStateSubnetManager(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T, s State, subnetID ids.ID, chainID ids.ID, addr []byte)
+	}{
+		{
+			name: "in-memory",
+			setup: func(_ *testing.T, s State, subnetID ids.ID, chainID ids.ID, addr []byte) {
+				s.SetSubnetManager(subnetID, chainID, addr)
+			},
+		},
+		{
+			name: "cache",
+			setup: func(t *testing.T, s State, subnetID ids.ID, chainID ids.ID, addr []byte) {
+				subnetManagerCache := s.(*state).subnetManagerCache
+
+				require.Zero(t, subnetManagerCache.Len())
+				subnetManagerCache.Put(subnetID, chainIDAndAddr{
+					ChainID: chainID,
+					Addr:    addr,
+				})
+				require.Equal(t, 1, subnetManagerCache.Len())
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require := require.New(t)
+
+			initializedState := newTestState(t, memdb.New())
+
+			subnetID := ids.GenerateTestID()
+			chainID, addr, err := initializedState.GetSubnetManager(subnetID)
+			require.ErrorIs(err, database.ErrNotFound)
+			require.Equal(ids.Empty, chainID)
+			require.Nil(addr)
+
+			expectedChainID := ids.GenerateTestID()
+			expectedAddr := []byte{'a', 'd', 'd', 'r'}
+
+			test.setup(t, initializedState, subnetID, expectedChainID, expectedAddr)
+
+			chainID, addr, err = initializedState.GetSubnetManager(subnetID)
+			require.NoError(err)
+			require.Equal(expectedChainID, chainID)
+			require.Equal(expectedAddr, addr)
+		})
+	}
 }
 
 func makeBlocks(require *require.Assertions) []block.Block {
@@ -1487,4 +1447,110 @@ func makeBlocks(require *require.Assertions) []block.Block {
 		blks = append(blks, blk)
 	}
 	return blks
+}
+
+// Verify that committing the state writes the fee state to the database and
+// that loading the state fetches the fee state from the database.
+func TestStateFeeStateCommitAndLoad(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	s := newTestState(t, db)
+
+	expectedFeeState := gas.State{
+		Capacity: 1,
+		Excess:   2,
+	}
+	s.SetFeeState(expectedFeeState)
+	require.NoError(s.Commit())
+
+	s = newTestState(t, db)
+	require.Equal(expectedFeeState, s.GetFeeState())
+}
+
+func TestMarkAndIsInitialized(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	defaultIsInitialized, err := isInitialized(db)
+	require.NoError(err)
+	require.False(defaultIsInitialized)
+
+	require.NoError(markInitialized(db))
+
+	isInitializedAfterMarking, err := isInitialized(db)
+	require.NoError(err)
+	require.True(isInitializedAfterMarking)
+}
+
+// Verify that reading from the database returns the same value that was written
+// to it.
+func TestPutAndGetFeeState(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	defaultFeeState, err := getFeeState(db)
+	require.NoError(err)
+	require.Equal(gas.State{}, defaultFeeState)
+
+	//nolint:gosec // This does not require a secure random number generator
+	expectedFeeState := gas.State{
+		Capacity: gas.Gas(rand.Uint64()),
+		Excess:   gas.Gas(rand.Uint64()),
+	}
+	require.NoError(putFeeState(db, expectedFeeState))
+
+	actualFeeState, err := getFeeState(db)
+	require.NoError(err)
+	require.Equal(expectedFeeState, actualFeeState)
+}
+
+func TestGetFeeStateErrors(t *testing.T) {
+	tests := []struct {
+		value       []byte
+		expectedErr error
+	}{
+		{
+			value: []byte{
+				// truncated codec version
+				0x00,
+			},
+			expectedErr: codec.ErrCantUnpackVersion,
+		},
+		{
+			value: []byte{
+				// codec version
+				0x00, 0x00,
+				// truncated capacity
+				0x12, 0x34, 0x56, 0x78,
+			},
+			expectedErr: wrappers.ErrInsufficientLength,
+		},
+		{
+			value: []byte{
+				// codec version
+				0x00, 0x00,
+				// capacity
+				0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78,
+				// excess
+				0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78,
+				// extra bytes
+				0x00,
+			},
+			expectedErr: codec.ErrExtraSpace,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.expectedErr.Error(), func(t *testing.T) {
+			var (
+				require = require.New(t)
+				db      = memdb.New()
+			)
+			require.NoError(db.Put(FeeStateKey, test.value))
+
+			actualState, err := getFeeState(db)
+			require.Equal(gas.State{}, actualState)
+			require.ErrorIs(err, test.expectedErr)
+		})
+	}
 }

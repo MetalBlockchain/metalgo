@@ -13,6 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -31,11 +32,12 @@ type ContextInitializable interface {
 // [ChainID] is the ID of the chain this context exists within.
 // [NodeID] is the ID of this node
 type Context struct {
-	NetworkID uint32
-	SubnetID  ids.ID
-	ChainID   ids.ID
-	NodeID    ids.NodeID
-	PublicKey *bls.PublicKey
+	NetworkID       uint32
+	SubnetID        ids.ID
+	ChainID         ids.ID
+	NodeID          ids.NodeID
+	PublicKey       *bls.PublicKey
+	NetworkUpgrades upgrade.Config
 
 	XChainID    ids.ID
 	CChainID    ids.ID

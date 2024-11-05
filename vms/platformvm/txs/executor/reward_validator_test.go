@@ -4,7 +4,6 @@
 package executor
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -13,17 +12,17 @@ import (
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
-
-	walletsigner "github.com/MetalBlockchain/metalgo/wallet/chain/p/signer"
 )
 
 func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
@@ -37,7 +36,7 @@ func newRewardValidatorTx(t testing.TB, txID ids.ID) (*txs.Tx, error) {
 
 func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	dummyHeight := uint64(1)
 
 	currentStakerIterator, err := env.state.GetCurrentStakerIterator()
@@ -61,8 +60,7 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, onAbortState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, onAbortState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
@@ -137,12 +135,12 @@ func TestRewardValidatorTxExecuteOnCommit(t *testing.T) {
 
 	onCommitBalance, err := avax.GetBalance(env.state, stakeOwners)
 	require.NoError(err)
-	require.Equal(oldBalance+stakerToRemove.Weight+27697, onCommitBalance)
+	require.Equal(oldBalance+stakerToRemove.Weight+38944, onCommitBalance)
 }
 
 func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	dummyHeight := uint64(1)
 
 	currentStakerIterator, err := env.state.GetCurrentStakerIterator()
@@ -166,8 +164,7 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, onAbortState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, onAbortState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
@@ -241,18 +238,19 @@ func TestRewardValidatorTxExecuteOnAbort(t *testing.T) {
 
 func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	dummyHeight := uint64(1)
+
+	wallet := newWallet(t, env, walletConfig{})
 
 	vdrRewardAddress := ids.GenerateTestShortID()
 	delRewardAddress := ids.GenerateTestShortID()
 
-	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
-	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrStartTime := genesistest.DefaultValidatorStartTimeUnix + 1
+	vdrEndTime := uint64(genesistest.DefaultValidatorStartTime.Add(2 * defaultMinStakingDuration).Unix())
 	vdrNodeID := ids.GenerateTestNodeID()
 
-	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	uVdrTx, err := builder.NewAddValidatorTx(
+	vdrTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  vdrStartTime,
@@ -266,13 +264,11 @@ func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 		reward.PercentDenominator/4,
 	)
 	require.NoError(err)
-	vdrTx, err := walletsigner.SignUnsigned(context.Background(), signer, uVdrTx)
-	require.NoError(err)
 
 	delStartTime := vdrStartTime
 	delEndTime := vdrEndTime
 
-	uDelTx, err := builder.NewAddDelegatorTx(
+	delTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  delStartTime,
@@ -284,8 +280,6 @@ func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 			Addrs:     []ids.ShortID{delRewardAddress},
 		},
 	)
-	require.NoError(err)
-	delTx, err := walletsigner.SignUnsigned(context.Background(), signer, uDelTx)
 	require.NoError(err)
 
 	addValTx := vdrTx.Unsigned.(*txs.AddValidatorTx)
@@ -306,7 +300,7 @@ func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(vdrStaker)
+	require.NoError(env.state.PutCurrentValidator(vdrStaker))
 	env.state.AddTx(vdrTx, status.Committed)
 	env.state.PutCurrentDelegator(delStaker)
 	env.state.AddTx(delTx, status.Committed)
@@ -327,8 +321,7 @@ func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, onCommitState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
@@ -376,18 +369,19 @@ func TestRewardDelegatorTxExecuteOnCommitPreDelegateeDeferral(t *testing.T) {
 
 func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, cortina)
+	env := newEnvironment(t, upgradetest.Cortina)
 	dummyHeight := uint64(1)
+
+	wallet := newWallet(t, env, walletConfig{})
 
 	vdrRewardAddress := ids.GenerateTestShortID()
 	delRewardAddress := ids.GenerateTestShortID()
 
-	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
-	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrStartTime := genesistest.DefaultValidatorStartTimeUnix + 1
+	vdrEndTime := uint64(genesistest.DefaultValidatorStartTime.Add(2 * defaultMinStakingDuration).Unix())
 	vdrNodeID := ids.GenerateTestNodeID()
 
-	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	uVdrTx, err := builder.NewAddValidatorTx(
+	vdrTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  vdrStartTime,
@@ -401,13 +395,11 @@ func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 		reward.PercentDenominator/4,
 	)
 	require.NoError(err)
-	vdrTx, err := walletsigner.SignUnsigned(context.Background(), signer, uVdrTx)
-	require.NoError(err)
 
 	delStartTime := vdrStartTime
 	delEndTime := vdrEndTime
 
-	uDelTx, err := builder.NewAddDelegatorTx(
+	delTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  delStartTime,
@@ -419,8 +411,6 @@ func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 			Addrs:     []ids.ShortID{delRewardAddress},
 		},
 	)
-	require.NoError(err)
-	delTx, err := walletsigner.SignUnsigned(context.Background(), signer, uDelTx)
 	require.NoError(err)
 
 	addValTx := vdrTx.Unsigned.(*txs.AddValidatorTx)
@@ -443,7 +433,7 @@ func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(vdrStaker)
+	require.NoError(env.state.PutCurrentValidator(vdrStaker))
 	env.state.AddTx(vdrTx, status.Committed)
 	env.state.PutCurrentDelegator(delStaker)
 	env.state.AddTx(delTx, status.Committed)
@@ -473,8 +463,7 @@ func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, onCommitState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,
@@ -607,18 +596,19 @@ func TestRewardDelegatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 
 func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, cortina)
+	env := newEnvironment(t, upgradetest.Cortina)
 	dummyHeight := uint64(1)
+
+	wallet := newWallet(t, env, walletConfig{})
 
 	vdrRewardAddress := ids.GenerateTestShortID()
 	delRewardAddress := ids.GenerateTestShortID()
 
-	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
-	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrStartTime := genesistest.DefaultValidatorStartTimeUnix + 1
+	vdrEndTime := uint64(genesistest.DefaultValidatorStartTime.Add(2 * defaultMinStakingDuration).Unix())
 	vdrNodeID := ids.GenerateTestNodeID()
 
-	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	uVdrTx, err := builder.NewAddValidatorTx(
+	vdrTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  vdrStartTime,
@@ -632,13 +622,11 @@ func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *
 		reward.PercentDenominator/4,
 	)
 	require.NoError(err)
-	vdrTx, err := walletsigner.SignUnsigned(context.Background(), signer, uVdrTx)
-	require.NoError(err)
 
 	delStartTime := vdrStartTime
 	delEndTime := vdrEndTime
 
-	uDelTx, err := builder.NewAddDelegatorTx(
+	delTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  delStartTime,
@@ -650,8 +638,6 @@ func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *
 			Addrs:     []ids.ShortID{delRewardAddress},
 		},
 	)
-	require.NoError(err)
-	delTx, err := walletsigner.SignUnsigned(context.Background(), signer, uDelTx)
 	require.NoError(err)
 
 	addValTx := vdrTx.Unsigned.(*txs.AddValidatorTx)
@@ -674,7 +660,7 @@ func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(vdrStaker)
+	require.NoError(env.state.PutCurrentValidator(vdrStaker))
 	env.state.AddTx(vdrTx, status.Committed)
 	env.state.PutCurrentDelegator(delStaker)
 	env.state.AddTx(delTx, status.Committed)
@@ -700,8 +686,7 @@ func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *
 	delOnAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, delOnCommitState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, delOnCommitState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: delOnCommitState,
 		OnAbortState:  delOnAbortState,
@@ -781,8 +766,10 @@ func TestRewardDelegatorTxAndValidatorTxExecuteOnCommitPostDelegateeDeferral(t *
 
 func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	require := require.New(t)
-	env := newEnvironment(t, apricotPhase5)
+	env := newEnvironment(t, upgradetest.ApricotPhase5)
 	dummyHeight := uint64(1)
+
+	wallet := newWallet(t, env, walletConfig{})
 
 	initialSupply, err := env.state.GetCurrentSupply(constants.PrimaryNetworkID)
 	require.NoError(err)
@@ -790,12 +777,11 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	vdrRewardAddress := ids.GenerateTestShortID()
 	delRewardAddress := ids.GenerateTestShortID()
 
-	vdrStartTime := uint64(defaultValidateStartTime.Unix()) + 1
-	vdrEndTime := uint64(defaultValidateStartTime.Add(2 * defaultMinStakingDuration).Unix())
+	vdrStartTime := genesistest.DefaultValidatorStartTimeUnix + 1
+	vdrEndTime := uint64(genesistest.DefaultValidatorStartTime.Add(2 * defaultMinStakingDuration).Unix())
 	vdrNodeID := ids.GenerateTestNodeID()
 
-	builder, signer := env.factory.NewWallet(preFundedKeys[0])
-	uVdrTx, err := builder.NewAddValidatorTx(
+	vdrTx, err := wallet.IssueAddValidatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  vdrStartTime,
@@ -809,13 +795,11 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 		reward.PercentDenominator/4,
 	)
 	require.NoError(err)
-	vdrTx, err := walletsigner.SignUnsigned(context.Background(), signer, uVdrTx)
-	require.NoError(err)
 
 	delStartTime := vdrStartTime
 	delEndTime := vdrEndTime
 
-	uDelTx, err := builder.NewAddDelegatorTx(
+	delTx, err := wallet.IssueAddDelegatorTx(
 		&txs.Validator{
 			NodeID: vdrNodeID,
 			Start:  delStartTime,
@@ -827,8 +811,6 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 			Addrs:     []ids.ShortID{delRewardAddress},
 		},
 	)
-	require.NoError(err)
-	delTx, err := walletsigner.SignUnsigned(context.Background(), signer, uDelTx)
 	require.NoError(err)
 
 	addValTx := vdrTx.Unsigned.(*txs.AddValidatorTx)
@@ -849,7 +831,7 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	)
 	require.NoError(err)
 
-	env.state.PutCurrentValidator(vdrStaker)
+	require.NoError(env.state.PutCurrentValidator(vdrStaker))
 	env.state.AddTx(vdrTx, status.Committed)
 	env.state.PutCurrentDelegator(delStaker)
 	env.state.AddTx(delTx, status.Committed)
@@ -866,8 +848,7 @@ func TestRewardDelegatorTxExecuteOnAbort(t *testing.T) {
 	onAbortState, err := state.NewDiff(lastAcceptedID, env)
 	require.NoError(err)
 
-	feeCalculator, err := state.PickFeeCalculator(env.config, onCommitState)
-	require.NoError(err)
+	feeCalculator := state.PickFeeCalculator(env.config, onCommitState)
 	txExecutor := ProposalTxExecutor{
 		OnCommitState: onCommitState,
 		OnAbortState:  onAbortState,

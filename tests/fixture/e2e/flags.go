@@ -19,7 +19,9 @@ type FlagVars struct {
 	reuseNetwork         bool
 	delayNetworkShutdown bool
 	stopNetwork          bool
+	restartNetwork       bool
 	nodeCount            int
+	activateEtna         bool
 }
 
 func (v *FlagVars) AvalancheGoExecPath() string {
@@ -44,6 +46,10 @@ func (v *FlagVars) ReuseNetwork() bool {
 	return v.reuseNetwork
 }
 
+func (v *FlagVars) RestartNetwork() bool {
+	return v.restartNetwork
+}
+
 func (v *FlagVars) NetworkShutdownDelay() time.Duration {
 	if v.delayNetworkShutdown {
 		// Only return a non-zero value if the delay is enabled.  Make sure this value takes
@@ -59,6 +65,18 @@ func (v *FlagVars) StopNetwork() bool {
 
 func (v *FlagVars) NodeCount() int {
 	return v.nodeCount
+}
+
+func (v *FlagVars) ActivateEtna() bool {
+	return v.activateEtna
+}
+
+func getEnvWithDefault(envVar, defaultVal string) string {
+	val := os.Getenv(envVar)
+	if len(val) == 0 {
+		return defaultVal
+	}
+	return val
 }
 
 func RegisterFlags() *FlagVars {

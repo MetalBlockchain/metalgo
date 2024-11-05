@@ -26,6 +26,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -237,6 +238,7 @@ func newFullyConnectedTestNetwork(t *testing.T, handlers []router.InboundHandler
 		var connected set.Set[ids.NodeID]
 		net, err := NewNetwork(
 			config,
+			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
 			logging.NoLog{},
@@ -466,6 +468,7 @@ func TestTrackDoesNotDialPrivateIPs(t *testing.T) {
 
 		net, err := NewNetwork(
 			config,
+			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
 			logging.NoLog{},
@@ -545,6 +548,7 @@ func TestDialDeletesNonValidators(t *testing.T) {
 
 		net, err := NewNetwork(
 			config,
+			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
 			logging.NoLog{},
@@ -699,6 +703,7 @@ func TestAllowConnectionAsAValidator(t *testing.T) {
 
 		net, err := NewNetwork(
 			config,
+			upgrade.InitiallyActiveTime,
 			msgCreator,
 			registry,
 			logging.NoLog{},

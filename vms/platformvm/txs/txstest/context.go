@@ -4,36 +4,39 @@
 package txstest
 
 import (
-	"time"
-
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
 )
 
 func newContext(
 	ctx *snow.Context,
-	cfg *config.Config,
-	timestamp time.Time,
+	config *config.Config,
+	state state.State,
 ) *builder.Context {
 	var (
-		feeCalculator      = fee.NewStaticCalculator(cfg.StaticFeeConfig, cfg.UpgradeConfig, timestamp)
-		createSubnetFee, _ = feeCalculator.CalculateFee(&txs.CreateSubnetTx{})
-		createChainFee, _  = feeCalculator.CalculateFee(&txs.CreateChainTx{})
+		timestamp      = state.GetTimestamp()
+		builderContext = &builder.Context{
+			NetworkID:   ctx.NetworkID,
+			AVAXAssetID: ctx.AVAXAssetID,
+		}
 	)
-
-	return &builder.Context{
-		NetworkID:                     ctx.NetworkID,
-		AVAXAssetID:                   ctx.AVAXAssetID,
-		BaseTxFee:                     cfg.StaticFeeConfig.TxFee,
-		CreateSubnetTxFee:             createSubnetFee,
-		TransformSubnetTxFee:          cfg.StaticFeeConfig.TransformSubnetTxFee,
-		CreateBlockchainTxFee:         createChainFee,
-		AddPrimaryNetworkValidatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkValidatorFee,
-		AddPrimaryNetworkDelegatorFee: cfg.StaticFeeConfig.AddPrimaryNetworkDelegatorFee,
-		AddSubnetValidatorFee:         cfg.StaticFeeConfig.AddSubnetValidatorFee,
-		AddSubnetDelegatorFee:         cfg.StaticFeeConfig.AddSubnetDelegatorFee,
+	switch {
+	case config.UpgradeConfig.IsEtnaActivated(timestamp):
+		builderContext.ComplexityWeights = config.DynamicFeeConfig.Weights
+		builderContext.GasPrice = gas.CalculatePrice(
+			config.DynamicFeeConfig.MinPrice,
+			state.GetFeeState().Excess,
+			config.DynamicFeeConfig.ExcessConversionConstant,
+		)
+	case config.UpgradeConfig.IsApricotPhase3Activated(timestamp):
+		builderContext.StaticFeeConfig = config.StaticFeeConfig
+	default:
+		builderContext.StaticFeeConfig = config.StaticFeeConfig
+		builderContext.StaticFeeConfig.CreateSubnetTxFee = config.CreateAssetTxFee
+		builderContext.StaticFeeConfig.CreateBlockchainTxFee = config.CreateAssetTxFee
 	}
+	return builderContext
 }

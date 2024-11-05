@@ -10,12 +10,13 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/upgrade"
 )
 
 // Struct collecting all foundational parameters of PlatformVM
@@ -31,8 +32,12 @@ type Config struct {
 	//            calling VM.Initialize.
 	Validators validators.Manager
 
-	// All static fees config active before E-upgrade
-	StaticFeeConfig fee.StaticConfig
+	// Static fees are active before the E-upgrade
+	CreateAssetTxFee uint64 // Override for CreateSubnet and CreateChain before AP3
+	StaticFeeConfig  fee.StaticConfig
+
+	// Dynamic fees are active after the E-upgrade
+	DynamicFeeConfig gas.Config
 
 	// Provides access to the uptime manager as a thread safe data structure
 	UptimeLockedCalculator uptime.LockedCalculator

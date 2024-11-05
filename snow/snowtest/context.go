@@ -1,8 +1,6 @@
 // Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-//go:build test
-
 package snowtest
 
 import (
@@ -16,7 +14,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow/validators/validatorstest"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -65,7 +64,7 @@ func Context(tb testing.TB, chainID ids.ID) *snow.Context {
 	require.NoError(aliaser.Alias(CChainID, "C"))
 	require.NoError(aliaser.Alias(CChainID, CChainID.String()))
 
-	validatorState := &validators.TestState{
+	validatorState := &validatorstest.State{
 		GetSubnetIDF: func(_ context.Context, chainID ids.ID) (ids.ID, error) {
 			subnetID, ok := map[ids.ID]ids.ID{
 				constants.PlatformChainID: constants.PrimaryNetworkID,
@@ -80,11 +79,12 @@ func Context(tb testing.TB, chainID ids.ID) *snow.Context {
 	}
 
 	return &snow.Context{
-		NetworkID: constants.UnitTestID,
-		SubnetID:  constants.PrimaryNetworkID,
-		ChainID:   chainID,
-		NodeID:    ids.EmptyNodeID,
-		PublicKey: publicKey,
+		NetworkID:       constants.UnitTestID,
+		SubnetID:        constants.PrimaryNetworkID,
+		ChainID:         chainID,
+		NodeID:          ids.EmptyNodeID,
+		PublicKey:       publicKey,
+		NetworkUpgrades: upgrade.Default,
 
 		XChainID:    XChainID,
 		CChainID:    CChainID,

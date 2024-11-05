@@ -14,9 +14,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool/mempoolmock"
 	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
-
-	pmempool "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 var errFoo = errors.New("foo")
@@ -31,7 +30,7 @@ func TestGossipMempoolAddVerificationError(t *testing.T) {
 		TxID: txID,
 	}
 
-	mempool := pmempool.NewMockMempool(ctrl)
+	mempool := mempoolmock.NewMempool(ctrl)
 	txVerifier := testTxVerifier{err: errFoo}
 
 	mempool.EXPECT().Get(txID).Return(nil, false)
@@ -65,7 +64,7 @@ func TestGossipMempoolAddError(t *testing.T) {
 	}
 
 	txVerifier := testTxVerifier{}
-	mempool := pmempool.NewMockMempool(ctrl)
+	mempool := mempoolmock.NewMempool(ctrl)
 
 	mempool.EXPECT().Get(txID).Return(nil, false)
 	mempool.EXPECT().GetDropReason(txID).Return(nil)
@@ -93,7 +92,7 @@ func TestMempoolDuplicate(t *testing.T) {
 	require := require.New(t)
 	ctrl := gomock.NewController(t)
 
-	testMempool := pmempool.NewMockMempool(ctrl)
+	testMempool := mempoolmock.NewMempool(ctrl)
 	txVerifier := testTxVerifier{}
 
 	txID := ids.GenerateTestID()
@@ -130,7 +129,7 @@ func TestGossipAddBloomFilter(t *testing.T) {
 	}
 
 	txVerifier := testTxVerifier{}
-	mempool := pmempool.NewMockMempool(ctrl)
+	mempool := mempoolmock.NewMempool(ctrl)
 
 	mempool.EXPECT().Get(txID).Return(nil, false)
 	mempool.EXPECT().GetDropReason(txID).Return(nil)

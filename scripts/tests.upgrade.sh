@@ -16,8 +16,8 @@ fi
 # local network, this flag must be updated to the last compatible
 # version with the latest code.
 #
-# v1.11.0 activates Durango.
-DEFAULT_VERSION="1.11.0"
+# v1.11.3 fixes a regression in Coreth genesis for custom networks.
+DEFAULT_VERSION="1.11.3"
 
 VERSION="${1:-${DEFAULT_VERSION}}"
 if [[ -z "${VERSION}" ]]; then
@@ -66,7 +66,7 @@ source ./scripts/constants.sh
 echo "building upgrade.test"
 # to install the ginkgo binary (required for test build and run)
 go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build --tags test ./tests/upgrade
+ACK_GINKGO_RC=true ginkgo build ./tests/upgrade
 ./tests/upgrade/upgrade.test --help
 
 #################################

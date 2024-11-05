@@ -11,6 +11,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+
+	timerpkg "github.com/MetalBlockchain/metalgo/utils/timer"
 )
 
 var (
@@ -131,10 +133,7 @@ func (n *inboundConnUpgradeThrottler) ShouldUpgrade(addrPort netip.AddrPort) boo
 }
 
 func (n *inboundConnUpgradeThrottler) Dispatch() {
-	timer := time.NewTimer(0)
-	if !timer.Stop() {
-		<-timer.C
-	}
+	timer := timerpkg.StoppedTimer()
 
 	defer timer.Stop()
 	for {

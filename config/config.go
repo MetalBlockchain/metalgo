@@ -33,6 +33,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -44,6 +45,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/storage"
 	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm"
@@ -762,21 +764,74 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	return config, nil
 }
 
-func getTxFeeConfig(v *viper.Viper, networkID uint32) fee.StaticConfig {
-	if networkID != constants.MainnetID && networkID != constants.TahoeID {
-		return fee.StaticConfig{
-			TxFee:                         v.GetUint64(TxFeeKey),
-			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
-			CreateSubnetTxFee:             v.GetUint64(CreateSubnetTxFeeKey),
-			TransformSubnetTxFee:          v.GetUint64(TransformSubnetTxFeeKey),
-			CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
-			AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
-			AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
-			AddSubnetValidatorFee:         v.GetUint64(AddSubnetValidatorFeeKey),
-			AddSubnetDelegatorFee:         v.GetUint64(AddSubnetDelegatorFeeKey),
+func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
+	if networkID != constants.MainnetID && networkID != constants.FujiID {
+		return genesis.TxFeeConfig{
+			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
+			StaticFeeConfig: fee.StaticConfig{
+				TxFee:                         v.GetUint64(TxFeeKey),
+				CreateSubnetTxFee:             v.GetUint64(CreateSubnetTxFeeKey),
+				TransformSubnetTxFee:          v.GetUint64(TransformSubnetTxFeeKey),
+				CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
+				AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
+				AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
+				AddSubnetValidatorFee:         v.GetUint64(AddSubnetValidatorFeeKey),
+				AddSubnetDelegatorFee:         v.GetUint64(AddSubnetDelegatorFeeKey),
+			},
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: v.GetUint64(DynamicFeesBandwidthWeightKey),
+					gas.DBRead:    v.GetUint64(DynamicFeesDBReadWeightKey),
+					gas.DBWrite:   v.GetUint64(DynamicFeesDBWriteWeightKey),
+					gas.Compute:   v.GetUint64(DynamicFeesComputeWeightKey),
+				},
+				MaxCapacity:              gas.Gas(v.GetUint64(DynamicFeesMaxGasCapacityKey)),
+				MaxPerSecond:             gas.Gas(v.GetUint64(DynamicFeesMaxGasPerSecondKey)),
+				TargetPerSecond:          gas.Gas(v.GetUint64(DynamicFeesTargetGasPerSecondKey)),
+				MinPrice:                 gas.Price(v.GetUint64(DynamicFeesMinGasPriceKey)),
+				ExcessConversionConstant: gas.Gas(v.GetUint64(DynamicFeesExcessConversionConstantKey)),
+			},
 		}
 	}
 	return genesis.GetTxFeeConfig(networkID)
+}
+
+func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) {
+	if !v.IsSet(UpgradeFileKey) && !v.IsSet(UpgradeFileContentKey) {
+		return upgrade.GetConfig(networkID), nil
+	}
+
+	switch networkID {
+	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
+			constants.NetworkName(networkID),
+		)
+	}
+
+	var (
+		upgradeBytes []byte
+		err          error
+	)
+	switch {
+	case v.IsSet(UpgradeFileKey):
+		upgradeFileName := GetExpandedArg(v, UpgradeFileKey)
+		upgradeBytes, err = os.ReadFile(upgradeFileName)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to read upgrade file: %w", err)
+		}
+	case v.IsSet(UpgradeFileContentKey):
+		upgradeContent := v.GetString(UpgradeFileContentKey)
+		upgradeBytes, err = base64.StdEncoding.DecodeString(upgradeContent)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to decode upgrade base64 content: %w", err)
+		}
+	}
+
+	var upgradeConfig upgrade.Config
+	if err := json.Unmarshal(upgradeBytes, &upgradeConfig); err != nil {
+		return upgrade.Config{}, fmt.Errorf("unable to unmarshal upgrade bytes: %w", err)
+	}
+	return upgradeConfig, nil
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
@@ -1294,6 +1349,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
+	// Upgrade config
+	nodeConfig.UpgradeConfig, err = getUpgradeConfig(v, nodeConfig.NetworkID)
+	if err != nil {
+		return node.Config{}, err
+	}
+
 	// Network Config
 	nodeConfig.NetworkConfig, err = getNetworkConfig(
 		v,
@@ -1329,7 +1390,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	nodeConfig.FdLimit = v.GetUint64(FdLimitKey)
 
 	// Tx Fee
-	nodeConfig.StaticConfig = getTxFeeConfig(v, nodeConfig.NetworkID)
+	nodeConfig.TxFeeConfig = getTxFeeConfig(v, nodeConfig.NetworkID)
 
 	// Genesis Data
 	genesisStakingCfg := nodeConfig.StakingConfig.StakingConfig

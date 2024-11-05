@@ -20,6 +20,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -113,7 +114,7 @@ func StartTestPeer(
 			InboundMsgThrottler:  throttling.NewNoInboundThrottler(),
 			Network:              TestNetwork,
 			Router:               router,
-			VersionCompatibility: version.GetCompatibility(networkID),
+			VersionCompatibility: version.GetCompatibility(upgrade.InitiallyActiveTime),
 			MySubnets:            set.Set[ids.ID]{},
 			Beacons:              validators.NewManager(),
 			Validators:           validators.NewManager(),

@@ -12,6 +12,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/signertest"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/warp"
@@ -65,7 +66,7 @@ func setupSigner(t testing.TB) *testSigner {
 }
 
 func TestInterface(t *testing.T) {
-	for name, test := range warp.SignerTests {
+	for name, test := range signertest.SignerTests {
 		t.Run(name, func(t *testing.T) {
 			s := setupSigner(t)
 			test(t, s.client, s.sk, s.networkID, s.chainID)

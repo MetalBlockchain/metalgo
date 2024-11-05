@@ -9,6 +9,7 @@ import (
 	_ "embed"
 
 	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
@@ -19,16 +20,32 @@ var (
 
 	// MainnetParams are the params used for mainnet
 	MainnetParams = Params{
-		StaticConfig: fee.StaticConfig{
-			TxFee:                         units.MilliAvax,
-			CreateAssetTxFee:              10 * units.MilliAvax,
-			CreateSubnetTxFee:             1 * units.Avax,
-			TransformSubnetTxFee:          10 * units.Avax,
-			CreateBlockchainTxFee:         1 * units.Avax,
-			AddPrimaryNetworkValidatorFee: 0,
-			AddPrimaryNetworkDelegatorFee: 0,
-			AddSubnetValidatorFee:         units.MilliAvax,
-			AddSubnetDelegatorFee:         units.MilliAvax,
+		TxFeeConfig: TxFeeConfig{
+			CreateAssetTxFee: 10 * units.MilliAvax,
+			StaticFeeConfig: fee.StaticConfig{
+				TxFee:                         units.MilliAvax,
+				CreateSubnetTxFee:             1 * units.Avax,
+				TransformSubnetTxFee:          10 * units.Avax,
+				CreateBlockchainTxFee:         1 * units.Avax,
+				AddPrimaryNetworkValidatorFee: 0,
+				AddPrimaryNetworkDelegatorFee: 0,
+				AddSubnetValidatorFee:         units.MilliAvax,
+				AddSubnetDelegatorFee:         units.MilliAvax,
+			},
+			// TODO: Set these values to something more reasonable
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: 1,
+					gas.DBRead:    1,
+					gas.DBWrite:   1,
+					gas.Compute:   1,
+				},
+				MaxCapacity:              1_000_000,
+				MaxPerSecond:             1_000,
+				TargetPerSecond:          500,
+				MinPrice:                 1,
+				ExcessConversionConstant: 5_000,
+			},
 		},
 		StakingConfig: StakingConfig{
 			UptimeRequirement: .8, // 80%

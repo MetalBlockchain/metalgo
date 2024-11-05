@@ -14,6 +14,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow/validators/validatorsmock"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
@@ -24,7 +25,7 @@ var errCustom = errors.New("custom")
 
 type testState struct {
 	client *Client
-	server *validators.MockState
+	server *validatorsmock.State
 }
 
 func setupState(t testing.TB, ctrl *gomock.Controller) *testState {
@@ -33,7 +34,7 @@ func setupState(t testing.TB, ctrl *gomock.Controller) *testState {
 	t.Helper()
 
 	state := &testState{
-		server: validators.NewMockState(ctrl),
+		server: validatorsmock.NewState(ctrl),
 	}
 
 	listener, err := grpcutils.NewListener()

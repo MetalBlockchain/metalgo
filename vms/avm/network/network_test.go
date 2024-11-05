@@ -15,11 +15,14 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common/commonmock"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
+	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor/executormock"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool/mempoolmock"
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -64,7 +67,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "mempool has transaction",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, true)
 				return mempool
 			},
@@ -73,7 +76,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "transaction marked as dropped in mempool",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mempool.EXPECT().GetDropReason(gomock.Any()).Return(errTest)
 				return mempool
@@ -83,14 +86,14 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "transaction invalid",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
 				mempool.EXPECT().MarkDropped(gomock.Any(), gomock.Any())
 				return mempool
 			},
 			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
+				txVerifier := executormock.NewManager(ctrl)
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(errTest)
 				return txVerifier
 			},
@@ -99,7 +102,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "can't add transaction to mempool",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
 				mempool.EXPECT().Add(gomock.Any()).Return(errTest)
@@ -107,7 +110,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
+				txVerifier := executormock.NewManager(ctrl)
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
@@ -116,7 +119,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 		{
 			name: "happy path",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, false)
 				mempool.EXPECT().GetDropReason(gomock.Any()).Return(nil)
 				mempool.EXPECT().Add(gomock.Any()).Return(nil)
@@ -126,12 +129,12 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				return mempool
 			},
 			txVerifierFunc: func(ctrl *gomock.Controller) TxVerifier {
-				txVerifier := executor.NewMockManager(ctrl)
+				txVerifier := executormock.NewManager(ctrl)
 				txVerifier.EXPECT().VerifyTx(gomock.Any()).Return(nil)
 				return txVerifier
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -154,21 +157,21 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 			require.NoError(err)
 
 			mempoolFunc := func(ctrl *gomock.Controller) xmempool.Mempool {
-				return xmempool.NewMockMempool(ctrl)
+				return mempoolmock.NewMempool(ctrl)
 			}
 			if tt.mempoolFunc != nil {
 				mempoolFunc = tt.mempoolFunc
 			}
 
 			txVerifierFunc := func(ctrl *gomock.Controller) TxVerifier {
-				return executor.NewMockManager(ctrl)
+				return executormock.NewManager(ctrl)
 			}
 			if tt.txVerifierFunc != nil {
 				txVerifierFunc = tt.txVerifierFunc
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
-				return common.NewMockSender(ctrl)
+				return commonmock.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -178,7 +181,7 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -214,7 +217,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 		{
 			name: "can't add transaction to mempool",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Add(gomock.Any()).Return(errTest)
 				mempool.EXPECT().MarkDropped(gomock.Any(), gomock.Any())
 				return mempool
@@ -224,7 +227,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 		{
 			name: "happy path",
 			mempoolFunc: func(ctrl *gomock.Controller) xmempool.Mempool {
-				mempool := xmempool.NewMockMempool(ctrl)
+				mempool := mempoolmock.NewMempool(ctrl)
 				mempool.EXPECT().Get(gomock.Any()).Return(nil, true).Times(2)
 				mempool.EXPECT().Add(gomock.Any()).Return(nil)
 				mempool.EXPECT().Len().Return(0)
@@ -232,7 +235,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				return mempool
 			},
 			appSenderFunc: func(ctrl *gomock.Controller) common.AppSender {
-				appSender := common.NewMockSender(ctrl)
+				appSender := commonmock.NewSender(ctrl)
 				appSender.EXPECT().SendAppGossip(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return appSender
 			},
@@ -255,14 +258,14 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 			require.NoError(err)
 
 			mempoolFunc := func(ctrl *gomock.Controller) xmempool.Mempool {
-				return xmempool.NewMockMempool(ctrl)
+				return mempoolmock.NewMempool(ctrl)
 			}
 			if tt.mempoolFunc != nil {
 				mempoolFunc = tt.mempoolFunc
 			}
 
 			appSenderFunc := func(ctrl *gomock.Controller) common.AppSender {
-				return common.NewMockSender(ctrl)
+				return commonmock.NewSender(ctrl)
 			}
 			if tt.appSenderFunc != nil {
 				appSenderFunc = tt.appSenderFunc
@@ -272,7 +275,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 				logging.NoLog{},
 				ids.EmptyNodeID,
 				ids.Empty,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 0, nil
 					},
@@ -281,7 +284,7 @@ func TestNetworkIssueTxFromRPCWithoutVerification(t *testing.T) {
 					},
 				},
 				parser,
-				executor.NewMockManager(ctrl), // Should never verify a tx
+				executormock.NewManager(ctrl), // Should never verify a tx
 				mempoolFunc(ctrl),
 				appSenderFunc(ctrl),
 				prometheus.NewRegistry(),

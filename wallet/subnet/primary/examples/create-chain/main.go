@@ -12,7 +12,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 
@@ -52,10 +51,10 @@ func main() {
 	// [uri] is hosting and registers [subnetID].
 	walletSyncStartTime := time.Now()
 	wallet, err := primary.MakeWallet(ctx, &primary.WalletConfig{
-		URI:              uri,
-		AVAXKeychain:     kc,
-		EthKeychain:      kc,
-		PChainTxsToFetch: set.Of(subnetID),
+		URI:          uri,
+		AVAXKeychain: kc,
+		EthKeychain:  kc,
+		SubnetIDs:    []ids.ID{subnetID},
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize wallet: %s\n", err)

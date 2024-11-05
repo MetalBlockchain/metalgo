@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
@@ -22,7 +23,7 @@ func BenchmarkLoadUser(b *testing.B) {
 		require := require.New(b)
 
 		env := setup(b, &envConfig{
-			fork: latest,
+			fork: upgradetest.Latest,
 			keystoreUsers: []*user{{
 				username: username,
 				password: password,
@@ -64,7 +65,7 @@ func BenchmarkLoadUser(b *testing.B) {
 func getAllUTXOsBenchmark(b *testing.B, utxoCount int, randSrc rand.Source) {
 	require := require.New(b)
 
-	env := setup(b, &envConfig{fork: latest})
+	env := setup(b, &envConfig{fork: upgradetest.Latest})
 	defer env.vm.ctx.Lock.Unlock()
 
 	addr := ids.GenerateTestShortID()

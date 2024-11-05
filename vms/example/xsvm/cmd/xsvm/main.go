@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/cmd/issue"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/cmd/run"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/cmd/version"
+	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/cmd/versionjson"
 )
 
 func init() {
@@ -28,6 +29,7 @@ func main() {
 		chain.Command(),
 		issue.Command(),
 		version.Command(),
+		versionjson.Command(),
 	)
 	ctx := context.Background()
 	if err := cmd.ExecuteContext(ctx); err != nil {

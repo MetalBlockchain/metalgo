@@ -19,14 +19,19 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmanmock"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/blockmock"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow/validators/validatorsmock"
 	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
-	"github.com/MetalBlockchain/metalgo/vms/proposervm/scheduler"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer/proposermock"
+	"github.com/MetalBlockchain/metalgo/vms/proposervm/scheduler/schedulermock"
 )
 
 // Assert that when the underlying VM implements ChainVMWithBuildBlockContext
@@ -46,33 +51,32 @@ func TestPostForkCommonComponents_buildChild(t *testing.T) {
 		blkID                  = ids.GenerateTestID()
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk := snowmanmock.NewBlock(ctrl)
 	innerBlk.EXPECT().ID().Return(blkID).AnyTimes()
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	builtBlk := snowmantest.NewMockBlock(ctrl)
+	builtBlk := snowmanmock.NewBlock(ctrl)
 	builtBlk.EXPECT().Bytes().Return([]byte{1, 2, 3}).AnyTimes()
 	builtBlk.EXPECT().ID().Return(ids.GenerateTestID()).AnyTimes()
 	builtBlk.EXPECT().Height().Return(pChainHeight).AnyTimes()
 
-	innerVM := block.NewMockChainVM(ctrl)
-	innerBlockBuilderVM := block.NewMockBuildBlockWithContextChainVM(ctrl)
+	innerVM := blockmock.NewChainVM(ctrl)
+	innerBlockBuilderVM := blockmock.NewBuildBlockWithContextChainVM(ctrl)
 	innerBlockBuilderVM.EXPECT().BuildBlockWithContext(gomock.Any(), &block.Context{
 		PChainHeight: pChainHeight - 1,
 	}).Return(builtBlk, nil).AnyTimes()
 
-	vdrState := validators.NewMockState(ctrl)
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposer.NewMockWindower(ctrl)
+	windower := proposermock.NewWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nodeID, nil).AnyTimes()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 	vm := &VM{
 		Config: Config{
-			ActivationTime:    time.Unix(0, 0),
-			DurangoTime:       time.Unix(0, 0),
+			Upgrades:          upgradetest.GetConfig(upgradetest.Latest),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
 			Registerer:        prometheus.NewRegistry(),
@@ -368,29 +372,28 @@ func TestPostDurangoBuildChildResetScheduler(t *testing.T) {
 		parentHeight     uint64 = 1234
 	)
 
-	innerBlk := snowmantest.NewMockBlock(ctrl)
+	innerBlk := snowmanmock.NewBlock(ctrl)
 	innerBlk.EXPECT().Height().Return(parentHeight + 1).AnyTimes()
 
-	vdrState := validators.NewMockState(ctrl)
+	vdrState := validatorsmock.NewState(ctrl)
 	vdrState.EXPECT().GetMinimumHeight(context.Background()).Return(pChainHeight, nil).AnyTimes()
 
-	windower := proposer.NewMockWindower(ctrl)
+	windower := proposermock.NewWindower(ctrl)
 	windower.EXPECT().ExpectedProposer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(selectedProposer, nil).AnyTimes() // return a proposer different from thisNode, to check whether scheduler is reset
 
-	scheduler := scheduler.NewMockScheduler(ctrl)
+	scheduler := schedulermock.NewScheduler(ctrl)
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(err)
 	vm := &VM{
 		Config: Config{
-			ActivationTime:    time.Unix(0, 0),
-			DurangoTime:       time.Unix(0, 0),
+			Upgrades:          upgradetest.GetConfig(upgradetest.Latest),
 			StakingCertLeaf:   &staking.Certificate{},
 			StakingLeafSigner: pk,
 			Registerer:        prometheus.NewRegistry(),
 		},
-		ChainVM: block.NewMockChainVM(ctrl),
+		ChainVM: blockmock.NewChainVM(ctrl),
 		ctx: &snow.Context{
 			NodeID:         thisNodeID,
 			ValidatorState: vdrState,

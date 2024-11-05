@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify/verifymock"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/vms/types"
@@ -456,7 +456,7 @@ func TestRemoveSubnetValidatorTxSerialization(t *testing.T) {
 				"locktime": 876543210,
 				"output": {
 					"addresses": [
-						"P-metal1g32kvaugnx4tk3z4vemc3xd2hdz92enhqaj6ex"
+						"P-avax1g32kvaugnx4tk3z4vemc3xd2hdz92enh972wxr"
 					],
 					"amount": 18446744073709551615,
 					"locktime": 0,
@@ -597,7 +597,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *RemoveSubnetValidatorTx {
 				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
+				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &RemoveSubnetValidatorTx{
 					// Set subnetID so we don't error on that check.
@@ -614,7 +614,7 @@ func TestRemoveSubnetValidatorTxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *RemoveSubnetValidatorTx {
 				// This SubnetAuth passes verification.
-				validSubnetAuth := verify.NewMockVerifiable(ctrl)
+				validSubnetAuth := verifymock.NewVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				return &RemoveSubnetValidatorTx{
 					// Set subnetID so we don't error on that check.

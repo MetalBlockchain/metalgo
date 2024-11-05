@@ -1,21 +1,24 @@
 // Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
-package atomic
+package atomic_test
 
 import (
 	"testing"
 
+	"github.com/MetalBlockchain/metalgo/chains/atomic/atomictest"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/ids"
+
+	. "github.com/MetalBlockchain/metalgo/chains/atomic"
 )
 
 func TestSharedMemory(t *testing.T) {
 	chainID0 := ids.GenerateTestID()
 	chainID1 := ids.GenerateTestID()
 
-	for _, test := range SharedMemoryTests {
+	for _, test := range atomictest.SharedMemoryTests {
 		baseDB := memdb.New()
 
 		memoryDB := prefixdb.New([]byte{0}, baseDB)

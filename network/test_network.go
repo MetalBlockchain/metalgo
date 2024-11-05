@@ -25,6 +25,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -216,6 +217,7 @@ func NewTestNetwork(
 				resourceTracker.DiskTracker(),
 			),
 		},
+		upgrade.InitiallyActiveTime,
 		msgCreator,
 		metrics,
 		log,

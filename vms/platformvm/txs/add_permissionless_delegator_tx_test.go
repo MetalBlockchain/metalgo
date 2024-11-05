@@ -18,7 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax/avaxmock"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx/fxmock"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/vms/types"
@@ -1583,7 +1584,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid rewards owner",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1609,10 +1610,10 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "invalid stake output",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 
-				stakeOut := avax.NewMockTransferableOut(ctrl)
+				stakeOut := avaxmock.NewTransferableOut(ctrl)
 				stakeOut.EXPECT().Verify().Return(errCustom)
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1636,7 +1637,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "multiple staked assets",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				return &AddPermissionlessDelegatorTx{
 					BaseTx: validBaseTx,
@@ -1670,7 +1671,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake not sorted",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1705,7 +1706,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "stake overflow",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1741,7 +1742,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "weight mismatch",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1776,7 +1777,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid subnet validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{
@@ -1811,7 +1812,7 @@ func TestAddPermissionlessDelegatorTxSyntacticVerify(t *testing.T) {
 		{
 			name: "valid primary network validator",
 			txFunc: func(ctrl *gomock.Controller) *AddPermissionlessDelegatorTx {
-				rewardsOwner := fx.NewMockOwner(ctrl)
+				rewardsOwner := fxmock.NewOwner(ctrl)
 				rewardsOwner.EXPECT().Verify().Return(nil).AnyTimes()
 				assetID := ids.GenerateTestID()
 				return &AddPermissionlessDelegatorTx{

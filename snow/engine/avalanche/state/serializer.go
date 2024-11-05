@@ -8,7 +8,6 @@ package state
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/database"
@@ -43,11 +42,10 @@ type Serializer struct {
 }
 
 type SerializerConfig struct {
-	ChainID     ids.ID
-	VM          vertex.DAGVM
-	DB          database.Database
-	Log         logging.Logger
-	CortinaTime time.Time
+	ChainID ids.ID
+	VM      vertex.DAGVM
+	DB      database.Database
+	Log     logging.Logger
 }
 
 func NewSerializer(config SerializerConfig) vertex.Manager {

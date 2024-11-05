@@ -15,7 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
@@ -97,14 +97,14 @@ func TestHealthCheckSubnet(t *testing.T) {
 			)
 			require.NoError(err)
 
-			bootstrapper := &common.BootstrapperTest{
-				EngineTest: common.EngineTest{
+			bootstrapper := &enginetest.Bootstrapper{
+				Engine: enginetest.Engine{
 					T: t,
 				},
 			}
 			bootstrapper.Default(false)
 
-			engine := &common.EngineTest{T: t}
+			engine := &enginetest.Engine{T: t}
 			engine.Default(false)
 			engine.ContextF = func() *snow.ConsensusContext {
 				return ctx
@@ -136,8 +136,8 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 				require.NoError(vdrs.AddStaker(ctx.SubnetID, vdrID, nil, ids.Empty, 100))
 			}
-
-			for index, nodeID := range vdrIDs.List() {
+			vdrIDsList := vdrIDs.List()
+			for index, nodeID := range vdrIDsList {
 				require.NoError(peerTracker.Connected(context.Background(), nodeID, nil))
 
 				details, err := handlerIntf.HealthCheck(context.Background())
@@ -152,13 +152,13 @@ func TestHealthCheckSubnet(t *testing.T) {
 
 				detailsMap, ok := details.(map[string]interface{})
 				require.True(ok)
-				networkingMap, ok := detailsMap["networking"]
-				require.True(ok)
-				networkingDetails, ok := networkingMap.(map[string]float64)
-				require.True(ok)
-				percentConnected, ok := networkingDetails["percentConnected"]
-				require.True(ok)
-				require.Equal(expectedPercentConnected, percentConnected)
+				require.Equal(
+					map[string]interface{}{
+						"percentConnected":       expectedPercentConnected,
+						"disconnectedValidators": set.Of(vdrIDsList[index+1:]...),
+					},
+					detailsMap["networking"],
+				)
 			}
 		})
 	}

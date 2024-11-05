@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
@@ -34,21 +35,27 @@ type StakingConfig struct {
 	RewardConfig reward.Config `json:"rewardConfig"`
 }
 
-type Params struct {
-	StakingConfig
-	fee.StaticConfig
+type TxFeeConfig struct {
+	CreateAssetTxFee uint64           `json:"createAssetTxFee"`
+	StaticFeeConfig  fee.StaticConfig `json:"staticFeeConfig"`
+	DynamicFeeConfig gas.Config       `json:"dynamicFeeConfig"`
 }
 
-func GetTxFeeConfig(networkID uint32) fee.StaticConfig {
+type Params struct {
+	StakingConfig
+	TxFeeConfig
+}
+
+func GetTxFeeConfig(networkID uint32) TxFeeConfig {
 	switch networkID {
 	case constants.MainnetID:
-		return MainnetParams.StaticConfig
+		return MainnetParams.TxFeeConfig
 	case constants.TahoeID:
-		return TahoeParams.StaticConfig
+		return TahoeParams.TxFeeConfig
 	case constants.LocalID:
-		return LocalParams.StaticConfig
+		return LocalParams.TxFeeConfig
 	default:
-		return LocalParams.StaticConfig
+		return LocalParams.TxFeeConfig
 	}
 }
 

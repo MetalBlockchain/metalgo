@@ -16,6 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex/vertextest"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
@@ -23,7 +24,7 @@ import (
 var errUnknownTx = errors.New("unknown tx")
 
 func newTestSerializer(t *testing.T, parse func(context.Context, []byte) (snowstorm.Tx, error)) *Serializer {
-	vm := vertex.TestVM{}
+	vm := vertextest.VM{}
 	vm.T = t
 	vm.Default(true)
 	vm.ParseTxF = parse

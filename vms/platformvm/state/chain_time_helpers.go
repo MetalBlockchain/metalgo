@@ -9,6 +9,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
@@ -75,7 +76,31 @@ func GetNextStakerChangeTime(state Chain) (time.Time, error) {
 // depending on the active upgrade.
 //
 // PickFeeCalculator does not modify [state].
-func PickFeeCalculator(cfg *config.Config, state Chain) (fee.Calculator, error) {
+func PickFeeCalculator(cfg *config.Config, state Chain) fee.Calculator {
 	timestamp := state.GetTimestamp()
-	return fee.NewStaticCalculator(cfg.StaticFeeConfig, cfg.UpgradeConfig, timestamp), nil
+	if !cfg.UpgradeConfig.IsEtnaActivated(timestamp) {
+		return NewStaticFeeCalculator(cfg, timestamp)
+	}
+
+	feeState := state.GetFeeState()
+	gasPrice := gas.CalculatePrice(
+		cfg.DynamicFeeConfig.MinPrice,
+		feeState.Excess,
+		cfg.DynamicFeeConfig.ExcessConversionConstant,
+	)
+	return fee.NewDynamicCalculator(
+		cfg.DynamicFeeConfig.Weights,
+		gasPrice,
+	)
+}
+
+// NewStaticFeeCalculator creates a static fee calculator, with the config set
+// to either the pre-AP3 or post-AP3 config.
+func NewStaticFeeCalculator(cfg *config.Config, timestamp time.Time) fee.Calculator {
+	config := cfg.StaticFeeConfig
+	if !cfg.UpgradeConfig.IsApricotPhase3Activated(timestamp) {
+		config.CreateSubnetTxFee = cfg.CreateAssetTxFee
+		config.CreateBlockchainTxFee = cfg.CreateAssetTxFee
+	}
+	return fee.NewStaticCalculator(config)
 }

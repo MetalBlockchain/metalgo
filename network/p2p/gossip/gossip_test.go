@@ -17,8 +17,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/proto/pb/sdk"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/snow/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -104,7 +105,7 @@ func TestGossiperGossip(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			responseSender := &common.FakeSender{
+			responseSender := &enginetest.SenderStub{
 				SentAppResponse: make(chan []byte, 1),
 			}
 			responseNetwork, err := p2p.NewNetwork(logging.NoLog{}, responseSender, prometheus.NewRegistry(), "")
@@ -133,7 +134,7 @@ func TestGossiperGossip(t *testing.T) {
 			require.NoError(err)
 			require.NoError(responseNetwork.AddHandler(0x0, handler))
 
-			requestSender := &common.FakeSender{
+			requestSender := &enginetest.SenderStub{
 				SentAppRequest: make(chan []byte, 1),
 			}
 
@@ -509,7 +510,7 @@ func TestPushGossiper(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			sender := &common.FakeSender{
+			sender := &enginetest.SenderStub{
 				SentAppGossip: make(chan []byte, 2),
 			}
 			network, err := p2p.NewNetwork(
@@ -524,7 +525,7 @@ func TestPushGossiper(t *testing.T) {
 				&p2p.Peers{},
 				logging.NoLog{},
 				constants.PrimaryNetworkID,
-				&validators.TestState{
+				&validatorstest.State{
 					GetCurrentHeightF: func(context.Context) (uint64, error) {
 						return 1, nil
 					},

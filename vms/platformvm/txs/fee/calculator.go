@@ -3,9 +3,16 @@
 
 package fee
 
-import "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+import (
+	"errors"
 
-// Calculator is the interfaces that any fee Calculator must implement
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+)
+
+var ErrUnsupportedTx = errors.New("unsupported transaction type")
+
+// Calculator calculates the minimum required fee, in nAVAX, that an unsigned
+// transaction must pay for valid inclusion into a block.
 type Calculator interface {
 	CalculateFee(tx txs.UnsignedTx) (uint64, error)
 }

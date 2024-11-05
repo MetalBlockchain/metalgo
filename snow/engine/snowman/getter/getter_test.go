@@ -17,7 +17,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman/snowmantest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/blockmock"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/blocktest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -25,19 +27,19 @@ import (
 var errUnknownBlock = errors.New("unknown block")
 
 type StateSyncEnabledMock struct {
-	*block.TestVM
-	*block.MockStateSyncableVM
+	*blocktest.VM
+	*blockmock.StateSyncableVM
 }
 
-func newTest(t *testing.T) (common.AllGetsServer, StateSyncEnabledMock, *common.SenderTest) {
+func newTest(t *testing.T) (common.AllGetsServer, StateSyncEnabledMock, *enginetest.Sender) {
 	ctrl := gomock.NewController(t)
 
 	vm := StateSyncEnabledMock{
-		TestVM:              &block.TestVM{},
-		MockStateSyncableVM: block.NewMockStateSyncableVM(ctrl),
+		VM:              &blocktest.VM{},
+		StateSyncableVM: blockmock.NewStateSyncableVM(ctrl),
 	}
 
-	sender := &common.SenderTest{
+	sender := &enginetest.Sender{
 		T: t,
 	}
 	sender.Default(true)

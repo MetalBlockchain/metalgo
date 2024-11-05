@@ -23,9 +23,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap/queue"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/getter"
-	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex/vertextest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
@@ -56,7 +56,7 @@ func (t *testTx) Accept(ctx context.Context) error {
 	return nil
 }
 
-func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.TestManager, *vertex.TestVM) {
+func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *vertextest.Manager, *vertextest.VM) {
 	require := require.New(t)
 
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
@@ -64,9 +64,9 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *common.SenderTest, *vertex.Te
 
 	vdrs := validators.NewManager()
 	db := memdb.New()
-	sender := &common.SenderTest{T: t}
-	manager := vertex.NewTestManager(t)
-	vm := &vertex.TestVM{}
+	sender := &enginetest.Sender{T: t}
+	manager := vertextest.NewManager(t)
+	vm := &vertextest.VM{}
 	vm.T = t
 
 	sender.Default(true)
