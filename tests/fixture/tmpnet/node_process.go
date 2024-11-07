@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,42 +18,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/MetalBlockchain/metalgo/api/health"
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/node"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
 )
 
 const (
-	AvalancheGoPathEnvName = "METALGO_PATH"
+	AvalancheGoPathEnvName      = "METALGO_PATH"
+	AvalancheGoPluginDirEnvName = "METALGO_PLUGIN_DIR"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )
 
-var errNodeAlreadyRunning = errors.New("failed to start node: node is already running")
-
-func checkNodeHealth(ctx context.Context, uri string) (bool, error) {
-	// Check that the node is reporting healthy
-	health, err := health.NewClient(uri).Health(ctx, nil)
-	if err == nil {
-		return health.Healthy, nil
-	}
-
-	switch t := err.(type) {
-	case *net.OpError:
-		if t.Op == "read" {
-			// Connection refused - potentially recoverable
-			return false, nil
-		}
-	case syscall.Errno:
-		if t == syscall.ECONNREFUSED {
-			// Connection refused - potentially recoverable
-			return false, nil
-		}
-	}
-	// Assume all other errors are not recoverable
-	return false, fmt.Errorf("failed to query node health: %w", err)
-}
+var (
+	errNodeAlreadyRunning = errors.New("failed to start node: node is already running")
+	errNotRunning         = errors.New("node is not running")
+)
 
 // Defines local-specific node configuration. Supports setting default
 // and node-specific values.
@@ -65,7 +44,7 @@ type NodeProcess struct {
 	pid int
 }
 
-func (p *NodeProcess) setProcessContext(processContext node.NodeProcessContext) {
+func (p *NodeProcess) setProcessContext(processContext node.ProcessContext) {
 	p.pid = processContext.PID
 	p.node.URI = processContext.URI
 	p.node.StakingAddress = processContext.StakingAddress
@@ -73,17 +52,15 @@ func (p *NodeProcess) setProcessContext(processContext node.NodeProcessContext) 
 
 func (p *NodeProcess) readState() error {
 	path := p.getProcessContextPath()
-	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		// The absence of the process context file indicates the node is not running
-		p.setProcessContext(node.NodeProcessContext{})
-		return nil
-	}
-
 	bytes, err := os.ReadFile(path)
-	if err != nil {
+	if errors.Is(err, fs.ErrNotExist) {
+		// The absence of the process context file indicates the node is not running
+		p.setProcessContext(node.ProcessContext{})
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("failed to read node process context: %w", err)
 	}
-	processContext := node.NodeProcessContext{}
+	processContext := node.ProcessContext{}
 	if err := json.Unmarshal(bytes, &processContext); err != nil {
 		return fmt.Errorf("failed to unmarshal node process context: %w", err)
 	}
@@ -194,10 +171,14 @@ func (p *NodeProcess) IsHealthy(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("failed to determine process status: %w", err)
 	}
 	if proc == nil {
-		return false, ErrNotRunning
+		return false, errNotRunning
 	}
 
-	return checkNodeHealth(ctx, p.node.URI)
+	healthReply, err := CheckNodeHealth(ctx, p.node.URI)
+	if err != nil {
+		return false, err
+	}
+	return healthReply.Healthy, nil
 }
 
 func (p *NodeProcess) getProcessContextPath() string {

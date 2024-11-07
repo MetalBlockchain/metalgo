@@ -18,7 +18,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/iterator/iteratormock"
+	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
@@ -59,6 +59,7 @@ func TestApricotStandardBlockTimeVerification(t *testing.T) {
 	chainTime := env.clk.Time().Truncate(time.Second)
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 	onParentAccept.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
+	onParentAccept.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
 
 	// wrong height
 	apricotChildBlk, err := block.NewApricotStandardBlock(
@@ -117,25 +118,23 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	nextStakerTime := chainTime.Add(executor.SyncBound).Add(-1 * time.Second)
 
 	// store just once current staker to mark next staker time.
-	currentStakerIt := iteratormock.NewIterator[*state.Staker](ctrl)
-	currentStakerIt.EXPECT().Next().Return(true).AnyTimes()
-	currentStakerIt.EXPECT().Value().Return(
-		&state.Staker{
-			NextTime: nextStakerTime,
-			Priority: txs.PrimaryNetworkValidatorCurrentPriority,
-		},
-	).AnyTimes()
-	currentStakerIt.EXPECT().Release().Return().AnyTimes()
-	onParentAccept.EXPECT().GetCurrentStakerIterator().Return(currentStakerIt, nil).AnyTimes()
+	onParentAccept.EXPECT().GetCurrentStakerIterator().DoAndReturn(func() (iterator.Iterator[*state.Staker], error) {
+		return iterator.FromSlice(
+			&state.Staker{
+				NextTime: nextStakerTime,
+				Priority: txs.PrimaryNetworkValidatorCurrentPriority,
+			},
+		), nil
+	}).AnyTimes()
 
 	// no pending stakers
-	pendingIt := iteratormock.NewIterator[*state.Staker](ctrl)
-	pendingIt.EXPECT().Next().Return(false).AnyTimes()
-	pendingIt.EXPECT().Release().Return().AnyTimes()
-	onParentAccept.EXPECT().GetPendingStakerIterator().Return(pendingIt, nil).AnyTimes()
+	onParentAccept.EXPECT().GetPendingStakerIterator().Return(iterator.Empty[*state.Staker]{}, nil).AnyTimes()
+	// no expiries
+	onParentAccept.EXPECT().GetExpiryIterator().Return(iterator.Empty[state.ExpiryEntry]{}, nil).AnyTimes()
 
 	onParentAccept.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
 	onParentAccept.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
+	onParentAccept.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
 
 	txID := ids.GenerateTestID()
 	utxo := &avax.UTXO{
@@ -210,7 +209,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
 		err = block.Verify(context.Background())
-		require.ErrorIs(err, errChildBlockEarlierThanParent)
+		require.ErrorIs(err, executor.ErrChildBlockEarlierThanParent)
 	}
 
 	{

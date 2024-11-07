@@ -46,12 +46,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/txstest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/wallet"
 
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
-	pvalidators "github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
 )
 
 const (
@@ -153,7 +153,7 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 		metrics,
 		res.state,
 		&res.backend,
-		pvalidators.TestManager,
+		validatorstest.Manager,
 	)
 
 	txVerifier := network.NewLockedTxVerifier(&res.ctx.Lock, res.blkManager)
@@ -187,10 +187,10 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment { //nolint:un
 
 		res.Builder.ShutdownBlockTimer()
 
-		if res.isBootstrapped.Get() {
+		if res.uptimes.StartedTracking() {
 			validatorIDs := res.config.Validators.GetValidatorIDs(constants.PrimaryNetworkID)
 
-			require.NoError(res.uptimes.StopTracking(validatorIDs, constants.PrimaryNetworkID))
+			require.NoError(res.uptimes.StopTracking(validatorIDs))
 
 			require.NoError(res.state.Commit())
 		}

@@ -8,16 +8,19 @@ import (
 	"crypto/rand"
 	"log"
 	"math/big"
-	"os"
 	"time"
 
 	"github.com/antithesishq/antithesis-sdk-go/assert"
 	"github.com/antithesishq/antithesis-sdk-go/lifecycle"
+	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/tests/antithesis"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -31,6 +34,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 
+	timerpkg "github.com/MetalBlockchain/metalgo/utils/timer"
 	xtxs "github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	ptxs "github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	xbuilder "github.com/MetalBlockchain/metalgo/wallet/chain/x/builder"
@@ -39,15 +43,17 @@ import (
 const NumKeys = 5
 
 func main() {
-	c, err := antithesis.NewConfig(os.Args)
-	if err != nil {
-		log.Fatalf("invalid config: %s", err)
-	}
+	tc := tests.NewTestContext()
+	defer tc.Cleanup()
+	require := require.New(tc)
 
-	ctx := context.Background()
-	if err := antithesis.AwaitHealthyNodes(ctx, c.URIs); err != nil {
-		log.Fatalf("failed to await healthy nodes: %s", err)
-	}
+	c := antithesis.NewConfig(
+		tc,
+		&tmpnet.Network{
+			Owner: "antithesis-avalanchego",
+		},
+	)
+	ctx := tests.DefaultNotifyContext(c.Duration, tc.DeferCleanup)
 
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 	walletSyncStartTime := time.Now()
@@ -56,9 +62,7 @@ func main() {
 		AVAXKeychain: kc,
 		EthKeychain:  kc,
 	})
-	if err != nil {
-		log.Fatalf("failed to initialize wallet: %s", err)
-	}
+	require.NoError(err, "failed to initialize wallet")
 	log.Printf("synced wallet in %s", time.Since(walletSyncStartTime))
 
 	genesisWorkload := &workload{
@@ -79,9 +83,7 @@ func main() {
 	)
 	for i := 1; i < NumKeys; i++ {
 		key, err := secp256k1.NewPrivateKey()
-		if err != nil {
-			log.Fatalf("failed to generate key: %s", err)
-		}
+		require.NoError(err, "failed to generate key")
 
 		var (
 			addr          = key.Address()
@@ -101,11 +103,10 @@ func main() {
 				},
 			},
 		}})
-		if err != nil {
-			log.Fatalf("failed to issue initial funding X-chain baseTx: %s", err)
-		}
+		require.NoError(err, "failed to issue initial funding X-chain baseTx")
 		log.Printf("issued initial funding X-chain baseTx %s in %s", baseTx.ID(), time.Since(baseStartTime))
 
+		// TODO(marun) Enable cleanup of these contexts
 		genesisWorkload.confirmXChainTx(ctx, baseTx)
 
 		uri := c.URIs[i%len(c.URIs)]
@@ -116,9 +117,7 @@ func main() {
 			AVAXKeychain: kc,
 			EthKeychain:  kc,
 		})
-		if err != nil {
-			log.Fatalf("failed to initialize wallet: %s", err)
-		}
+		require.NoError(err, "failed to initialize wallet")
 		log.Printf("synced wallet in %s", time.Since(walletSyncStartTime))
 
 		workloads[i] = &workload{
@@ -148,31 +147,13 @@ type workload struct {
 }
 
 func (w *workload) run(ctx context.Context) {
-	timer := time.NewTimer(0)
-	if !timer.Stop() {
-		<-timer.C
-	}
+	timer := timerpkg.StoppedTimer()
 
-	var (
-		xWallet  = w.wallet.X()
-		xBuilder = xWallet.Builder()
-		pWallet  = w.wallet.P()
-		pBuilder = pWallet.Builder()
-	)
-	xBalances, err := xBuilder.GetFTBalance()
-	if err != nil {
-		log.Fatalf("failed to fetch X-chain balances: %s", err)
-	}
-	pBalances, err := pBuilder.GetBalance()
-	if err != nil {
-		log.Fatalf("failed to fetch P-chain balances: %s", err)
-	}
-	var (
-		xContext    = xBuilder.Context()
-		avaxAssetID = xContext.AVAXAssetID
-		xAVAX       = xBalances[avaxAssetID]
-		pAVAX       = pBalances[avaxAssetID]
-	)
+	tc := tests.NewTestContext()
+	defer tc.Cleanup()
+	require := require.New(tc)
+
+	xAVAX, pAVAX := e2e.GetWalletBalances(tc, w.wallet)
 	log.Printf("wallet starting with %d X-chain nAVAX and %d P-chain nAVAX", xAVAX, pAVAX)
 	assert.Reachable("wallet starting", map[string]any{
 		"worker":   w.id,
@@ -182,9 +163,7 @@ func (w *workload) run(ctx context.Context) {
 
 	for {
 		val, err := rand.Int(rand.Reader, big.NewInt(5))
-		if err != nil {
-			log.Fatalf("failed to read randomness: %s", err)
-		}
+		require.NoError(err, "failed to read randomness")
 
 		flowID := val.Int64()
 		log.Printf("wallet %d executing flow %d", w.id, flowID)
@@ -202,9 +181,7 @@ func (w *workload) run(ctx context.Context) {
 		}
 
 		val, err = rand.Int(rand.Reader, big.NewInt(int64(time.Second)))
-		if err != nil {
-			log.Fatalf("failed to read randomness: %s", err)
-		}
+		require.NoError(err, "failed to read randomness")
 
 		timer.Reset(time.Duration(val.Int64()))
 		select {
@@ -412,7 +389,7 @@ func (w *workload) issueXToPTransfer(ctx context.Context) {
 		xBaseTxFee    = xContext.BaseTxFee
 		pBuilder      = pWallet.Builder()
 		pContext      = pBuilder.Context()
-		pBaseTxFee    = pContext.BaseTxFee
+		pBaseTxFee    = pContext.StaticFeeConfig.TxFee
 		txFees        = xBaseTxFee + pBaseTxFee
 		neededBalance = txFees + units.Avax
 	)
@@ -484,7 +461,7 @@ func (w *workload) issuePToXTransfer(ctx context.Context) {
 		pContext      = pBuilder.Context()
 		avaxAssetID   = pContext.AVAXAssetID
 		avaxBalance   = balances[avaxAssetID]
-		pBaseTxFee    = pContext.BaseTxFee
+		pBaseTxFee    = pContext.StaticFeeConfig.TxFee
 		xBaseTxFee    = xContext.BaseTxFee
 		txFees        = pBaseTxFee + xBaseTxFee
 		neededBalance = txFees + units.Schmeckle

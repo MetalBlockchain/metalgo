@@ -15,7 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/validators/validatorstest"
-	"github.com/MetalBlockchain/metalgo/upgrade"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -84,7 +84,7 @@ func Context(tb testing.TB, chainID ids.ID) *snow.Context {
 		ChainID:         chainID,
 		NodeID:          ids.EmptyNodeID,
 		PublicKey:       publicKey,
-		NetworkUpgrades: upgrade.Default,
+		NetworkUpgrades: upgradetest.GetConfig(upgradetest.Latest),
 
 		XChainID:    XChainID,
 		CChainID:    CChainID,

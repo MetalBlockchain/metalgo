@@ -16,7 +16,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
+
+	txfee "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
+	validatorfee "github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
 )
 
 // Struct collecting all foundational parameters of PlatformVM
@@ -32,12 +34,15 @@ type Config struct {
 	//            calling VM.Initialize.
 	Validators validators.Manager
 
-	// Static fees are active before the E-upgrade
+	// Static fees are active before Etna
 	CreateAssetTxFee uint64 // Override for CreateSubnet and CreateChain before AP3
-	StaticFeeConfig  fee.StaticConfig
+	StaticFeeConfig  txfee.StaticConfig
 
-	// Dynamic fees are active after the E-upgrade
+	// Dynamic fees are active after Etna
 	DynamicFeeConfig gas.Config
+
+	// ACP-77 validator fees are active after Etna
+	ValidatorFeeConfig validatorfee.Config
 
 	// Provides access to the uptime manager as a thread safe data structure
 	UptimeLockedCalculator uptime.LockedCalculator

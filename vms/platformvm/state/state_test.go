@@ -88,18 +88,25 @@ func TestStateSyncGenesis(t *testing.T) {
 
 	delegatorIterator, err := state.GetCurrentDelegatorIterator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.NoError(err)
-	assertIteratorsEqual(t, iterator.Empty[*Staker]{}, delegatorIterator)
+	require.Empty(
+		iterator.ToSlice(delegatorIterator),
+	)
 
 	stakerIterator, err := state.GetCurrentStakerIterator()
 	require.NoError(err)
-	assertIteratorsEqual(t, iterator.FromSlice(staker), stakerIterator)
+	require.Equal(
+		[]*Staker{staker},
+		iterator.ToSlice(stakerIterator),
+	)
 
 	_, err = state.GetPendingValidator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.ErrorIs(err, database.ErrNotFound)
 
 	delegatorIterator, err = state.GetPendingDelegatorIterator(constants.PrimaryNetworkID, defaultValidatorNodeID)
 	require.NoError(err)
-	assertIteratorsEqual(t, iterator.Empty[*Staker]{}, delegatorIterator)
+	require.Empty(
+		iterator.ToSlice(delegatorIterator),
+	)
 }
 
 // Whenever we store a staker, a whole bunch a data structures are updated
@@ -171,10 +178,15 @@ func TestPersistStakers(t *testing.T) {
 				)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID, staker.SubnetID)
-				r.NoError(err)
-				r.Equal(upDuration, time.Duration(0))
-				r.Equal(lastUpdated, staker.StartTime)
+				upDuration, lastUpdated, err := s.GetUptime(staker.NodeID)
+				if staker.SubnetID != constants.PrimaryNetworkID {
+					// only primary network validators have uptimes
+					r.ErrorIs(err, database.ErrNotFound)
+				} else {
+					r.NoError(err)
+					r.Equal(upDuration, time.Duration(0))
+					r.Equal(lastUpdated, staker.StartTime)
+				}
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
 				weightDiffBytes, err := s.validatorWeightDiffsDB.Get(marshalDiffKey(staker.SubnetID, height, staker.NodeID))
@@ -325,7 +337,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// pending validators uptime is not tracked
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -447,7 +459,7 @@ func TestPersistStakers(t *testing.T) {
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
 				// uptimes of delete validators are dropped
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -600,7 +612,7 @@ func TestPersistStakers(t *testing.T) {
 				r.NotContains(valsMap, staker.NodeID)
 			},
 			checkValidatorUptimes: func(r *require.Assertions, s *state, staker *Staker) {
-				_, _, err := s.GetUptime(staker.NodeID, staker.SubnetID)
+				_, _, err := s.GetUptime(staker.NodeID)
 				r.ErrorIs(err, database.ErrNotFound)
 			},
 			checkDiffs: func(r *require.Assertions, s *state, staker *Staker, height uint64) {
@@ -1468,6 +1480,22 @@ func TestStateFeeStateCommitAndLoad(t *testing.T) {
 	require.Equal(expectedFeeState, s.GetFeeState())
 }
 
+// Verify that committing the state writes the accrued fees to the database and
+// that loading the state fetches the accrued fees from the database.
+func TestStateAccruedFeesCommitAndLoad(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	s := newTestState(t, db)
+
+	expectedAccruedFees := uint64(1)
+	s.SetAccruedFees(expectedAccruedFees)
+	require.NoError(s.Commit())
+
+	s = newTestState(t, db)
+	require.Equal(expectedAccruedFees, s.GetAccruedFees())
+}
+
 func TestMarkAndIsInitialized(t *testing.T) {
 	require := require.New(t)
 
@@ -1553,4 +1581,36 @@ func TestGetFeeStateErrors(t *testing.T) {
 			require.ErrorIs(err, test.expectedErr)
 		})
 	}
+}
+
+// Verify that committing the state writes the expiry changes to the database
+// and that loading the state fetches the expiry from the database.
+func TestStateExpiryCommitAndLoad(t *testing.T) {
+	require := require.New(t)
+
+	db := memdb.New()
+	s := newTestState(t, db)
+
+	// Populate an entry.
+	expiry := ExpiryEntry{
+		Timestamp: 1,
+	}
+	s.PutExpiry(expiry)
+	require.NoError(s.Commit())
+
+	// Verify that the entry was written and loaded correctly.
+	s = newTestState(t, db)
+	has, err := s.HasExpiry(expiry)
+	require.NoError(err)
+	require.True(has)
+
+	// Delete an entry.
+	s.DeleteExpiry(expiry)
+	require.NoError(s.Commit())
+
+	// Verify that the entry was deleted correctly.
+	s = newTestState(t, db)
+	has, err = s.HasExpiry(expiry)
+	require.NoError(err)
+	require.False(has)
 }

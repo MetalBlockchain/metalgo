@@ -23,7 +23,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
@@ -62,7 +62,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			state: s,
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	require.NoError(acceptor.ApricotProposalBlock(blk))
@@ -97,7 +97,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotAtomicBlock(
@@ -177,7 +177,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewBanffStandardBlock(
@@ -266,7 +266,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			},
 		},
 		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
+		validators:   validatorstest.Manager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 
@@ -376,7 +376,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			},
 		},
 		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
+		validators:   validatorstest.Manager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 
