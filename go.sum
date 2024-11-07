@@ -60,6 +60,8 @@ github.com/MetalBlockchain/coreth v0.13.8-rc.4 h1:7h5gcHA2NX6gjYAf8YuEcH4W5kVfUi
 github.com/MetalBlockchain/coreth v0.13.8-rc.4/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
 github.com/MetalBlockchain/coreth v0.13.8-rc.5 h1:BC8MtlpvLfwOiFPslTepvQZltvvIClAyswfWgz4CyZ8=
 github.com/MetalBlockchain/coreth v0.13.8-rc.5/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
+github.com/MetalBlockchain/coreth v0.13.8-rc.6 h1:yP5h6NecYAthqdFlRfTj/jzYIGqKwSpn2yPx5Ufs87c=
+github.com/MetalBlockchain/coreth v0.13.8-rc.6/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
