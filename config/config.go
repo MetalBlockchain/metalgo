@@ -765,7 +765,7 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 }
 
 func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
-	if networkID != constants.MainnetID && networkID != constants.FujiID {
+	if networkID != constants.MainnetID && networkID != constants.TahoeID {
 		return genesis.TxFeeConfig{
 			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
 			StaticFeeConfig: fee.StaticConfig{
@@ -802,7 +802,7 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	}
 
 	switch networkID {
-	case constants.MainnetID, constants.TestnetID, constants.LocalID:
+	case constants.MainnetID, constants.TahoeID, constants.LocalID:
 		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
 			constants.NetworkName(networkID),
 		)

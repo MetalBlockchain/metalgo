@@ -52,6 +52,14 @@ github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/MetalBlockchain/coreth v0.13.8-rc.1 h1:byiWoN23XOUAYBzwnthQtDvL/VHbgu0IjMKYN48AgE0=
 github.com/MetalBlockchain/coreth v0.13.8-rc.1/go.mod h1:LhfjxZlS+WAhYUMig/gEpUohLiLp1lyfqK1Bf97mrXY=
+github.com/MetalBlockchain/coreth v0.13.8-rc.2 h1:GXRq5VJoS1CHHtMdEGpfrehztuqHe4+02Id3bR87FKg=
+github.com/MetalBlockchain/coreth v0.13.8-rc.2/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
+github.com/MetalBlockchain/coreth v0.13.8-rc.3 h1:fDwlTbiBs2tlChvdlemF/bg5K9uUI5ThVmWbvKlzy9w=
+github.com/MetalBlockchain/coreth v0.13.8-rc.3/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
+github.com/MetalBlockchain/coreth v0.13.8-rc.4 h1:7h5gcHA2NX6gjYAf8YuEcH4W5kVfUi8pdDcRGeDGcbQ=
+github.com/MetalBlockchain/coreth v0.13.8-rc.4/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
+github.com/MetalBlockchain/coreth v0.13.8-rc.5 h1:BC8MtlpvLfwOiFPslTepvQZltvvIClAyswfWgz4CyZ8=
+github.com/MetalBlockchain/coreth v0.13.8-rc.5/go.mod h1:9wAi8tRFlonmbPUexHY1z3bsSUDqHEHTpd7GoNnTqxs=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
