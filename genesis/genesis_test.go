@@ -358,7 +358,7 @@ func TestGenesis(t *testing.T) {
 		},
 		{
 			config:     &unmodifiedLocalConfig,
-			expectedID: "2eTomovrqWq9d5AtLqfewx7tan5pwYhzYUPkQuhEJoMjkW2kFs",
+			expectedID: "cJ5P2MJoE87LFevQKmWVLbE88F7oSDNWbf6ZDWN9PrzeHP8te",
 		},
 	}
 	for _, test := range tests {
@@ -418,7 +418,7 @@ func TestVMGenesis(t *testing.T) {
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2CA6j5zYzasynPsFeNoqWkmTCt3VScMvXUZHbfDJ8k3oGzAPtU",
+					expectedID: "2owdGqyG6FFzTHy5qhenDXQcEghvr571KZE3gSfRJERSJinuwC",
 				},
 			},
 		},
@@ -499,7 +499,7 @@ func TestCChainGenesisTimestamp(t *testing.T) {
 			expectedGenesisTime: 0,
 		},
 		{
-			networkID:           constants.FujiID,
+			networkID:           constants.TahoeID,
 			expectedGenesisTime: 0,
 		},
 		{
