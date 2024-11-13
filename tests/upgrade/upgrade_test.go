@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/onsi/ginkgo/v2"
-	"github.com/stretchr/testify/require"
-
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpgrade(t *testing.T) {
@@ -44,7 +43,7 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 	require := require.New(tc)
 
 	ginkgo.It("can upgrade versions", func() {
-		network := tmpnet.NewDefaultNetwork("avalanchego-upgrade")
+		network := tmpnet.NewDefaultNetwork("metalgo-upgrade")
 
 		// Get the default genesis so we can modify it
 		genesis, err := network.DefaultGenesis()
