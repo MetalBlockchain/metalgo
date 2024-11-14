@@ -58,7 +58,7 @@ func TestServiceIssueTx(t *testing.T) {
 	err := service.IssueTx(nil, txArgs, txReply)
 	require.ErrorIs(err, codec.ErrCantUnpackVersion)
 
-	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "AVAX")
+	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "METAL")
 	txArgs.Tx, err = formatting.Encode(formatting.Hex, tx.Bytes())
 	require.NoError(err)
 	txArgs.Encoding = formatting.Hex
@@ -2299,7 +2299,7 @@ func TestGetAssetDescription(t *testing.T) {
 		AssetID: avaxAssetID.String(),
 	}, &reply))
 
-	require.Equal("AVAX", reply.Name)
+	require.Equal("METAL", reply.Name)
 	require.Equal("SYMB", reply.Symbol)
 }
 

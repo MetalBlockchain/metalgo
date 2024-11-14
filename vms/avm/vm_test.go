@@ -119,7 +119,7 @@ func TestIssueTx(t *testing.T) {
 	})
 	env.vm.ctx.Lock.Unlock()
 
-	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "AVAX")
+	tx := newTx(t, env.genesisBytes, env.vm.ctx.ChainID, env.vm.parser, "METAL")
 	issueAndAccept(require, env.vm, env.issuer, tx)
 }
 
@@ -458,7 +458,7 @@ func TestIssueImportTx(t *testing.T) {
 
 	peerSharedMemory := env.sharedMemory.NewSharedMemory(constants.PlatformChainID)
 
-	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "AVAX")
+	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "METAL")
 	avaxID := genesisTx.ID()
 
 	var (
@@ -535,7 +535,7 @@ func TestForceAcceptImportTx(t *testing.T) {
 	})
 	defer env.vm.ctx.Lock.Unlock()
 
-	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "AVAX")
+	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "METAL")
 	avaxID := genesisTx.ID()
 
 	key := keys[0]
@@ -607,7 +607,7 @@ func TestIssueExportTx(t *testing.T) {
 	env := setup(t, &envConfig{fork: upgradetest.Durango})
 	defer env.vm.ctx.Lock.Unlock()
 
-	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "AVAX")
+	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "METAL")
 
 	var (
 		avaxID     = genesisTx.ID()
@@ -667,7 +667,7 @@ func TestClearForceAcceptedExportTx(t *testing.T) {
 	})
 	defer env.vm.ctx.Lock.Unlock()
 
-	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "AVAX")
+	genesisTx := getCreateTxFromGenesisTest(t, env.genesisBytes, "METAL")
 
 	var (
 		avaxID     = genesisTx.ID()

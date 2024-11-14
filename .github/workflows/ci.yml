@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - name: Build AvalancheGo Binary
+      - name: Build MetalGo Binary
         shell: bash
         run: ./scripts/build.sh -r
       - name: Run e2e tests
