@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool/mempoolmock"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
@@ -119,7 +119,7 @@ func TestRejectBlock(t *testing.T) {
 			blk, err := tt.newBlockFunc()
 			require.NoError(err)
 
-			mempool := mempool.NewMockMempool(ctrl)
+			mempool := mempoolmock.NewMempool(ctrl)
 			state := state.NewMockState(ctrl)
 			blkIDToState := map[ids.ID]*blockState{
 				blk.Parent(): nil,

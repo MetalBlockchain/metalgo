@@ -7,18 +7,21 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/netip"
 
 	"github.com/gorilla/rpc/v2"
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/chains"
+	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/peer"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -37,7 +40,7 @@ type Info struct {
 	Parameters
 	log          logging.Logger
 	validators   validators.Manager
-	myIP         ips.DynamicIPPort
+	myIP         *utils.Atomic[netip.AddrPort]
 	networking   network.Network
 	chainManager chains.Manager
 	vmManager    vms.Manager
@@ -45,20 +48,13 @@ type Info struct {
 }
 
 type Parameters struct {
-	Version                       *version.Application
-	NodeID                        ids.NodeID
-	NodePOP                       *signer.ProofOfPossession
-	NetworkID                     uint32
-	TxFee                         uint64
-	CreateAssetTxFee              uint64
-	CreateSubnetTxFee             uint64
-	TransformSubnetTxFee          uint64
-	CreateBlockchainTxFee         uint64
-	AddPrimaryNetworkValidatorFee uint64
-	AddPrimaryNetworkDelegatorFee uint64
-	AddSubnetValidatorFee         uint64
-	AddSubnetDelegatorFee         uint64
-	VMManager                     vms.Manager
+	Version     *version.Application
+	NodeID      ids.NodeID
+	NodePOP     *signer.ProofOfPossession
+	NetworkID   uint32
+	TxFeeConfig genesis.TxFeeConfig
+	VMManager   vms.Manager
+	Upgrades    upgrade.Config
 }
 
 func NewService(
@@ -67,7 +63,7 @@ func NewService(
 	validators validators.Manager,
 	chainManager chains.Manager,
 	vmManager vms.Manager,
-	myIP ips.DynamicIPPort,
+	myIP *utils.Atomic[netip.AddrPort],
 	network network.Network,
 	benchlist benchlist.Manager,
 ) (http.Handler, error) {
@@ -144,7 +140,7 @@ type GetNetworkIDReply struct {
 
 // GetNodeIPReply are the results from calling GetNodeIP
 type GetNodeIPReply struct {
-	IP string `json:"ip"`
+	IP netip.AddrPort `json:"ip"`
 }
 
 // GetNodeIP returns the IP of this node
@@ -154,7 +150,7 @@ func (i *Info) GetNodeIP(_ *http.Request, _ *struct{}, reply *GetNodeIPReply) er
 		zap.String("method", "getNodeIP"),
 	)
 
-	reply.IP = i.myIP.IPPort().String()
+	reply.IP = i.myIP.Get()
 	return nil
 }
 
@@ -289,6 +285,17 @@ func (i *Info) IsBootstrapped(_ *http.Request, args *IsBootstrappedArgs, reply *
 	return nil
 }
 
+// Upgrades returns the upgrade schedule this node is running.
+func (i *Info) Upgrades(_ *http.Request, _ *struct{}, reply *upgrade.Config) error {
+	i.log.Debug("API called",
+		zap.String("service", "info"),
+		zap.String("method", "upgrades"),
+	)
+
+	*reply = i.Parameters.Upgrades
+	return nil
+}
+
 // UptimeResponse are the results from calling Uptime
 type UptimeResponse struct {
 	// RewardingStakePercentage shows what percent of network stake thinks we're
@@ -306,18 +313,13 @@ type UptimeResponse struct {
 	WeightedAveragePercentage json.Float64 `json:"weightedAveragePercentage"`
 }
 
-type UptimeRequest struct {
-	// if omitted, defaults to primary network
-	SubnetID ids.ID `json:"subnetID"`
-}
-
-func (i *Info) Uptime(_ *http.Request, args *UptimeRequest, reply *UptimeResponse) error {
+func (i *Info) Uptime(_ *http.Request, _ *struct{}, reply *UptimeResponse) error {
 	i.log.Debug("API called",
 		zap.String("service", "info"),
 		zap.String("method", "uptime"),
 	)
 
-	result, err := i.networking.NodeUptime(args.SubnetID)
+	result, err := i.networking.NodeUptime()
 	if err != nil {
 		return fmt.Errorf("couldn't get node uptime: %w", err)
 	}
@@ -403,15 +405,15 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 		zap.String("method", "getTxFee"),
 	)
 
-	reply.TxFee = json.Uint64(i.TxFee)
-	reply.CreateAssetTxFee = json.Uint64(i.CreateAssetTxFee)
-	reply.CreateSubnetTxFee = json.Uint64(i.CreateSubnetTxFee)
-	reply.TransformSubnetTxFee = json.Uint64(i.TransformSubnetTxFee)
-	reply.CreateBlockchainTxFee = json.Uint64(i.CreateBlockchainTxFee)
-	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.AddPrimaryNetworkValidatorFee)
-	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.AddPrimaryNetworkDelegatorFee)
-	reply.AddSubnetValidatorFee = json.Uint64(i.AddSubnetValidatorFee)
-	reply.AddSubnetDelegatorFee = json.Uint64(i.AddSubnetDelegatorFee)
+	reply.TxFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.TxFee)
+	reply.CreateAssetTxFee = json.Uint64(i.TxFeeConfig.CreateAssetTxFee)
+	reply.CreateSubnetTxFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.CreateSubnetTxFee)
+	reply.TransformSubnetTxFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.TransformSubnetTxFee)
+	reply.CreateBlockchainTxFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.CreateBlockchainTxFee)
+	reply.AddPrimaryNetworkValidatorFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.AddPrimaryNetworkValidatorFee)
+	reply.AddPrimaryNetworkDelegatorFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.AddPrimaryNetworkDelegatorFee)
+	reply.AddSubnetValidatorFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.AddSubnetValidatorFee)
+	reply.AddSubnetDelegatorFee = json.Uint64(i.TxFeeConfig.StaticFeeConfig.AddSubnetDelegatorFee)
 	return nil
 }
 

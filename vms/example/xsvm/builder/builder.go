@@ -11,7 +11,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/chain"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/execute"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/tx"
@@ -35,7 +35,7 @@ type builder struct {
 	engineChan   chan<- common.Message
 	chain        chain.Chain
 
-	pendingTxs linkedhashmap.LinkedHashmap[ids.ID, *tx.Tx]
+	pendingTxs *linked.Hashmap[ids.ID, *tx.Tx]
 	preference ids.ID
 }
 
@@ -45,7 +45,7 @@ func New(chainContext *snow.Context, engineChan chan<- common.Message, chain cha
 		engineChan:   engineChan,
 		chain:        chain,
 
-		pendingTxs: linkedhashmap.New[ids.ID, *tx.Tx](),
+		pendingTxs: linked.NewHashmap[ids.ID, *tx.Tx](),
 		preference: chain.LastAccepted(),
 	}
 }

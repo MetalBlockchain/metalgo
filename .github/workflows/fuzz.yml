@@ -2,7 +2,7 @@ name: Run fuzz tests
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # Once a day at midnight UTC
 
 permissions:
   contents: read
@@ -13,13 +13,8 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
-        with:
-          ref: 'dev'
       - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '~1.21.8'
-          check-latest: true
+        uses: ./.github/actions/setup-go-for-project
       - name: Run fuzz tests
         shell: bash
         run: ./scripts/build_fuzz.sh 180 # Run each fuzz test 180 seconds

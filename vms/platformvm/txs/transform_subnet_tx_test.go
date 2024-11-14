@@ -16,7 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify/verifymock"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -960,7 +960,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransformSubnetTx {
 				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
+				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransformSubnetTx{
 					BaseTx:                   validBaseTx,
@@ -1010,7 +1010,7 @@ func TestTransformSubnetTxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *TransformSubnetTx {
 				// This SubnetAuth passes verification.
-				validSubnetAuth := verify.NewMockVerifiable(ctrl)
+				validSubnetAuth := verifymock.NewVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
 				return &TransformSubnetTx{
 					BaseTx:                   validBaseTx,

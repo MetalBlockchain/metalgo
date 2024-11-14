@@ -12,9 +12,9 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -28,9 +28,9 @@ import (
 var (
 	keys      = secp256k1.TestKeys()
 	feeConfig = config.Config{
+		Upgrades:         upgradetest.GetConfig(upgradetest.Durango),
 		TxFee:            2,
 		CreateAssetTxFee: 3,
-		EUpgradeTime:     mockable.MaxTime,
 	}
 )
 

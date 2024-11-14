@@ -6,6 +6,7 @@ package network
 import (
 	"crypto"
 	"crypto/tls"
+	"net/netip"
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -14,9 +15,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
@@ -110,13 +111,12 @@ type Config struct {
 
 	TLSKeyLogFile string `json:"tlsKeyLogFile"`
 
-	Namespace          string            `json:"namespace"`
-	MyNodeID           ids.NodeID        `json:"myNodeID"`
-	MyIPPort           ips.DynamicIPPort `json:"myIP"`
-	NetworkID          uint32            `json:"networkID"`
-	MaxClockDifference time.Duration     `json:"maxClockDifference"`
-	PingFrequency      time.Duration     `json:"pingFrequency"`
-	AllowPrivateIPs    bool              `json:"allowPrivateIPs"`
+	MyNodeID           ids.NodeID                    `json:"myNodeID"`
+	MyIPPort           *utils.Atomic[netip.AddrPort] `json:"myIP"`
+	NetworkID          uint32                        `json:"networkID"`
+	MaxClockDifference time.Duration                 `json:"maxClockDifference"`
+	PingFrequency      time.Duration                 `json:"pingFrequency"`
+	AllowPrivateIPs    bool                          `json:"allowPrivateIPs"`
 
 	SupportedACPs set.Set[uint32] `json:"supportedACPs"`
 	ObjectedACPs  set.Set[uint32] `json:"objectedACPs"`
@@ -131,6 +131,7 @@ type Config struct {
 	BLSKey *bls.SecretKey `json:"-"`
 
 	// TrackedSubnets of the node.
+	// It must not include the primary network ID.
 	TrackedSubnets set.Set[ids.ID]    `json:"-"`
 	Beacons        validators.Manager `json:"-"`
 

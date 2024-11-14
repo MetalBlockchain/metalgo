@@ -14,8 +14,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms"
-	"github.com/MetalBlockchain/metalgo/vms/registry"
+	"github.com/MetalBlockchain/metalgo/vms/registry/registrymock"
+	"github.com/MetalBlockchain/metalgo/vms/vmsmock"
 
 	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 )
@@ -23,15 +23,15 @@ import (
 type loadVMsTest struct {
 	admin          *Admin
 	ctrl           *gomock.Controller
-	mockVMManager  *vms.MockManager
-	mockVMRegistry *registry.MockVMRegistry
+	mockVMManager  *vmsmock.Manager
+	mockVMRegistry *registrymock.VMRegistry
 }
 
 func initLoadVMsTest(t *testing.T) *loadVMsTest {
 	ctrl := gomock.NewController(t)
 
-	mockVMRegistry := registry.NewMockVMRegistry(ctrl)
-	mockVMManager := vms.NewMockManager(ctrl)
+	mockVMRegistry := registrymock.NewVMRegistry(ctrl)
+	mockVMManager := vmsmock.NewManager(ctrl)
 
 	return &loadVMsTest{
 		admin: &Admin{Config: Config{

@@ -33,6 +33,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -44,8 +45,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/storage"
 	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm"
+
+	txfee "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
+	validatorfee "github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
 )
 
 const (
@@ -59,12 +64,8 @@ const (
 var (
 	// Deprecated key --> deprecation message (i.e. which key replaces it)
 	// TODO: deprecate "BootstrapIDsKey" and "BootstrapIPsKey"
-	commitThresholdDeprecationMsg = fmt.Sprintf("use --%s instead", SnowCommitThresholdKey)
-	deprecatedKeys                = map[string]string{
+	deprecatedKeys = map[string]string{
 		KeystoreAPIEnabledKey: keystoreDeprecationMsg,
-
-		SnowRogueCommitThresholdKey:    commitThresholdDeprecationMsg,
-		SnowVirtuousCommitThresholdKey: commitThresholdDeprecationMsg,
 	}
 
 	errConflictingACPOpinion                  = errors.New("supporting and objecting to the same ACP")
@@ -95,8 +96,7 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
 		K:                     v.GetInt(SnowSampleSizeKey),
 		AlphaPreference:       v.GetInt(SnowPreferenceQuorumSizeKey),
 		AlphaConfidence:       v.GetInt(SnowConfidenceQuorumSizeKey),
-		BetaVirtuous:          v.GetInt(SnowCommitThresholdKey),
-		BetaRogue:             v.GetInt(SnowCommitThresholdKey),
+		Beta:                  v.GetInt(SnowCommitThresholdKey),
 		ConcurrentRepolls:     v.GetInt(SnowConcurrentRepollsKey),
 		OptimalProcessing:     v.GetInt(SnowOptimalProcessingKey),
 		MaxOutstandingItems:   v.GetInt(SnowMaxProcessingKey),
@@ -105,10 +105,6 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
 	if v.IsSet(SnowQuorumSizeKey) {
 		p.AlphaPreference = v.GetInt(SnowQuorumSizeKey)
 		p.AlphaConfidence = p.AlphaPreference
-	}
-	if v.IsSet(SnowRogueCommitThresholdKey) {
-		p.BetaVirtuous = v.GetInt(SnowRogueCommitThresholdKey)
-		p.BetaRogue = v.GetInt(SnowRogueCommitThresholdKey)
 	}
 	return p
 }
@@ -297,6 +293,11 @@ func getNetworkConfig(
 	// peers that we support these upgrades.
 	supportedACPs.Union(constants.ScheduledACPs)
 
+	// To decrease unnecessary network traffic, peers will not be notified of
+	// objection or support of activated ACPs.
+	supportedACPs.Difference(constants.ActivatedACPs)
+	objectedACPs.Difference(constants.ActivatedACPs)
+
 	config := network.Config{
 		ThrottlerConfig: network.ThrottlerConfig{
 			MaxInboundConnsPerSec: maxInboundConnsPerSec,
@@ -453,7 +454,7 @@ func getStateSyncConfig(v *viper.Viper) (node.StateSyncConfig, error) {
 		if ip == "" {
 			continue
 		}
-		addr, err := ips.ToIPPort(ip)
+		addr, err := ips.ParseAddrPort(ip)
 		if err != nil {
 			return node.StateSyncConfig{}, fmt.Errorf("couldn't parse state sync ip %s: %w", ip, err)
 		}
@@ -510,14 +511,13 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		if ip == "" {
 			continue
 		}
-
-		addr, err := ips.ToIPPort(ip)
+		addr, err := ips.ParseAddrPort(ip)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap ip %s: %w", ip, err)
 		}
 		config.Bootstrappers = append(config.Bootstrappers, genesis.Bootstrapper{
 			// ID is populated below
-			IP: ips.IPDesc(addr),
+			IP: addr,
 		})
 	}
 
@@ -528,7 +528,6 @@ func getBootstrapConfig(v *viper.Viper, networkID uint32) (node.BootstrapConfig,
 		if id == "" {
 			continue
 		}
-
 		nodeID, err := ids.NodeIDFromString(id)
 		if err != nil {
 			return node.BootstrapConfig{}, fmt.Errorf("couldn't parse bootstrap peer id %s: %w", id, err)
@@ -770,18 +769,77 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
 	if networkID != constants.MainnetID && networkID != constants.TahoeID {
 		return genesis.TxFeeConfig{
-			TxFee:                         v.GetUint64(TxFeeKey),
-			CreateAssetTxFee:              v.GetUint64(CreateAssetTxFeeKey),
-			CreateSubnetTxFee:             v.GetUint64(CreateSubnetTxFeeKey),
-			TransformSubnetTxFee:          v.GetUint64(TransformSubnetTxFeeKey),
-			CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
-			AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
-			AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
-			AddSubnetValidatorFee:         v.GetUint64(AddSubnetValidatorFeeKey),
-			AddSubnetDelegatorFee:         v.GetUint64(AddSubnetDelegatorFeeKey),
+			CreateAssetTxFee: v.GetUint64(CreateAssetTxFeeKey),
+			StaticFeeConfig: txfee.StaticConfig{
+				TxFee:                         v.GetUint64(TxFeeKey),
+				CreateSubnetTxFee:             v.GetUint64(CreateSubnetTxFeeKey),
+				TransformSubnetTxFee:          v.GetUint64(TransformSubnetTxFeeKey),
+				CreateBlockchainTxFee:         v.GetUint64(CreateBlockchainTxFeeKey),
+				AddPrimaryNetworkValidatorFee: v.GetUint64(AddPrimaryNetworkValidatorFeeKey),
+				AddPrimaryNetworkDelegatorFee: v.GetUint64(AddPrimaryNetworkDelegatorFeeKey),
+				AddSubnetValidatorFee:         v.GetUint64(AddSubnetValidatorFeeKey),
+				AddSubnetDelegatorFee:         v.GetUint64(AddSubnetDelegatorFeeKey),
+			},
+			DynamicFeeConfig: gas.Config{
+				Weights: gas.Dimensions{
+					gas.Bandwidth: v.GetUint64(DynamicFeesBandwidthWeightKey),
+					gas.DBRead:    v.GetUint64(DynamicFeesDBReadWeightKey),
+					gas.DBWrite:   v.GetUint64(DynamicFeesDBWriteWeightKey),
+					gas.Compute:   v.GetUint64(DynamicFeesComputeWeightKey),
+				},
+				MaxCapacity:              gas.Gas(v.GetUint64(DynamicFeesMaxGasCapacityKey)),
+				MaxPerSecond:             gas.Gas(v.GetUint64(DynamicFeesMaxGasPerSecondKey)),
+				TargetPerSecond:          gas.Gas(v.GetUint64(DynamicFeesTargetGasPerSecondKey)),
+				MinPrice:                 gas.Price(v.GetUint64(DynamicFeesMinGasPriceKey)),
+				ExcessConversionConstant: gas.Gas(v.GetUint64(DynamicFeesExcessConversionConstantKey)),
+			},
+			ValidatorFeeConfig: validatorfee.Config{
+				Capacity:                 gas.Gas(v.GetUint64(ValidatorFeesCapacityKey)),
+				Target:                   gas.Gas(v.GetUint64(ValidatorFeesTargetKey)),
+				MinPrice:                 gas.Price(v.GetUint64(ValidatorFeesMinPriceKey)),
+				ExcessConversionConstant: gas.Gas(v.GetUint64(ValidatorFeesExcessConversionConstantKey)),
+			},
 		}
 	}
 	return genesis.GetTxFeeConfig(networkID)
+}
+
+func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) {
+	if !v.IsSet(UpgradeFileKey) && !v.IsSet(UpgradeFileContentKey) {
+		return upgrade.GetConfig(networkID), nil
+	}
+
+	switch networkID {
+	case constants.MainnetID, constants.TahoeID, constants.LocalID:
+		return upgrade.Config{}, fmt.Errorf("cannot configure upgrades for networkID: %s",
+			constants.NetworkName(networkID),
+		)
+	}
+
+	var (
+		upgradeBytes []byte
+		err          error
+	)
+	switch {
+	case v.IsSet(UpgradeFileKey):
+		upgradeFileName := GetExpandedArg(v, UpgradeFileKey)
+		upgradeBytes, err = os.ReadFile(upgradeFileName)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to read upgrade file: %w", err)
+		}
+	case v.IsSet(UpgradeFileContentKey):
+		upgradeContent := v.GetString(UpgradeFileContentKey)
+		upgradeBytes, err = base64.StdEncoding.DecodeString(upgradeContent)
+		if err != nil {
+			return upgrade.Config{}, fmt.Errorf("unable to decode upgrade base64 content: %w", err)
+		}
+	}
+
+	var upgradeConfig upgrade.Config
+	if err := json.Unmarshal(upgradeBytes, &upgradeConfig); err != nil {
+		return upgrade.Config{}, fmt.Errorf("unable to unmarshal upgrade bytes: %w", err)
+	}
+	return upgradeConfig, nil
 }
 
 func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.StakingConfig) ([]byte, ids.ID, error) {
@@ -949,7 +1007,7 @@ func getChainConfigs(v *viper.Viper) (map[string]chains.ChainConfig, error) {
 	return getChainConfigsFromDir(v)
 }
 
-// ReadsChainConfigs reads chain config files from static directories and returns map with contents,
+// readChainConfigPath reads chain config files from static directories and returns map with contents,
 // if successful.
 func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig, error) {
 	chainDirs, err := filepath.Glob(filepath.Join(chainConfigPath, "*"))
@@ -987,7 +1045,7 @@ func readChainConfigPath(chainConfigPath string) (map[string]chains.ChainConfig,
 	return chainConfigMap, nil
 }
 
-// getSubnetConfigsFromFlags reads subnet configs from the correct place
+// getSubnetConfigs reads subnet configs from the correct place
 // (flag or file) and returns a non-nil map.
 func getSubnetConfigs(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	if v.IsSet(SubnetConfigContentKey) {
@@ -1295,6 +1353,12 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Adaptive Timeout Config
 	nodeConfig.AdaptiveTimeoutConfig, err = getAdaptiveTimeoutConfig(v)
+	if err != nil {
+		return node.Config{}, err
+	}
+
+	// Upgrade config
+	nodeConfig.UpgradeConfig, err = getUpgradeConfig(v, nodeConfig.NetworkID)
 	if err != nil {
 		return node.Config{}, err
 	}

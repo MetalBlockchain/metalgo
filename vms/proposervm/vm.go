@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/cache/metercacher"
 	"github.com/MetalBlockchain/metalgo/database"
@@ -20,7 +19,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
@@ -52,10 +50,6 @@ var (
 	_ block.ChainVM         = (*VM)(nil)
 	_ block.BatchedChainVM  = (*VM)(nil)
 	_ block.StateSyncableVM = (*VM)(nil)
-
-	// TODO: remove after the X-chain supports height indexing.
-	mainnetXChainID = ids.FromStringOrPanic("UQg9hfKuviMwwkR16hE8nHyrmG6f5tax5seEoqUSiBmsTghXE")
-	tahoeXChainID    = ids.FromStringOrPanic("N8BzztcRDHj6nNcGLbdimm6FSwE34rSVSgxhcV18TAaYSa4Q8")
 
 	dbPrefix = []byte("proposervm")
 )
@@ -103,6 +97,14 @@ type VM struct {
 
 	// lastAcceptedHeight is set to the last accepted PostForkBlock's height.
 	lastAcceptedHeight uint64
+
+	// proposerBuildSlotGauge reports the slot index when this node may attempt
+	// to build a block.
+	proposerBuildSlotGauge prometheus.Gauge
+
+	// acceptedBlocksSlotHistogram reports the slots that accepted blocks were
+	// proposed in.
+	acceptedBlocksSlotHistogram prometheus.Histogram
 }
 
 // New performs best when [minBlkDelay] is whole seconds. This is because block
@@ -134,26 +136,9 @@ func (vm *VM) Initialize(
 	fxs []*common.Fx,
 	appSender common.AppSender,
 ) error {
-	// TODO: Add a helper for this metrics override, it is performed in multiple
-	//       places.
-	multiGatherer := metrics.NewMultiGatherer()
-	registerer := prometheus.NewRegistry()
-	if err := multiGatherer.Register("proposervm", registerer); err != nil {
-		return err
-	}
-
-	optionalGatherer := metrics.NewOptionalGatherer()
-	if err := multiGatherer.Register("", optionalGatherer); err != nil {
-		return err
-	}
-	if err := chainCtx.Metrics.Register(multiGatherer); err != nil {
-		return err
-	}
-	chainCtx.Metrics = optionalGatherer
-
 	vm.ctx = chainCtx
 	vm.db = versiondb.New(prefixdb.New(dbPrefix, db))
-	baseState, err := state.NewMetered(vm.db, "state", registerer)
+	baseState, err := state.NewMetered(vm.db, "state", vm.Config.Registerer)
 	if err != nil {
 		return err
 	}
@@ -162,7 +147,7 @@ func (vm *VM) Initialize(
 	vm.Tree = tree.New()
 	innerBlkCache, err := metercacher.New(
 		"inner_block_cache",
-		registerer,
+		vm.Config.Registerer,
 		cache.NewSizedLRU(
 			innerBlkCacheSize,
 			cachedBlockSize,
@@ -214,7 +199,7 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	forkHeight, err := vm.getForkHeight()
+	forkHeight, err := vm.GetForkHeight()
 	switch err {
 	case nil:
 		chainCtx.Log.Info("initialized proposervm",
@@ -229,7 +214,28 @@ func (vm *VM) Initialize(
 	default:
 		return err
 	}
-	return nil
+
+	vm.proposerBuildSlotGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "block_building_slot",
+		Help: "the slot that this node may attempt to build a block",
+	})
+	vm.acceptedBlocksSlotHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name: "accepted_blocks_slot",
+		Help: "the slot accepted blocks were proposed in",
+		// define the following ranges:
+		// (-inf, 0]
+		// (0, 1]
+		// (1, 2]
+		// (2, inf)
+		// the usage of ".5" before was to ensure we work around the limitation
+		// of comparing floating point of the same numerical value.
+		Buckets: []float64{0.5, 1.5, 2.5},
+	})
+
+	return errors.Join(
+		vm.Config.Registerer.Register(vm.proposerBuildSlotGauge),
+		vm.Config.Registerer.Register(vm.acceptedBlocksSlotHistogram),
+	)
 }
 
 // shutdown ops then propagate shutdown to innerVM
@@ -280,7 +286,14 @@ func (vm *VM) BuildBlock(ctx context.Context) (snowman.Block, error) {
 }
 
 func (vm *VM) ParseBlock(ctx context.Context, b []byte) (snowman.Block, error) {
-	if blk, err := vm.parsePostForkBlock(ctx, b); err == nil {
+	if blk, err := vm.parsePostForkBlock(ctx, b, true); err == nil {
+		return blk, nil
+	}
+	return vm.parsePreForkBlock(ctx, b)
+}
+
+func (vm *VM) ParseLocalBlock(ctx context.Context, b []byte) (snowman.Block, error) {
+	if blk, err := vm.parsePostForkBlock(ctx, b, false); err == nil {
 		return blk, nil
 	}
 	return vm.parsePreForkBlock(ctx, b)
@@ -315,15 +328,17 @@ func (vm *VM) SetPreference(ctx context.Context, preferred ids.ID) error {
 		parentTimestamp  = blk.Timestamp()
 		nextStartTime    time.Time
 	)
-	if vm.IsDurangoActivated(parentTimestamp) {
+	if vm.Upgrades.IsDurangoActivated(parentTimestamp) {
 		currentTime := vm.Clock.Time().Truncate(time.Second)
-		nextStartTime, err = vm.getPostDurangoSlotTime(
+		if nextStartTime, err = vm.getPostDurangoSlotTime(
 			ctx,
 			childBlockHeight,
 			pChainHeight,
 			proposer.TimeToSlot(parentTimestamp, currentTime),
 			parentTimestamp,
-		)
+		); err == nil {
+			vm.proposerBuildSlotGauge.Set(float64(proposer.TimeToSlot(parentTimestamp, nextStartTime)))
+		}
 	} else {
 		nextStartTime, err = vm.getPreDurangoSlotTime(
 			ctx,
@@ -397,9 +412,9 @@ func (vm *VM) getPostDurangoSlotTime(
 	switch {
 	case err == nil:
 		delay = max(delay, vm.MinBlkDelay)
-		return parentTimestamp.Add(delay), err
+		return parentTimestamp.Add(delay), nil
 	case errors.Is(err, proposer.ErrAnyoneCanPropose):
-		return parentTimestamp.Add(vm.MinBlkDelay), err
+		return parentTimestamp.Add(vm.MinBlkDelay), nil
 	default:
 		return time.Time{}, err
 	}
@@ -516,22 +531,22 @@ func (vm *VM) setLastAcceptedMetadata(ctx context.Context) error {
 	return nil
 }
 
-func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte) (PostForkBlock, error) {
-	statelessBlock, err := statelessblock.Parse(b)
+func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte, verifySignature bool) (PostForkBlock, error) {
+	var (
+		statelessBlock statelessblock.Block
+		err            error
+	)
+
+	if verifySignature {
+		statelessBlock, err = statelessblock.Parse(b, vm.ctx.ChainID)
+	} else {
+		statelessBlock, err = statelessblock.ParseWithoutVerification(b)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	// if the block already exists, then make sure the status is set correctly
 	blkID := statelessBlock.ID()
-	blk, err := vm.getPostForkBlock(ctx, blkID)
-	if err == nil {
-		return blk, nil
-	}
-	if err != database.ErrNotFound {
-		return nil, err
-	}
-
 	innerBlkBytes := statelessBlock.Block()
 	innerBlk, err := vm.parseInnerBlock(ctx, blkID, innerBlkBytes)
 	if err != nil {
@@ -539,25 +554,22 @@ func (vm *VM) parsePostForkBlock(ctx context.Context, b []byte) (PostForkBlock, 
 	}
 
 	if statelessSignedBlock, ok := statelessBlock.(statelessblock.SignedBlock); ok {
-		blk = &postForkBlock{
+		return &postForkBlock{
 			SignedBlock: statelessSignedBlock,
 			postForkCommonComponents: postForkCommonComponents{
 				vm:       vm,
 				innerBlk: innerBlk,
-				status:   choices.Processing,
 			},
-		}
-	} else {
-		blk = &postForkOption{
-			Block: statelessBlock,
-			postForkCommonComponents: postForkCommonComponents{
-				vm:       vm,
-				innerBlk: innerBlk,
-				status:   choices.Processing,
-			},
-		}
+		}, nil
 	}
-	return blk, nil
+
+	return &postForkOption{
+		Block: statelessBlock,
+		postForkCommonComponents: postForkCommonComponents{
+			vm:       vm,
+			innerBlk: innerBlk,
+		},
+	}, nil
 }
 
 func (vm *VM) parsePreForkBlock(ctx context.Context, b []byte) (*preForkBlock, error) {
@@ -575,33 +587,13 @@ func (vm *VM) getBlock(ctx context.Context, id ids.ID) (Block, error) {
 	return vm.getPreForkBlock(ctx, id)
 }
 
-// TODO: remove after the P-chain and X-chain support height indexing.
-func (vm *VM) getForkHeight() (uint64, error) {
-	// The fork block can be easily identified with the provided links because
-	// the `Parent Hash` is equal to the `Proposer Parent ID`.
-	switch vm.ctx.ChainID {
-	case constants.PlatformChainID:
-		switch vm.ctx.NetworkID {
-		case constants.MainnetID:
-			return 1, nil
-		case constants.TahoeID:
-			return 1, nil
-		}
-	case mainnetXChainID:
-		return 1, nil // https://subnets.avax.network/x-chain/block/1
-	case tahoeXChainID:
-		return 1, nil // https://subnets-test.avax.network/x-chain/block/1
-	}
-	return vm.GetForkHeight()
-}
-
 func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock, error) {
 	block, exists := vm.verifiedBlocks[blkID]
 	if exists {
 		return block, nil
 	}
 
-	statelessBlock, status, err := vm.State.GetBlock(blkID)
+	statelessBlock, err := vm.State.GetBlock(blkID)
 	if err != nil {
 		return nil, err
 	}
@@ -618,7 +610,6 @@ func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock
 			postForkCommonComponents: postForkCommonComponents{
 				vm:       vm,
 				innerBlk: innerBlk,
-				status:   status,
 			},
 		}, nil
 	}
@@ -627,7 +618,6 @@ func (vm *VM) getPostForkBlock(ctx context.Context, blkID ids.ID) (PostForkBlock
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       vm,
 			innerBlk: innerBlk,
-			status:   status,
 		},
 	}, nil
 }
@@ -651,7 +641,7 @@ func (vm *VM) acceptPostForkBlock(blk PostForkBlock) error {
 	if err := vm.State.SetLastAccepted(blkID); err != nil {
 		return err
 	}
-	if err := vm.State.PutBlock(blk.getStatelessBlk(), choices.Accepted); err != nil {
+	if err := vm.State.PutBlock(blk.getStatelessBlk()); err != nil {
 		return err
 	}
 	if err := vm.updateHeightIndex(height, blkID); err != nil {

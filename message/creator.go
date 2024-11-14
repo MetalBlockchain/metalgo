@@ -10,7 +10,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/utils/metric"
 )
 
 var _ Creator = (*creator)(nil)
@@ -28,14 +27,11 @@ type creator struct {
 func NewCreator(
 	log logging.Logger,
 	metrics prometheus.Registerer,
-	parentNamespace string,
 	compressionType compression.Type,
 	maxMessageTimeout time.Duration,
 ) (Creator, error) {
-	namespace := metric.AppendNamespace(parentNamespace, "codec")
 	builder, err := newMsgBuilder(
 		log,
-		namespace,
 		metrics,
 		maxMessageTimeout,
 	)

@@ -9,6 +9,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
 
 var _ txs.Visitor = (*AtomicTxExecutor)(nil)
@@ -18,6 +19,7 @@ var _ txs.Visitor = (*AtomicTxExecutor)(nil)
 type AtomicTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
 	*Backend
+	FeeCalculator fee.Calculator
 	ParentID      ids.ID
 	StateVersions state.Versions
 	Tx            *txs.Tx
@@ -80,6 +82,10 @@ func (*AtomicTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
+func (*AtomicTxExecutor) ConvertSubnetTx(*txs.ConvertSubnetTx) error {
+	return ErrWrongTxType
+}
+
 func (e *AtomicTxExecutor) ImportTx(tx *txs.ImportTx) error {
 	return e.atomicTx(tx)
 }
@@ -99,9 +105,10 @@ func (e *AtomicTxExecutor) atomicTx(tx txs.UnsignedTx) error {
 	e.OnAccept = onAccept
 
 	executor := StandardTxExecutor{
-		Backend: e.Backend,
-		State:   e.OnAccept,
-		Tx:      e.Tx,
+		Backend:       e.Backend,
+		State:         e.OnAccept,
+		FeeCalculator: e.FeeCalculator,
+		Tx:            e.Tx,
 	}
 	err = tx.Visit(&executor)
 	e.Inputs = executor.Inputs

@@ -13,6 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -92,6 +93,10 @@ func (tx *Tx) Bytes() []byte {
 	return tx.bytes
 }
 
+func (tx *Tx) Size() int {
+	return len(tx.bytes)
+}
+
 func (tx *Tx) ID() ids.ID {
 	return tx.TxID
 }
@@ -115,6 +120,11 @@ func (tx *Tx) UTXOs() []*avax.UTXO {
 		}
 	}
 	return utxos
+}
+
+// InputIDs returns the set of inputs this transaction consumes
+func (tx *Tx) InputIDs() set.Set[ids.ID] {
+	return tx.Unsigned.InputIDs()
 }
 
 func (tx *Tx) SyntacticVerify(ctx *snow.Context) error {

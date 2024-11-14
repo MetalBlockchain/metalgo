@@ -4,12 +4,15 @@
 package avm
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/api"
+	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 )
 
 func TestWalletService_SendMultiple(t *testing.T) {
@@ -18,7 +21,7 @@ func TestWalletService_SendMultiple(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := setup(t, &envConfig{
-				fork:             latest,
+				fork:             upgradetest.Latest,
 				isCustomFeeAsset: !tc.avaxAsset,
 				keystoreUsers: []*user{{
 					username:    username,
@@ -28,10 +31,10 @@ func TestWalletService_SendMultiple(t *testing.T) {
 			})
 			env.vm.ctx.Lock.Unlock()
 
-			defer func() {
-				require.NoError(env.vm.Shutdown(context.Background()))
-				env.vm.ctx.Lock.Unlock()
-			}()
+			walletService := &WalletService{
+				vm:         env.vm,
+				pendingTxs: linked.NewHashmap[ids.ID, *txs.Tx](),
+			}
 
 			assetID := env.genesisTx.ID()
 			addr := keys[0].PublicKey().Address()
@@ -65,14 +68,14 @@ func TestWalletService_SendMultiple(t *testing.T) {
 				},
 			}
 			reply := &api.JSONTxIDChangeAddr{}
-			require.NoError(env.walletService.SendMultiple(nil, args, reply))
+			require.NoError(walletService.SendMultiple(nil, args, reply))
 			require.Equal(changeAddrStr, reply.ChangeAddr)
 
 			buildAndAccept(require, env.vm, env.issuer, reply.TxID)
 
 			env.vm.ctx.Lock.Lock()
-
 			_, err = env.vm.state.GetTx(reply.TxID)
+			env.vm.ctx.Lock.Unlock()
 			require.NoError(err)
 		})
 	}

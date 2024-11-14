@@ -9,9 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/message"
-	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
@@ -33,14 +31,7 @@ func TestMessageQueue(t *testing.T) {
 
 	// Assert that the messages are popped in the same order they were pushed
 	for i := 0; i < numToSend; i++ {
-		testID := ids.GenerateTestID()
-		testID2 := ids.GenerateTestID()
-		m, err := mc.Ping(
-			uint32(i),
-			[]*p2p.SubnetUptime{
-				{SubnetId: testID[:], Uptime: uint32(i)},
-				{SubnetId: testID2[:], Uptime: uint32(i)},
-			})
+		m, err := mc.Ping(uint32(i))
 		require.NoError(err)
 		msgs = append(msgs, m)
 	}

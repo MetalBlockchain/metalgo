@@ -7,6 +7,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/bloom"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 // Network defines the interface that is used by a peer to help establish a well
@@ -35,6 +36,8 @@ type Network interface {
 	// Peers returns peers that are not known.
 	Peers(
 		peerID ids.NodeID,
+		trackedSubnets set.Set[ids.ID],
+		requestAllPeers bool,
 		knownPeers *bloom.ReadFilter,
 		peerSalt []byte,
 	) []*ips.ClaimedIPPort

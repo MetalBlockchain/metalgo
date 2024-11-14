@@ -16,6 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
 
 const (
@@ -33,7 +34,6 @@ var (
 
 	ErrRemoveStakerTooEarly          = errors.New("attempting to remove staker before their end time")
 	ErrRemoveWrongStaker             = errors.New("attempting to remove wrong staker")
-	ErrChildBlockNotAfterParent      = errors.New("proposed timestamp not after current chain time")
 	ErrInvalidState                  = errors.New("generated output isn't valid state")
 	ErrShouldBePermissionlessStaker  = errors.New("expected permissionless staker")
 	ErrWrongTxType                   = errors.New("wrong transaction type")
@@ -45,7 +45,8 @@ var (
 type ProposalTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
 	*Backend
-	Tx *txs.Tx
+	FeeCalculator fee.Calculator
+	Tx            *txs.Tx
 	// [OnCommitState] is the state used for validation.
 	// [OnCommitState] is modified by this struct's methods to
 	// reflect changes made to the state if the proposal is committed.
@@ -98,22 +99,27 @@ func (*ProposalTxExecutor) BaseTx(*txs.BaseTx) error {
 	return ErrWrongTxType
 }
 
+func (*ProposalTxExecutor) ConvertSubnetTx(*txs.ConvertSubnetTx) error {
+	return ErrWrongTxType
+}
+
 func (e *ProposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 	// AddValidatorTx is a proposal transaction until the Banff fork
 	// activation. Following the activation, AddValidatorTxs must be issued into
 	// StandardBlocks.
 	currentTimestamp := e.OnCommitState.GetTimestamp()
-	if e.Config.IsBanffActivated(currentTimestamp) {
+	if e.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
 			"%w: timestamp (%s) >= Banff fork time (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
-			e.Config.BanffTime,
+			e.Config.UpgradeConfig.BanffTime,
 		)
 	}
 
 	onAbortOuts, err := verifyAddValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.OnCommitState,
 		e.Tx,
 		tx,
@@ -135,7 +141,9 @@ func (e *ProposalTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 		return err
 	}
 
-	e.OnCommitState.PutPendingValidator(newStaker)
+	if err := e.OnCommitState.PutPendingValidator(newStaker); err != nil {
+		return err
+	}
 
 	// Set up the state if this tx is aborted
 	// Consume the UTXOs
@@ -150,17 +158,18 @@ func (e *ProposalTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 	// activation. Following the activation, AddSubnetValidatorTxs must be
 	// issued into StandardBlocks.
 	currentTimestamp := e.OnCommitState.GetTimestamp()
-	if e.Config.IsBanffActivated(currentTimestamp) {
+	if e.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
 			"%w: timestamp (%s) >= Banff fork time (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
-			e.Config.BanffTime,
+			e.Config.UpgradeConfig.BanffTime,
 		)
 	}
 
 	if err := verifyAddSubnetValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.OnCommitState,
 		e.Tx,
 		tx,
@@ -181,7 +190,9 @@ func (e *ProposalTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 		return err
 	}
 
-	e.OnCommitState.PutPendingValidator(newStaker)
+	if err := e.OnCommitState.PutPendingValidator(newStaker); err != nil {
+		return err
+	}
 
 	// Set up the state if this tx is aborted
 	// Consume the UTXOs
@@ -196,17 +207,18 @@ func (e *ProposalTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	// activation. Following the activation, AddDelegatorTxs must be issued into
 	// StandardBlocks.
 	currentTimestamp := e.OnCommitState.GetTimestamp()
-	if e.Config.IsBanffActivated(currentTimestamp) {
+	if e.Config.UpgradeConfig.IsBanffActivated(currentTimestamp) {
 		return fmt.Errorf(
 			"%w: timestamp (%s) >= Banff fork time (%s)",
 			ErrProposedAddStakerTxAfterBanff,
 			currentTimestamp,
-			e.Config.BanffTime,
+			e.Config.UpgradeConfig.BanffTime,
 		)
 	}
 
 	onAbortOuts, err := verifyAddDelegatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.OnCommitState,
 		e.Tx,
 		tx,
@@ -248,43 +260,26 @@ func (e *ProposalTxExecutor) AdvanceTimeTx(tx *txs.AdvanceTimeTx) error {
 
 	// Validate [newChainTime]
 	newChainTime := tx.Timestamp()
-	if e.Config.IsBanffActivated(newChainTime) {
+	if e.Config.UpgradeConfig.IsBanffActivated(newChainTime) {
 		return fmt.Errorf(
 			"%w: proposed timestamp (%s) >= Banff fork time (%s)",
 			ErrAdvanceTimeTxIssuedAfterBanff,
 			newChainTime,
-			e.Config.BanffTime,
+			e.Config.UpgradeConfig.BanffTime,
 		)
-	}
-
-	parentChainTime := e.OnCommitState.GetTimestamp()
-	if !newChainTime.After(parentChainTime) {
-		return fmt.Errorf(
-			"%w, proposed timestamp (%s), chain time (%s)",
-			ErrChildBlockNotAfterParent,
-			parentChainTime,
-			parentChainTime,
-		)
-	}
-
-	// Only allow timestamp to move forward as far as the time of next staker
-	// set change time
-	nextStakerChangeTime, err := GetNextStakerChangeTime(e.OnCommitState)
-	if err != nil {
-		return err
 	}
 
 	now := e.Clk.Time()
 	if err := VerifyNewChainTime(
 		newChainTime,
-		nextStakerChangeTime,
 		now,
+		e.OnCommitState,
 	); err != nil {
 		return err
 	}
 
 	// Note that state doesn't change if this proposal is aborted
-	_, err = AdvanceTimeTo(e.Backend, e.OnCommitState, newChainTime)
+	_, err := AdvanceTimeTo(e.Backend, e.OnCommitState, newChainTime)
 	return err
 }
 
@@ -558,7 +553,7 @@ func (e *ProposalTxExecutor) rewardDelegatorTx(uDelegatorTx txs.DelegatorTx, del
 	}
 
 	// Reward the delegatee here
-	if e.Config.IsCortinaActivated(validator.StartTime) {
+	if e.Config.UpgradeConfig.IsCortinaActivated(validator.StartTime) {
 		previousDelegateeReward, err := e.OnCommitState.GetDelegateeReward(
 			validator.SubnetID,
 			validator.NodeID,

@@ -44,8 +44,7 @@ func New(
 
 	var err error
 	gh.getAncestorsVtxs, err = metric.NewAverager(
-		"bs",
-		"get_ancestors_vtxs",
+		"bs_get_ancestors_vtxs",
 		"vertices fetched in a call to GetAncestors",
 		reg,
 	)
@@ -111,8 +110,9 @@ func (gh *getter) GetAncestors(ctx context.Context, nodeID ids.NodeID, requestID
 	)
 	vertex, err := gh.storage.GetVtx(ctx, vtxID)
 	if err != nil || vertex.Status() == choices.Unknown {
+		// Don't have the requested vertex. Drop message.
 		gh.log.Verbo("dropping getAncestors")
-		return nil // Don't have the requested vertex. Drop message.
+		return nil //nolint:nilerr
 	}
 
 	queue := make([]avalanche.Vertex, 1, gh.maxContainersGetAncestors) // for BFS

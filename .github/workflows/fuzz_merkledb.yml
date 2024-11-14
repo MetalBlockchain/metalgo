@@ -15,13 +15,8 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v4
-        with:
-          ref: 'dev'
       - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '~1.21.8'
-          check-latest: true
+        uses: ./.github/actions/setup-go-for-project
       - name: Run merkledb fuzz tests
         shell: bash
         run: ./scripts/build_fuzz.sh 900 ./x/merkledb # Run each merkledb fuzz tests 15 minutes

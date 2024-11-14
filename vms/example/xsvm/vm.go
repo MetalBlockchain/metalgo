@@ -9,16 +9,19 @@ import (
 	"net/http"
 
 	"github.com/gorilla/rpc/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/network/p2p"
+	"github.com/MetalBlockchain/metalgo/network/p2p/acp118"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/api"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/builder"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/chain"
@@ -36,7 +39,7 @@ var (
 )
 
 type VM struct {
-	common.AppHandler
+	*p2p.Network
 
 	chainContext *snow.Context
 	db           database.Database
@@ -56,13 +59,37 @@ func (vm *VM) Initialize(
 	_ []byte,
 	engineChan chan<- common.Message,
 	_ []*common.Fx,
-	_ common.AppSender,
+	appSender common.AppSender,
 ) error {
-	vm.AppHandler = common.NewNoOpAppHandler(chainContext.Log)
-
 	chainContext.Log.Info("initializing xsvm",
 		zap.Stringer("version", Version),
 	)
+
+	metrics := prometheus.NewRegistry()
+	err := chainContext.Metrics.Register("p2p", metrics)
+	if err != nil {
+		return err
+	}
+
+	vm.Network, err = p2p.NewNetwork(
+		chainContext.Log,
+		appSender,
+		metrics,
+		"",
+	)
+	if err != nil {
+		return err
+	}
+
+	// Allow signing of all warp messages. This is not typically safe, but is
+	// allowed for this example.
+	acp118Handler := acp118.NewHandler(
+		acp118Verifier{},
+		chainContext.WarpSigner,
+	)
+	if err := vm.Network.AddHandler(p2p.SignatureRequestHandlerID, acp118Handler); err != nil {
+		return err
+	}
 
 	vm.chainContext = chainContext
 	vm.db = db
@@ -124,19 +151,11 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]http.Handler, error) {
 	)
 	return map[string]http.Handler{
 		"": server,
-	}, server.RegisterService(api, Name)
+	}, server.RegisterService(api, constants.XSVMName)
 }
 
 func (*VM) HealthCheck(context.Context) (interface{}, error) {
 	return http.StatusOK, nil
-}
-
-func (*VM) Connected(context.Context, ids.NodeID, *version.Application) error {
-	return nil
-}
-
-func (*VM) Disconnected(context.Context, ids.NodeID) error {
-	return nil
 }
 
 func (vm *VM) GetBlock(_ context.Context, blkID ids.ID) (snowman.Block, error) {

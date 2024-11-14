@@ -6,12 +6,12 @@ package genesis
 import (
 	"encoding/json"
 	"fmt"
+	"net/netip"
 
 	_ "embed"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 )
 
@@ -31,8 +31,8 @@ func init() {
 // Represents the relationship between the nodeID and the nodeIP.
 // The bootstrapper is sometimes called "anchor" or "beacon" node.
 type Bootstrapper struct {
-	ID ids.NodeID `json:"id"`
-	IP ips.IPDesc `json:"ip"`
+	ID ids.NodeID     `json:"id"`
+	IP netip.AddrPort `json:"ip"`
 }
 
 // GetBootstrappers returns all default bootstrappers for the provided network.

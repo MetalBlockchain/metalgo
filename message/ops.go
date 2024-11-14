@@ -54,13 +54,8 @@ const (
 	AppErrorOp
 	AppResponseOp
 	AppGossipOp
-	// Cross chain:
-	CrossChainAppRequestOp
-	CrossChainAppErrorOp
-	CrossChainAppResponseOp
 	// Internal:
 	ConnectedOp
-	ConnectedSubnetOp
 	DisconnectedOp
 	NotifyOp
 	GossipRequestOp
@@ -116,11 +111,7 @@ var (
 		GetAncestorsFailedOp,
 		GetFailedOp,
 		QueryFailedOp,
-		CrossChainAppRequestOp,
-		CrossChainAppErrorOp,
-		CrossChainAppResponseOp,
 		ConnectedOp,
-		ConnectedSubnetOp,
 		DisconnectedOp,
 		NotifyOp,
 		GossipRequestOp,
@@ -158,7 +149,6 @@ var (
 		ChitsOp,
 		// Internal
 		ConnectedOp,
-		ConnectedSubnetOp,
 		DisconnectedOp,
 	}
 
@@ -168,10 +158,6 @@ var (
 		AppErrorOp,
 		AppGossipOp,
 		AppResponseOp,
-		// Cross chain
-		CrossChainAppRequestOp,
-		CrossChainAppErrorOp,
-		CrossChainAppResponseOp,
 	}
 
 	FailedToResponseOps = map[Op]Op{
@@ -183,7 +169,6 @@ var (
 		GetFailedOp:                     PutOp,
 		QueryFailedOp:                   ChitsOp,
 		AppErrorOp:                      AppResponseOp,
-		CrossChainAppErrorOp:            CrossChainAppResponseOp,
 	}
 	UnrequestedOps = set.Of(
 		GetAcceptedFrontierOp,
@@ -194,7 +179,6 @@ var (
 		PullQueryOp,
 		AppRequestOp,
 		AppGossipOp,
-		CrossChainAppRequestOp,
 		GetStateSummaryFrontierOp,
 		GetAcceptedStateSummaryOp,
 	)
@@ -271,18 +255,9 @@ func (op Op) String() string {
 		return "app_response"
 	case AppGossipOp:
 		return "app_gossip"
-	// Cross chain
-	case CrossChainAppRequestOp:
-		return "cross_chain_app_request"
-	case CrossChainAppErrorOp:
-		return "cross_chain_app_error"
-	case CrossChainAppResponseOp:
-		return "cross_chain_app_response"
-		// Internal
+	// Internal
 	case ConnectedOp:
 		return "connected"
-	case ConnectedSubnetOp:
-		return "connected_subnet"
 	case DisconnectedOp:
 		return "disconnected"
 	case NotifyOp:

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/hashing/hashingmock"
 )
 
 var (
@@ -435,9 +435,9 @@ func TestIteration(t *testing.T) {
 	require.Equal(node2, node)
 }
 
-func setupTest(t *testing.T, virtualNodes int) (Ring, *hashing.MockHasher) {
+func setupTest(t *testing.T, virtualNodes int) (Ring, *hashingmock.Hasher) {
 	ctrl := gomock.NewController(t)
-	hasher := hashing.NewMockHasher(ctrl)
+	hasher := hashingmock.NewHasher(ctrl)
 
 	return NewHashRing(RingConfig{
 		VirtualNodes: virtualNodes,

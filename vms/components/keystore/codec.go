@@ -4,11 +4,11 @@
 package keystore
 
 import (
+	"errors"
 	"math"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 const CodecVersion = 0
@@ -24,7 +24,7 @@ func init() {
 	lc := linearcodec.NewDefault()
 	LegacyCodec = codec.NewManager(math.MaxInt32)
 
-	err := utils.Err(
+	err := errors.Join(
 		Codec.RegisterCodec(CodecVersion, c),
 		LegacyCodec.RegisterCodec(CodecVersion, lc),
 	)

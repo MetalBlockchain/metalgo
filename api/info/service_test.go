@@ -12,7 +12,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
-	"github.com/MetalBlockchain/metalgo/vms"
+	"github.com/MetalBlockchain/metalgo/vms/vmsmock"
 )
 
 var errTest = errors.New("non-nil error")
@@ -20,12 +20,12 @@ var errTest = errors.New("non-nil error")
 type getVMsTest struct {
 	info          *Info
 	ctrl          *gomock.Controller
-	mockVMManager *vms.MockManager
+	mockVMManager *vmsmock.Manager
 }
 
 func initGetVMsTest(t *testing.T) *getVMsTest {
 	ctrl := gomock.NewController(t)
-	mockVMManager := vms.NewMockManager(ctrl)
+	mockVMManager := vmsmock.NewManager(ctrl)
 	return &getVMsTest{
 		info: &Info{
 			Parameters: Parameters{

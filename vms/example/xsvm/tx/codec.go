@@ -4,11 +4,11 @@
 package tx
 
 import (
+	"errors"
 	"math"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/utils"
 )
 
 const CodecVersion = 0
@@ -19,7 +19,7 @@ func init() {
 	c := linearcodec.NewDefault()
 	Codec = codec.NewManager(math.MaxInt32)
 
-	err := utils.Err(
+	err := errors.Join(
 		c.RegisterType(&Transfer{}),
 		c.RegisterType(&Export{}),
 		c.RegisterType(&Import{}),

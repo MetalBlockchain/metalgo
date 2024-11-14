@@ -11,7 +11,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
-	"github.com/MetalBlockchain/metalgo/database"
+	"github.com/MetalBlockchain/metalgo/chains/atomic/atomicmock"
+	"github.com/MetalBlockchain/metalgo/database/databasemock"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils"
@@ -22,7 +23,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
@@ -61,7 +62,7 @@ func TestAcceptorVisitProposalBlock(t *testing.T) {
 			state: s,
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	require.NoError(acceptor.ApricotProposalBlock(blk))
@@ -82,7 +83,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -96,7 +97,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotAtomicBlock(
@@ -146,7 +147,7 @@ func TestAcceptorVisitAtomicBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -161,7 +162,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	clk := &mockable.Clock{}
@@ -176,7 +177,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 			},
 		},
 		metrics:    metrics.Noop,
-		validators: validators.TestManager,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewBanffStandardBlock(
@@ -234,7 +235,7 @@ func TestAcceptorVisitStandardBlock(t *testing.T) {
 	s.EXPECT().SetLastAccepted(blk.ID()).Times(1)
 	s.EXPECT().SetHeight(blk.Height()).Times(1)
 	s.EXPECT().AddStatelessBlock(blk).Times(1)
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 	s.EXPECT().CommitBatch().Return(batch, nil).Times(1)
 	s.EXPECT().Abort().Times(1)
 	onAcceptState.EXPECT().Apply(s).Times(1)
@@ -251,7 +252,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -265,7 +266,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 			},
 		},
 		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
+		validators:   validatorstest.Manager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 
@@ -329,7 +330,7 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 		atomicRequests: parentState.atomicRequests,
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.
@@ -361,7 +362,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	s := state.NewMockState(ctrl)
-	sharedMemory := atomic.NewMockSharedMemory(ctrl)
+	sharedMemory := atomicmock.NewSharedMemory(ctrl)
 
 	parentID := ids.GenerateTestID()
 	acceptor := &acceptor{
@@ -375,7 +376,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 			},
 		},
 		metrics:      metrics.Noop,
-		validators:   validators.TestManager,
+		validators:   validatorstest.Manager,
 		bootstrapped: &utils.Atomic[bool]{},
 	}
 
@@ -439,7 +440,7 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 		atomicRequests: parentState.atomicRequests,
 	}
 
-	batch := database.NewMockBatch(ctrl)
+	batch := databasemock.NewBatch(ctrl)
 
 	// Set expected calls on dependencies.
 	// Make sure the parent is accepted first.

@@ -19,6 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
 
 var (
@@ -27,13 +28,16 @@ var (
 	errEmptyNodeID                = errors.New("validator nodeID cannot be empty")
 	errMaxStakeDurationTooLarge   = errors.New("max stake duration must be less than or equal to the global max stake duration")
 	errMissingStartTimePreDurango = errors.New("staker transactions must have a StartTime pre-Durango")
+	errEtnaUpgradeNotActive       = errors.New("attempting to use an Etna-upgrade feature prior to activation")
+	errTransformSubnetTxPostEtna  = errors.New("TransformSubnetTx is not permitted post-Etna")
 )
 
 type StandardTxExecutor struct {
 	// inputs, to be filled before visitor methods are called
 	*Backend
-	State state.Diff // state is expected to be modified
-	Tx    *txs.Tx
+	State         state.Diff // state is expected to be modified
+	FeeCalculator fee.Calculator
+	Tx            *txs.Tx
 
 	// outputs of visitor execution
 	OnAccept       func() // may be nil
@@ -56,7 +60,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 
 	var (
 		currentTimestamp = e.State.GetTimestamp()
-		isDurangoActive  = e.Config.IsDurangoActivated(currentTimestamp)
+		isDurangoActive  = e.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
 	)
 	if err := avax.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
 		return err
@@ -68,7 +72,10 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 	}
 
 	// Verify the flowcheck
-	createBlockchainTxFee := e.Config.GetCreateBlockchainTxFee(currentTimestamp)
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 	if err := e.FlowChecker.VerifySpend(
 		tx,
 		e.State,
@@ -76,7 +83,7 @@ func (e *StandardTxExecutor) CreateChainTx(tx *txs.CreateChainTx) error {
 		tx.Outs,
 		baseTxCreds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createBlockchainTxFee,
+			e.Ctx.AVAXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -107,14 +114,17 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 
 	var (
 		currentTimestamp = e.State.GetTimestamp()
-		isDurangoActive  = e.Config.IsDurangoActivated(currentTimestamp)
+		isDurangoActive  = e.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
 	)
 	if err := avax.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
 		return err
 	}
 
 	// Verify the flowcheck
-	createSubnetTxFee := e.Config.GetCreateSubnetTxFee(currentTimestamp)
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 	if err := e.FlowChecker.VerifySpend(
 		tx,
 		e.State,
@@ -122,7 +132,7 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: createSubnetTxFee,
+			e.Ctx.AVAXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -135,7 +145,7 @@ func (e *StandardTxExecutor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
 	// Produce the UTXOS
 	avax.Produce(e.State, txID, tx.Outs)
 	// Add the new subnet to the database
-	e.State.AddSubnet(e.Tx)
+	e.State.AddSubnet(txID)
 	e.State.SetSubnetOwner(txID, tx.Owner)
 	return nil
 }
@@ -147,7 +157,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 
 	var (
 		currentTimestamp = e.State.GetTimestamp()
-		isDurangoActive  = e.Config.IsDurangoActivated(currentTimestamp)
+		isDurangoActive  = e.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
 	)
 	if err := avax.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
 		return err
@@ -194,6 +204,11 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 		copy(ins, tx.Ins)
 		copy(ins[len(tx.Ins):], tx.ImportedInputs)
 
+		// Verify the flowcheck
+		fee, err := e.FeeCalculator.CalculateFee(tx)
+		if err != nil {
+			return err
+		}
 		if err := e.FlowChecker.VerifySpendUTXOs(
 			tx,
 			utxos,
@@ -201,7 +216,7 @@ func (e *StandardTxExecutor) ImportTx(tx *txs.ImportTx) error {
 			tx.Outs,
 			e.Tx.Creds,
 			map[ids.ID]uint64{
-				e.Ctx.AVAXAssetID: e.Config.TxFee,
+				e.Ctx.AVAXAssetID: fee,
 			},
 		); err != nil {
 			return err
@@ -233,7 +248,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 
 	var (
 		currentTimestamp = e.State.GetTimestamp()
-		isDurangoActive  = e.Config.IsDurangoActivated(currentTimestamp)
+		isDurangoActive  = e.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
 	)
 	if err := avax.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
 		return err
@@ -250,6 +265,10 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 	}
 
 	// Verify the flowcheck
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 	if err := e.FlowChecker.VerifySpend(
 		tx,
 		e.State,
@@ -257,7 +276,7 @@ func (e *StandardTxExecutor) ExportTx(tx *txs.ExportTx) error {
 		outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TxFee,
+			e.Ctx.AVAXAssetID: fee,
 		},
 	); err != nil {
 		return fmt.Errorf("failed verifySpend: %w", err)
@@ -314,6 +333,7 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 
 	if _, err := verifyAddValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -343,6 +363,7 @@ func (e *StandardTxExecutor) AddValidatorTx(tx *txs.AddValidatorTx) error {
 func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) error {
 	if err := verifyAddSubnetValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -363,6 +384,7 @@ func (e *StandardTxExecutor) AddSubnetValidatorTx(tx *txs.AddSubnetValidatorTx) 
 func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 	if _, err := verifyAddDelegatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -388,6 +410,7 @@ func (e *StandardTxExecutor) AddDelegatorTx(tx *txs.AddDelegatorTx) error {
 func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
 	staker, isCurrentValidator, err := verifyRemoveSubnetValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -412,14 +435,16 @@ func (e *StandardTxExecutor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidat
 }
 
 func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
+	currentTimestamp := e.State.GetTimestamp()
+	if e.Config.UpgradeConfig.IsEtnaActivated(currentTimestamp) {
+		return errTransformSubnetTxPostEtna
+	}
+
 	if err := e.Tx.SyntacticVerify(e.Ctx); err != nil {
 		return err
 	}
 
-	var (
-		currentTimestamp = e.State.GetTimestamp()
-		isDurangoActive  = e.Config.IsDurangoActivated(currentTimestamp)
-	)
+	isDurangoActive := e.Config.UpgradeConfig.IsDurangoActivated(currentTimestamp)
 	if err := avax.VerifyMemoFieldLength(tx.Memo, isDurangoActive); err != nil {
 		return err
 	}
@@ -435,6 +460,11 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		return err
 	}
 
+	// Verify the flowcheck
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 	totalRewardAmount := tx.MaximumSupply - tx.InitialSupply
 	if err := e.Backend.FlowChecker.VerifySpend(
 		tx,
@@ -446,7 +476,7 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 		//            entry in this map literal from being overwritten by the
 		//            second entry.
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TransformSubnetTxFee,
+			e.Ctx.AVAXAssetID: fee,
 			tx.AssetID:        totalRewardAmount,
 		},
 	); err != nil {
@@ -465,9 +495,61 @@ func (e *StandardTxExecutor) TransformSubnetTx(tx *txs.TransformSubnetTx) error 
 	return nil
 }
 
+func (e *StandardTxExecutor) ConvertSubnetTx(tx *txs.ConvertSubnetTx) error {
+	var (
+		currentTimestamp = e.State.GetTimestamp()
+		upgrades         = e.Backend.Config.UpgradeConfig
+	)
+	if !upgrades.IsEtnaActivated(currentTimestamp) {
+		return errEtnaUpgradeNotActive
+	}
+
+	if err := e.Tx.SyntacticVerify(e.Ctx); err != nil {
+		return err
+	}
+
+	if err := avax.VerifyMemoFieldLength(tx.Memo, true /*=isDurangoActive*/); err != nil {
+		return err
+	}
+
+	baseTxCreds, err := verifyPoASubnetAuthorization(e.Backend, e.State, e.Tx, tx.Subnet, tx.SubnetAuth)
+	if err != nil {
+		return err
+	}
+
+	// Verify the flowcheck
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
+	if err := e.Backend.FlowChecker.VerifySpend(
+		tx,
+		e.State,
+		tx.Ins,
+		tx.Outs,
+		baseTxCreds,
+		map[ids.ID]uint64{
+			e.Ctx.AVAXAssetID: fee,
+		},
+	); err != nil {
+		return err
+	}
+
+	txID := e.Tx.ID()
+
+	// Consume the UTXOS
+	avax.Consume(e.State, tx.Ins)
+	// Produce the UTXOS
+	avax.Produce(e.State, txID, tx.Outs)
+	// Set the new Subnet manager in the database
+	e.State.SetSubnetManager(tx.Subnet, tx.ChainID, tx.Address)
+	return nil
+}
+
 func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessValidatorTx) error {
 	if err := verifyAddPermissionlessValidatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -500,6 +582,7 @@ func (e *StandardTxExecutor) AddPermissionlessValidatorTx(tx *txs.AddPermissionl
 func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
 	if err := verifyAddPermissionlessDelegatorTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -524,6 +607,7 @@ func (e *StandardTxExecutor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionl
 func (e *StandardTxExecutor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
 	err := verifyTransferSubnetOwnershipTx(
 		e.Backend,
+		e.FeeCalculator,
 		e.State,
 		e.Tx,
 		tx,
@@ -541,7 +625,11 @@ func (e *StandardTxExecutor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwn
 }
 
 func (e *StandardTxExecutor) BaseTx(tx *txs.BaseTx) error {
-	if !e.Backend.Config.IsDurangoActivated(e.State.GetTimestamp()) {
+	var (
+		currentTimestamp = e.State.GetTimestamp()
+		upgrades         = e.Backend.Config.UpgradeConfig
+	)
+	if !upgrades.IsDurangoActivated(currentTimestamp) {
 		return ErrDurangoUpgradeNotActive
 	}
 
@@ -555,6 +643,10 @@ func (e *StandardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 	}
 
 	// Verify the flowcheck
+	fee, err := e.FeeCalculator.CalculateFee(tx)
+	if err != nil {
+		return err
+	}
 	if err := e.FlowChecker.VerifySpend(
 		tx,
 		e.State,
@@ -562,7 +654,7 @@ func (e *StandardTxExecutor) BaseTx(tx *txs.BaseTx) error {
 		tx.Outs,
 		e.Tx.Creds,
 		map[ids.ID]uint64{
-			e.Ctx.AVAXAssetID: e.Config.TxFee,
+			e.Ctx.AVAXAssetID: fee,
 		},
 	); err != nil {
 		return err
@@ -585,7 +677,7 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 		err       error
 	)
 
-	if !e.Config.IsDurangoActivated(chainTime) {
+	if !e.Config.UpgradeConfig.IsDurangoActivated(chainTime) {
 		// Pre-Durango, stakers set a future [StartTime] and are added to the
 		// pending staker set. They are promoted to the current staker set once
 		// the chain time reaches [StartTime].
@@ -631,11 +723,15 @@ func (e *StandardTxExecutor) putStaker(stakerTx txs.Staker) error {
 
 	switch priority := staker.Priority; {
 	case priority.IsCurrentValidator():
-		e.State.PutCurrentValidator(staker)
+		if err := e.State.PutCurrentValidator(staker); err != nil {
+			return err
+		}
 	case priority.IsCurrentDelegator():
 		e.State.PutCurrentDelegator(staker)
 	case priority.IsPendingValidator():
-		e.State.PutPendingValidator(staker)
+		if err := e.State.PutPendingValidator(staker); err != nil {
+			return err
+		}
 	case priority.IsPendingDelegator():
 		e.State.PutPendingDelegator(staker)
 	default:

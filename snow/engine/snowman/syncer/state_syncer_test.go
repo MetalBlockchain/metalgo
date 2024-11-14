@@ -18,7 +18,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/tracker"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block/blocktest"
 	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/getter"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -38,11 +40,11 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 	// Build state syncer
 	snowCtx := snowtest.Context(t, snowtest.CChainID)
 	ctx := snowtest.ConsensusContext(snowCtx)
-	sender := &common.SenderTest{T: t}
+	sender := &enginetest.Sender{T: t}
 
 	// Non state syncableVM case
-	nonStateSyncableVM := &block.TestVM{
-		TestVM: common.TestVM{T: t},
+	nonStateSyncableVM := &blocktest.VM{
+		VM: enginetest.VM{T: t},
 	}
 	dummyGetter, err := getter.New(
 		nonStateSyncableVM,
@@ -66,10 +68,10 @@ func TestStateSyncerIsEnabledIfVMSupportsStateSyncing(t *testing.T) {
 
 	// State syncableVM case
 	fullVM := &fullVM{
-		TestVM: &block.TestVM{
-			TestVM: common.TestVM{T: t},
+		VM: &blocktest.VM{
+			VM: enginetest.VM{T: t},
 		},
-		TestStateSyncableVM: &block.TestStateSyncableVM{
+		StateSyncableVM: &blocktest.StateSyncableVM{
 			T: t,
 		},
 	}
@@ -116,7 +118,7 @@ func TestStateSyncingStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, _, sender := buildTestsObjects(t, ctx, startup, beacons, alpha)
 
@@ -159,12 +161,12 @@ func TestStateSyncLocalSummaryIsIncludedAmongFrontiersIfAvailable(t *testing.T) 
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, _ := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
 	// mock VM to simulate a valid summary is returned
-	localSummary := &block.TestStateSummary{
+	localSummary := &blocktest.StateSummary{
 		HeightV: 2000,
 		IDV:     summaryID,
 		BytesV:  summaryBytes,
@@ -197,7 +199,7 @@ func TestStateSyncNotFoundOngoingSummaryIsNotIncludedAmongFrontiers(t *testing.T
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, _ := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -228,7 +230,7 @@ func TestBeaconsAreReachedForFrontiersUponStartup(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, _, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -267,7 +269,7 @@ func TestUnRequestedStateSummaryFrontiersAreDropped(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -292,7 +294,7 @@ func TestUnRequestedStateSummaryFrontiersAreDropped(t *testing.T) {
 	// mock VM to simulate a valid summary is returned
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
-		return &block.TestStateSummary{
+		return &blocktest.StateSummary{
 			HeightV: key,
 			IDV:     summaryID,
 			BytesV:  summaryBytes,
@@ -357,7 +359,7 @@ func TestMalformedStateSummaryFrontiersAreDropped(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -426,7 +428,7 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -478,7 +480,7 @@ func TestLateResponsesFromUnresponsiveFrontiersAreNotRecorded(t *testing.T) {
 	// mock VM to simulate a valid but late summary is returned
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
-		return &block.TestStateSummary{
+		return &blocktest.StateSummary{
 			HeightV: key,
 			IDV:     summaryID,
 			BytesV:  summaryBytes,
@@ -509,7 +511,7 @@ func TestStateSyncIsRestartedIfTooManyFrontierSeedersTimeout(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -527,7 +529,7 @@ func TestStateSyncIsRestartedIfTooManyFrontierSeedersTimeout(t *testing.T) {
 	fullVM.ParseStateSummaryF = func(_ context.Context, b []byte) (block.StateSummary, error) {
 		switch {
 		case bytes.Equal(b, summaryBytes):
-			return &block.TestStateSummary{
+			return &blocktest.StateSummary{
 				HeightV: key,
 				IDV:     summaryID,
 				BytesV:  summaryBytes,
@@ -598,7 +600,7 @@ func TestVoteRequestsAreSentAsAllFrontierBeaconsResponded(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -615,7 +617,7 @@ func TestVoteRequestsAreSentAsAllFrontierBeaconsResponded(t *testing.T) {
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, b []byte) (block.StateSummary, error) {
 		require.Equal(summaryBytes, b)
-		return &block.TestStateSummary{
+		return &blocktest.StateSummary{
 			HeightV: key,
 			IDV:     summaryID,
 			BytesV:  summaryBytes,
@@ -669,7 +671,7 @@ func TestUnRequestedVotesAreDropped(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -685,7 +687,7 @@ func TestUnRequestedVotesAreDropped(t *testing.T) {
 	// mock VM to simulate a valid summary is returned
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
-		return &block.TestStateSummary{
+		return &blocktest.StateSummary{
 			HeightV: key,
 			IDV:     summaryID,
 			BytesV:  summaryBytes,
@@ -786,7 +788,7 @@ func TestVotesForUnknownSummariesAreDropped(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 
@@ -802,7 +804,7 @@ func TestVotesForUnknownSummariesAreDropped(t *testing.T) {
 	// mock VM to simulate a valid summary is returned
 	fullVM.CantParseStateSummary = true
 	fullVM.ParseStateSummaryF = func(_ context.Context, summaryBytes []byte) (block.StateSummary, error) {
-		return &block.TestStateSummary{
+		return &blocktest.StateSummary{
 			HeightV: key,
 			IDV:     summaryID,
 			BytesV:  summaryBytes,
@@ -890,7 +892,7 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, alpha)
 
@@ -904,13 +906,13 @@ func TestStateSummaryIsPassedToVMAsMajorityOfVotesIsCastedForIt(t *testing.T) {
 	}
 
 	// mock VM to simulate a valid summary is returned
-	summary := &block.TestStateSummary{
+	summary := &blocktest.StateSummary{
 		HeightV: key,
 		IDV:     summaryID,
 		BytesV:  summaryBytes,
 		T:       t,
 	}
-	minoritySummary := &block.TestStateSummary{
+	minoritySummary := &blocktest.StateSummary{
 		HeightV: minorityKey,
 		IDV:     minoritySummaryID,
 		BytesV:  minoritySummaryBytes,
@@ -1035,7 +1037,7 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, alpha)
 
@@ -1049,7 +1051,7 @@ func TestVotingIsRestartedIfMajorityIsNotReachedDueToTimeouts(t *testing.T) {
 	}
 
 	// mock VM to simulate a valid summary is returned
-	minoritySummary := &block.TestStateSummary{
+	minoritySummary := &blocktest.StateSummary{
 		HeightV: minorityKey,
 		IDV:     minoritySummaryID,
 		BytesV:  minoritySummaryBytes,
@@ -1141,7 +1143,7 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, fullVM, sender := buildTestsObjects(t, ctx, startup, beacons, alpha)
 
@@ -1155,13 +1157,13 @@ func TestStateSyncIsStoppedIfEnoughVotesAreCastedWithNoClearMajority(t *testing.
 	}
 
 	// mock VM to simulate a valid minoritySummary1 is returned
-	minoritySummary1 := &block.TestStateSummary{
+	minoritySummary1 := &blocktest.StateSummary{
 		HeightV: key,
 		IDV:     summaryID,
 		BytesV:  summaryBytes,
 		T:       t,
 	}
-	minoritySummary2 := &block.TestStateSummary{
+	minoritySummary2 := &blocktest.StateSummary{
 		HeightV: minorityKey,
 		IDV:     minoritySummaryID,
 		BytesV:  minoritySummaryBytes,
@@ -1286,7 +1288,7 @@ func TestStateSyncIsDoneOnceVMNotifies(t *testing.T) {
 
 	peers := tracker.NewPeers()
 	startup := tracker.NewStartup(peers, startupAlpha)
-	beacons.RegisterCallbackListener(ctx.SubnetID, startup)
+	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	syncer, _, _ := buildTestsObjects(t, ctx, startup, beacons, (totalWeight+1)/2)
 

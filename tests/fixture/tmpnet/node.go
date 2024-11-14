@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,7 +80,7 @@ type Node struct {
 
 	// Runtime state, intended to be set by NodeRuntime
 	URI            string
-	StakingAddress string
+	StakingAddress netip.AddrPort
 
 	// Initialized on demand
 	runtime NodeRuntime
@@ -94,11 +95,24 @@ func NewNode(dataDir string) *Node {
 	}
 }
 
+// Initializes an ephemeral node using the provided config flags
+func NewEphemeralNode(flags FlagsMap) *Node {
+	node := NewNode("")
+	node.Flags = flags
+	node.IsEphemeral = true
+
+	return node
+}
+
 // Initializes the specified number of nodes.
-func NewNodes(count int) []*Node {
+func NewNodesOrPanic(count int) []*Node {
 	nodes := make([]*Node, count)
 	for i := range nodes {
-		nodes[i] = NewNode("")
+		node := NewNode("")
+		if err := node.EnsureKeys(); err != nil {
+			panic(err)
+		}
+		nodes[i] = node
 	}
 	return nodes
 }
@@ -177,7 +191,7 @@ func (n *Node) readState() error {
 	return n.getRuntime().readState()
 }
 
-func (n *Node) getDataDir() string {
+func (n *Node) GetDataDir() string {
 	return cast.ToString(n.Flags[config.DataDirKey])
 }
 
@@ -356,6 +370,10 @@ func (n *Node) EnsureNodeID() error {
 // labeling of metrics.
 func (n *Node) SaveAPIPort() error {
 	hostPort := strings.TrimPrefix(n.URI, "http://")
+	if len(hostPort) == 0 {
+		// Without an API URI there is nothing to save
+		return nil
+	}
 	_, port, err := net.SplitHostPort(hostPort)
 	if err != nil {
 		return err

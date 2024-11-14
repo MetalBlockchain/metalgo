@@ -10,51 +10,53 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
+	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 func TestNewExportTx(t *testing.T) {
-	env := newEnvironment(t, banff)
+	env := newEnvironment(t, upgradetest.Banff)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
-	type test struct {
+	tests := []struct {
 		description        string
 		destinationChainID ids.ID
-		sourceKeys         []*secp256k1.PrivateKey
 		timestamp          time.Time
-	}
-
-	sourceKey := preFundedKeys[0]
-
-	tests := []test{
+	}{
 		{
 			description:        "P->X export",
 			destinationChainID: env.ctx.XChainID,
-			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
-			timestamp:          defaultValidateStartTime,
+			timestamp:          genesistest.DefaultValidatorStartTime,
 		},
 		{
 			description:        "P->C export",
 			destinationChainID: env.ctx.CChainID,
-			sourceKeys:         []*secp256k1.PrivateKey{sourceKey},
-			timestamp:          env.config.ApricotPhase5Time,
+			timestamp:          env.config.UpgradeConfig.ApricotPhase5Time,
 		},
 	}
 
-	to := ids.GenerateTestShortID()
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			require := require.New(t)
 
-			tx, err := env.txBuilder.NewExportTx(
-				defaultBalance-defaultTxFee, // Amount of tokens to export
+			wallet := newWallet(t, env, walletConfig{})
+
+			tx, err := wallet.IssueExportTx(
 				tt.destinationChainID,
-				to,
-				tt.sourceKeys,
-				ids.ShortEmpty, // Change address
-				nil,
+				[]*avax.TransferableOutput{{
+					Asset: avax.Asset{ID: env.ctx.AVAXAssetID},
+					Out: &secp256k1fx.TransferOutput{
+						Amt: genesistest.DefaultInitialBalance - defaultTxFee,
+						OutputOwners: secp256k1fx.OutputOwners{
+							Threshold: 1,
+							Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
+						},
+					},
+				}},
 			)
 			require.NoError(err)
 
@@ -63,10 +65,12 @@ func TestNewExportTx(t *testing.T) {
 
 			stateDiff.SetTimestamp(tt.timestamp)
 
+			feeCalculator := state.PickFeeCalculator(env.config, stateDiff)
 			verifier := StandardTxExecutor{
-				Backend: &env.backend,
-				State:   stateDiff,
-				Tx:      tx,
+				Backend:       &env.backend,
+				FeeCalculator: feeCalculator,
+				State:         stateDiff,
+				Tx:            tx,
 			}
 			require.NoError(tx.Unsigned.Visit(&verifier))
 		})

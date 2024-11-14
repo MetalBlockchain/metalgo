@@ -4,13 +4,13 @@
 package txs
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
@@ -60,7 +60,7 @@ func NewCustomParser(
 	gcm := codec.NewManager(math.MaxInt32)
 	cm := codec.NewDefaultManager()
 
-	err := utils.Err(
+	err := errors.Join(
 		c.RegisterType(&BaseTx{}),
 		c.RegisterType(&CreateAssetTx{}),
 		c.RegisterType(&OperationTx{}),

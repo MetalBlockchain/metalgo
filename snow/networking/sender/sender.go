@@ -5,7 +5,6 @@ package sender
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -22,7 +21,13 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
-var _ common.Sender = (*sender)(nil)
+const opLabel = "op"
+
+var (
+	_ common.Sender = (*sender)(nil)
+
+	opLabels = []string{opLabel}
+)
 
 // sender is a wrapper around an ExternalSender.
 // Messages to this node are put directly into [router] rather than
@@ -37,11 +42,11 @@ type sender struct {
 	router   router.Router
 	timeouts timeout.Manager
 
-	// Request message type --> Counts how many of that request
-	// have failed because the node was benched
-	failedDueToBench map[message.Op]prometheus.Counter
-	engineType       p2p.EngineType
-	subnet           subnets.Subnet
+	// Counts how many request have failed because the node was benched
+	failedDueToBench *prometheus.CounterVec // op
+
+	engineType p2p.EngineType
+	subnet     subnets.Subnet
 }
 
 func New(
@@ -52,42 +57,25 @@ func New(
 	timeouts timeout.Manager,
 	engineType p2p.EngineType,
 	subnet subnets.Subnet,
+	reg prometheus.Registerer,
 ) (common.Sender, error) {
 	s := &sender{
-		ctx:              ctx,
-		msgCreator:       msgCreator,
-		sender:           externalSender,
-		router:           router,
-		timeouts:         timeouts,
-		failedDueToBench: make(map[message.Op]prometheus.Counter, len(message.ConsensusRequestOps)),
-		engineType:       engineType,
-		subnet:           subnet,
-	}
-
-	for _, op := range message.ConsensusRequestOps {
-		counter := prometheus.NewCounter(
+		ctx:        ctx,
+		msgCreator: msgCreator,
+		sender:     externalSender,
+		router:     router,
+		timeouts:   timeouts,
+		failedDueToBench: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: fmt.Sprintf("%s_failed_benched", op),
-				Help: fmt.Sprintf("# of times a %s request was not sent because the node was benched", op),
+				Name: "failed_benched",
+				Help: "requests dropped because a node was benched",
 			},
-		)
-
-		switch engineType {
-		case p2p.EngineType_ENGINE_TYPE_SNOWMAN:
-			if err := ctx.Registerer.Register(counter); err != nil {
-				return nil, fmt.Errorf("couldn't register metric for %s: %w", op, err)
-			}
-		case p2p.EngineType_ENGINE_TYPE_AVALANCHE:
-			if err := ctx.AvalancheRegisterer.Register(counter); err != nil {
-				return nil, fmt.Errorf("couldn't register metric for %s: %w", op, err)
-			}
-		default:
-			return nil, fmt.Errorf("unknown engine type %s", engineType)
-		}
-
-		s.failedDueToBench[op] = counter
+			opLabels,
+		),
+		engineType: engineType,
+		subnet:     subnet,
 	}
-	return s, nil
+	return s, reg.Register(s.failedDueToBench)
 }
 
 func (s *sender) SendGetStateSummaryFrontier(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32) {
@@ -111,7 +99,6 @@ func (s *sender) SendGetStateSummaryFrontier(ctx context.Context, nodeIDs set.Se
 		s.router.RegisterRequest(
 			ctx,
 			nodeID,
-			s.ctx.ChainID,
 			s.ctx.ChainID,
 			requestID,
 			message.StateSummaryFrontierOp,
@@ -257,7 +244,6 @@ func (s *sender) SendGetAcceptedStateSummary(ctx context.Context, nodeIDs set.Se
 			ctx,
 			nodeID,
 			s.ctx.ChainID,
-			s.ctx.ChainID,
 			requestID,
 			message.AcceptedStateSummaryOp,
 			inMsg,
@@ -395,7 +381,6 @@ func (s *sender) SendGetAcceptedFrontier(ctx context.Context, nodeIDs set.Set[id
 			ctx,
 			nodeID,
 			s.ctx.ChainID,
-			s.ctx.ChainID,
 			requestID,
 			message.AcceptedFrontierOp,
 			inMsg,
@@ -531,7 +516,6 @@ func (s *sender) SendGetAccepted(ctx context.Context, nodeIDs set.Set[ids.NodeID
 			ctx,
 			nodeID,
 			s.ctx.ChainID,
-			s.ctx.ChainID,
 			requestID,
 			message.AcceptedOp,
 			inMsg,
@@ -658,23 +642,25 @@ func (s *sender) SendGetAncestors(ctx context.Context, nodeID ids.NodeID, reques
 		ctx,
 		nodeID,
 		s.ctx.ChainID,
-		s.ctx.ChainID,
 		requestID,
 		message.AncestorsOp,
 		inMsg,
 		s.engineType,
 	)
 
-	// Sending a GetAncestors to myself always fails.
+	// Sending a GetAncestors to myself will fail. To avoid constantly sending
+	// myself requests when not connected to any peers, we rely on the timeout
+	// firing to deliver the GetAncestorsFailed message.
 	if nodeID == s.ctx.NodeID {
-		go s.router.HandleInbound(ctx, inMsg)
 		return
 	}
 
 	// [nodeID] may be benched. That is, they've been unresponsive so we don't
 	// even bother sending requests to them. We just have them immediately fail.
 	if s.timeouts.IsBenched(nodeID, s.ctx.ChainID) {
-		s.failedDueToBench[message.GetAncestorsOp].Inc() // update metric
+		s.failedDueToBench.With(prometheus.Labels{
+			opLabel: message.GetAncestorsOp.String(),
+		}).Inc()
 		s.timeouts.RegisterRequestToUnreachableValidator()
 		go s.router.HandleInbound(ctx, inMsg)
 		return
@@ -777,7 +763,6 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 		ctx,
 		nodeID,
 		s.ctx.ChainID,
-		s.ctx.ChainID,
 		requestID,
 		message.PutOp,
 		inMsg,
@@ -793,7 +778,9 @@ func (s *sender) SendGet(ctx context.Context, nodeID ids.NodeID, requestID uint3
 	// [nodeID] may be benched. That is, they've been unresponsive so we don't
 	// even bother sending requests to them. We just have them immediately fail.
 	if s.timeouts.IsBenched(nodeID, s.ctx.ChainID) {
-		s.failedDueToBench[message.GetOp].Inc() // update metric
+		s.failedDueToBench.With(prometheus.Labels{
+			opLabel: message.GetOp.String(),
+		}).Inc()
 		s.timeouts.RegisterRequestToUnreachableValidator()
 		go s.router.HandleInbound(ctx, inMsg)
 		return
@@ -915,7 +902,6 @@ func (s *sender) SendPushQuery(
 			ctx,
 			nodeID,
 			s.ctx.ChainID,
-			s.ctx.ChainID,
 			requestID,
 			message.ChitsOp,
 			inMsg,
@@ -947,7 +933,9 @@ func (s *sender) SendPushQuery(
 	// immediately fail.
 	for nodeID := range nodeIDs {
 		if s.timeouts.IsBenched(nodeID, s.ctx.ChainID) {
-			s.failedDueToBench[message.PushQueryOp].Inc() // update metric
+			s.failedDueToBench.With(prometheus.Labels{
+				opLabel: message.PushQueryOp.String(),
+			}).Inc()
 			nodeIDs.Remove(nodeID)
 			s.timeouts.RegisterRequestToUnreachableValidator()
 
@@ -1051,7 +1039,6 @@ func (s *sender) SendPullQuery(
 			ctx,
 			nodeID,
 			s.ctx.ChainID,
-			s.ctx.ChainID,
 			requestID,
 			message.ChitsOp,
 			inMsg,
@@ -1083,7 +1070,9 @@ func (s *sender) SendPullQuery(
 	// have them immediately fail.
 	for nodeID := range nodeIDs {
 		if s.timeouts.IsBenched(nodeID, s.ctx.ChainID) {
-			s.failedDueToBench[message.PullQueryOp].Inc() // update metric
+			s.failedDueToBench.With(prometheus.Labels{
+				opLabel: message.PullQueryOp.String(),
+			}).Inc()
 			nodeIDs.Remove(nodeID)
 			s.timeouts.RegisterRequestToUnreachableValidator()
 			// Immediately register a failure. Do so asynchronously to avoid
@@ -1159,6 +1148,7 @@ func (s *sender) SendChits(
 	preferredID ids.ID,
 	preferredIDAtHeight ids.ID,
 	acceptedID ids.ID,
+	acceptedHeight uint64,
 ) {
 	ctx = context.WithoutCancel(ctx)
 
@@ -1178,7 +1168,7 @@ func (s *sender) SendChits(
 	}
 
 	// Create the outbound message.
-	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, preferredID, preferredIDAtHeight, acceptedID)
+	outMsg, err := s.msgCreator.Chits(s.ctx.ChainID, requestID, preferredID, preferredIDAtHeight, acceptedID, acceptedHeight)
 	if err != nil {
 		s.ctx.Log.Error("failed to build message",
 			zap.Stringer("messageOp", message.ChitsOp),
@@ -1215,70 +1205,6 @@ func (s *sender) SendChits(
 	}
 }
 
-func (s *sender) SendCrossChainAppRequest(ctx context.Context, chainID ids.ID, requestID uint32, appRequestBytes []byte) error {
-	ctx = context.WithoutCancel(ctx)
-
-	// The failed message is treated as if it was sent by the requested chain
-	failedMsg := message.InternalCrossChainAppError(
-		s.ctx.NodeID,
-		chainID,
-		s.ctx.ChainID,
-		requestID,
-		common.ErrTimeout.Code,
-		common.ErrTimeout.Message,
-	)
-	s.router.RegisterRequest(
-		ctx,
-		s.ctx.NodeID,
-		s.ctx.ChainID,
-		chainID,
-		requestID,
-		message.CrossChainAppResponseOp,
-		failedMsg,
-		p2p.EngineType_ENGINE_TYPE_UNSPECIFIED,
-	)
-
-	inMsg := message.InternalCrossChainAppRequest(
-		s.ctx.NodeID,
-		s.ctx.ChainID,
-		chainID,
-		requestID,
-		s.timeouts.TimeoutDuration(),
-		appRequestBytes,
-	)
-	go s.router.HandleInbound(ctx, inMsg)
-	return nil
-}
-
-func (s *sender) SendCrossChainAppResponse(ctx context.Context, chainID ids.ID, requestID uint32, appResponseBytes []byte) error {
-	ctx = context.WithoutCancel(ctx)
-
-	inMsg := message.InternalCrossChainAppResponse(
-		s.ctx.NodeID,
-		s.ctx.ChainID,
-		chainID,
-		requestID,
-		appResponseBytes,
-	)
-	go s.router.HandleInbound(ctx, inMsg)
-	return nil
-}
-
-func (s *sender) SendCrossChainAppError(ctx context.Context, chainID ids.ID, requestID uint32, errorCode int32, errorMessage string) error {
-	ctx = context.WithoutCancel(ctx)
-
-	inMsg := message.InternalCrossChainAppError(
-		s.ctx.NodeID,
-		s.ctx.ChainID,
-		chainID,
-		requestID,
-		errorCode,
-		errorMessage,
-	)
-	go s.router.HandleInbound(ctx, inMsg)
-	return nil
-}
-
 func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID], requestID uint32, appRequestBytes []byte) error {
 	ctx = context.WithoutCancel(ctx)
 
@@ -1298,7 +1224,6 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 		s.router.RegisterRequest(
 			ctx,
 			nodeID,
-			s.ctx.ChainID,
 			s.ctx.ChainID,
 			requestID,
 			message.AppResponseOp,
@@ -1330,7 +1255,9 @@ func (s *sender) SendAppRequest(ctx context.Context, nodeIDs set.Set[ids.NodeID]
 	// have them immediately fail.
 	for nodeID := range nodeIDs {
 		if s.timeouts.IsBenched(nodeID, s.ctx.ChainID) {
-			s.failedDueToBench[message.AppRequestOp].Inc() // update metric
+			s.failedDueToBench.With(prometheus.Labels{
+				opLabel: message.AppRequestOp.String(),
+			}).Inc()
 			nodeIDs.Remove(nodeID)
 			s.timeouts.RegisterRequestToUnreachableValidator()
 

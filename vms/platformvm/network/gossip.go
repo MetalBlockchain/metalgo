@@ -14,9 +14,12 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/network/p2p/gossip"
+	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
+
+	pmempool "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 )
 
 var (
@@ -49,7 +52,7 @@ func (t txGossipHandler) AppRequest(
 	nodeID ids.NodeID,
 	deadline time.Time,
 	requestBytes []byte,
-) ([]byte, error) {
+) ([]byte, *common.AppError) {
 	return t.appRequestHandler.AppRequest(ctx, nodeID, deadline, requestBytes)
 }
 
@@ -64,7 +67,7 @@ func (txMarshaller) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-	mempool mempool.Mempool,
+	mempool pmempool.Mempool,
 	registerer prometheus.Registerer,
 	log logging.Logger,
 	txVerifier TxVerifier,
@@ -82,7 +85,7 @@ func newGossipMempool(
 }
 
 type gossipMempool struct {
-	mempool.Mempool
+	pmempool.Mempool
 	log        logging.Logger
 	txVerifier TxVerifier
 

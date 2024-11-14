@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -19,19 +18,20 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
-	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/avm/txs/txstest"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -40,14 +40,7 @@ import (
 	keystoreutils "github.com/MetalBlockchain/metalgo/vms/components/keystore"
 )
 
-type fork uint8
-
 const (
-	durango fork = iota
-	eUpgrade
-
-	latest = durango
-
 	testTxFee    uint64 = 1000
 	startBalance uint64 = 50000
 
@@ -77,12 +70,6 @@ var (
 
 	keys  = secp256k1.TestKeys()[:3] // TODO: Remove [:3]
 	addrs []ids.ShortID              // addrs[i] corresponds to keys[i]
-
-	noFeesTestConfig = &config.Config{
-		EUpgradeTime:     mockable.MaxTime,
-		TxFee:            0,
-		CreateAssetTxFee: 0,
-	}
 )
 
 func init() {
@@ -99,7 +86,7 @@ type user struct {
 }
 
 type envConfig struct {
-	fork             fork
+	fork             upgradetest.Fork
 	isCustomFeeAsset bool
 	keystoreUsers    []*user
 	vmStaticConfig   *config.Config
@@ -110,13 +97,12 @@ type envConfig struct {
 }
 
 type environment struct {
-	genesisBytes  []byte
-	genesisTx     *txs.Tx
-	sharedMemory  *atomic.Memory
-	issuer        chan common.Message
-	vm            *VM
-	service       *Service
-	walletService *WalletService
+	genesisBytes []byte
+	genesisTx    *txs.Tx
+	sharedMemory *atomic.Memory
+	issuer       chan common.Message
+	vm           *VM
+	txBuilder    *txstest.Builder
 }
 
 // setup the testing environment
@@ -125,7 +111,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 
 	var (
 		genesisArgs *BuildGenesisArgs
-		assetName   = "AVAX"
+		assetName   = "METAL"
 	)
 	if c.isCustomFeeAsset {
 		genesisArgs = makeCustomAssetGenesis(tb)
@@ -160,7 +146,11 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		require.NoError(keystoreUser.Close())
 	}
 
-	vmStaticConfig := staticConfig(tb, c.fork)
+	vmStaticConfig := config.Config{
+		Upgrades:         upgradetest.GetConfig(c.fork),
+		TxFee:            testTxFee,
+		CreateAssetTxFee: testTxFee,
+	}
 	if c.vmStaticConfig != nil {
 		vmStaticConfig = *c.vmStaticConfig
 	}
@@ -198,7 +188,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 			},
 			c.additionalFxs...,
 		),
-		&common.SenderTest{},
+		&enginetest.Sender{},
 	))
 
 	stopVertexID := ids.GenerateTestID()
@@ -210,13 +200,7 @@ func setup(tb testing.TB, c *envConfig) *environment {
 		sharedMemory: m,
 		issuer:       issuer,
 		vm:           vm,
-		service: &Service{
-			vm: vm,
-		},
-		walletService: &WalletService{
-			vm:         vm,
-			pendingTxs: linkedhashmap.New[ids.ID, *txs.Tx](),
-		},
+		txBuilder:    txstest.New(vm.parser.Codec(), vm.ctx, &vm.Config, vm.feeAssetID, vm.state),
 	}
 
 	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
@@ -230,25 +214,15 @@ func setup(tb testing.TB, c *envConfig) *environment {
 	}
 
 	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+
+	tb.Cleanup(func() {
+		env.vm.ctx.Lock.Lock()
+		defer env.vm.ctx.Lock.Unlock()
+
+		require.NoError(env.vm.Shutdown(context.Background()))
+	})
+
 	return env
-}
-
-func staticConfig(tb testing.TB, f fork) config.Config {
-	c := config.Config{
-		TxFee:            testTxFee,
-		CreateAssetTxFee: testTxFee,
-		EUpgradeTime:     mockable.MaxTime,
-	}
-
-	switch f {
-	case eUpgrade:
-		c.EUpgradeTime = time.Time{}
-	case durango:
-	default:
-		require.FailNow(tb, "unhandled fork", f)
-	}
-
-	return c
 }
 
 // Returns:
@@ -349,8 +323,8 @@ func sampleAddrs(tb testing.TB, addressFormatter avax.AddressManager, addrs []id
 	sampler.Initialize(uint64(len(addrs)))
 
 	numAddrs := 1 + rand.Intn(len(addrs)) // #nosec G404
-	indices, err := sampler.Sample(numAddrs)
-	require.NoError(err)
+	indices, ok := sampler.Sample(numAddrs)
+	require.True(ok)
 	for _, index := range indices {
 		addr := addrs[index]
 		addrStr, err := addressFormatter.FormatLocalAddress(addr)
@@ -378,7 +352,7 @@ func makeDefaultGenesis(tb testing.TB) *BuildGenesisArgs {
 		Encoding: formatting.Hex,
 		GenesisData: map[string]AssetDefinition{
 			"asset1": {
-				Name:   "AVAX",
+				Name:   "METAL",
 				Symbol: "SYMB",
 				InitialState: map[string][]interface{}{
 					"fixedCap": {

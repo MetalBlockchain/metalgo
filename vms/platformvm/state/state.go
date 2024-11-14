@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"sync"
 	"time"
 
 	"github.com/google/btree"
@@ -21,14 +23,19 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
-	"github.com/MetalBlockchain/metalgo/utils"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
+	"github.com/MetalBlockchain/metalgo/utils/iterator"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/timer"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
@@ -39,6 +46,14 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
+)
+
+const (
+	defaultTreeDegree             = 2
+	indexIterationLimit           = 4096
+	indexIterationSleepMultiplier = 5
+	indexIterationSleepCap        = 10 * time.Second
+	indexLogFrequency             = 30 * time.Second
 )
 
 var (
@@ -63,21 +78,27 @@ var (
 	UTXOPrefix                    = []byte("utxo")
 	SubnetPrefix                  = []byte("subnet")
 	SubnetOwnerPrefix             = []byte("subnetOwner")
+	SubnetManagerPrefix           = []byte("subnetManager")
 	TransformedSubnetPrefix       = []byte("transformedSubnet")
 	SupplyPrefix                  = []byte("supply")
 	ChainPrefix                   = []byte("chain")
+	ExpiryReplayProtectionPrefix  = []byte("expiryReplayProtection")
 	SingletonPrefix               = []byte("singleton")
 
-	TimestampKey      = []byte("timestamp")
-	CurrentSupplyKey  = []byte("current supply")
-	LastAcceptedKey   = []byte("last accepted")
-	HeightsIndexedKey = []byte("heights indexed")
-	InitializedKey    = []byte("initialized")
+	TimestampKey       = []byte("timestamp")
+	FeeStateKey        = []byte("fee state")
+	AccruedFeesKey     = []byte("accrued fees")
+	CurrentSupplyKey   = []byte("current supply")
+	LastAcceptedKey    = []byte("last accepted")
+	HeightsIndexedKey  = []byte("heights indexed")
+	InitializedKey     = []byte("initialized")
+	BlocksReindexedKey = []byte("blocks reindexed")
 )
 
 // Chain collects all methods to manage the state of the chain for block
 // execution.
 type Chain interface {
+	Expiry
 	Stakers
 	avax.UTXOAdder
 	avax.UTXOGetter
@@ -86,15 +107,24 @@ type Chain interface {
 	GetTimestamp() time.Time
 	SetTimestamp(tm time.Time)
 
+	GetFeeState() gas.State
+	SetFeeState(f gas.State)
+
+	GetAccruedFees() uint64
+	SetAccruedFees(f uint64)
+
 	GetCurrentSupply(subnetID ids.ID) (uint64, error)
 	SetCurrentSupply(subnetID ids.ID, cs uint64)
 
 	AddRewardUTXO(txID ids.ID, utxo *avax.UTXO)
 
-	AddSubnet(createSubnetTx *txs.Tx)
+	AddSubnet(subnetID ids.ID)
 
 	GetSubnetOwner(subnetID ids.ID) (fx.Owner, error)
 	SetSubnetOwner(subnetID ids.ID, owner fx.Owner)
+
+	GetSubnetManager(subnetID ids.ID) (ids.ID, []byte, error)
+	SetSubnetManager(subnetID ids.ID, chainID ids.ID, addr []byte)
 
 	GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error)
 	AddSubnetTransformation(transformSubnetTx *txs.Tx)
@@ -121,7 +151,7 @@ type State interface {
 	GetBlockIDAtHeight(height uint64) (ids.ID, error)
 
 	GetRewardUTXOs(txID ids.ID) ([]*avax.UTXO, error)
-	GetSubnets() ([]*txs.Tx, error)
+	GetSubnetIDs() ([]ids.ID, error)
 	GetChains(subnetID ids.ID) ([]*txs.Tx, error)
 
 	// ApplyValidatorWeightDiffs iterates from [startHeight] towards the genesis
@@ -166,6 +196,14 @@ type State interface {
 	// Discard uncommitted changes to the database.
 	Abort()
 
+	// ReindexBlocks converts any block indices using the legacy storage format
+	// to the new format. If this database has already updated the indices,
+	// this function will return immediately, without iterating over the
+	// database.
+	//
+	// TODO: Remove after v1.12.x is activated
+	ReindexBlocks(lock sync.Locker, log logging.Logger) error
+
 	// Commit changes to the base database.
 	Commit() error
 
@@ -176,6 +214,16 @@ type State interface {
 	Checksum() ids.ID
 
 	Close() error
+}
+
+// Prior to https://github.com/MetalBlockchain/metalgo/pull/1719, blocks were
+// stored as a map from blkID to stateBlk. Nodes synced prior to this PR may
+// still have blocks partially stored using this legacy format.
+//
+// TODO: Remove after v1.12.x is activated
+type stateBlk struct {
+	Bytes  []byte         `serialize:"true"`
+	Status choices.Status `serialize:"true"`
 }
 
 /*
@@ -232,9 +280,14 @@ type State interface {
  * | '-. subnetID
  * |   '-. list
  * |     '-- txID -> nil
+ * |-. expiryReplayProtection
+ * | '-- timestamp + validationID -> nil
  * '-. singletons
  *   |-- initializedKey -> nil
+ *   |-- blocksReindexedKey -> nil
  *   |-- timestampKey -> timestamp
+ *   |-- feeStateKey -> feeState
+ *   |-- accruedFeesKey -> accruedFees
  *   |-- currentSupplyKey -> currentSupply
  *   |-- lastAcceptedKey -> lastAccepted
  *   '-- heightsIndexKey -> startIndexHeight + endIndexHeight
@@ -244,11 +297,15 @@ type state struct {
 
 	validators validators.Manager
 	ctx        *snow.Context
-	cfg        *config.Config
+	upgrades   upgrade.Config
 	metrics    metrics.Metrics
 	rewards    reward.Calculator
 
 	baseDB *versiondb.Database
+
+	expiry     *btree.BTreeG[ExpiryEntry]
+	expiryDiff *expiryDiff
+	expiryDB   database.Database
 
 	currentStakers *baseStakers
 	pendingStakers *baseStakers
@@ -256,11 +313,11 @@ type state struct {
 	currentHeight uint64
 
 	addedBlockIDs map[uint64]ids.ID            // map of height -> blockID
-	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID. If the entry is ids.Empty, it is not in the database
+	blockIDCache  cache.Cacher[uint64, ids.ID] // cache of height -> blockID; if the entry is ids.Empty, it is not in the database
 	blockIDDB     database.Database
 
 	addedBlocks map[ids.ID]block.Block            // map of blockID -> Block
-	blockCache  cache.Cacher[ids.ID, block.Block] // cache of blockID -> Block. If the entry is nil, it is not in the database
+	blockCache  cache.Cacher[ids.ID, block.Block] // cache of blockID -> Block; if the entry is nil, it is not in the database
 	blockDB     database.Database
 
 	validatorsDB                 database.Database
@@ -287,33 +344,36 @@ type state struct {
 	validatorPublicKeyDiffsDB database.Database
 
 	addedTxs map[ids.ID]*txAndStatus            // map of txID -> {*txs.Tx, Status}
-	txCache  cache.Cacher[ids.ID, *txAndStatus] // txID -> {*txs.Tx, Status}. If the entry is nil, it isn't in the database
+	txCache  cache.Cacher[ids.ID, *txAndStatus] // txID -> {*txs.Tx, Status}; if the entry is nil, it is not in the database
 	txDB     database.Database
 
 	addedRewardUTXOs map[ids.ID][]*avax.UTXO            // map of txID -> []*UTXO
 	rewardUTXOsCache cache.Cacher[ids.ID, []*avax.UTXO] // txID -> []*UTXO
 	rewardUTXODB     database.Database
 
-	modifiedUTXOs map[ids.ID]*avax.UTXO // map of modified UTXOID -> *UTXO if the UTXO is nil, it has been removed
+	modifiedUTXOs map[ids.ID]*avax.UTXO // map of modified UTXOID -> *UTXO; if the UTXO is nil, it has been removed
 	utxoDB        database.Database
 	utxoState     avax.UTXOState
 
-	cachedSubnets []*txs.Tx // nil if the subnets haven't been loaded
-	addedSubnets  []*txs.Tx
-	subnetBaseDB  database.Database
-	subnetDB      linkeddb.LinkedDB
+	cachedSubnetIDs []ids.ID // nil if the subnets haven't been loaded
+	addedSubnetIDs  []ids.ID
+	subnetBaseDB    database.Database
+	subnetDB        linkeddb.LinkedDB
 
-	// Subnet ID --> Owner of the subnet
-	subnetOwners     map[ids.ID]fx.Owner
-	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of subnetID -> owner if the entry is nil, it is not in the database
+	subnetOwners     map[ids.ID]fx.Owner                  // map of subnetID -> owner
+	subnetOwnerCache cache.Cacher[ids.ID, fxOwnerAndSize] // cache of subnetID -> owner; if the entry is nil, it is not in the database
 	subnetOwnerDB    database.Database
 
+	subnetManagers     map[ids.ID]chainIDAndAddr            // map of subnetID -> manager of the subnet
+	subnetManagerCache cache.Cacher[ids.ID, chainIDAndAddr] // cache of subnetID -> manager
+	subnetManagerDB    database.Database
+
 	transformedSubnets     map[ids.ID]*txs.Tx            // map of subnetID -> transformSubnetTx
-	transformedSubnetCache cache.Cacher[ids.ID, *txs.Tx] // cache of subnetID -> transformSubnetTx if the entry is nil, it is not in the database
+	transformedSubnetCache cache.Cacher[ids.ID, *txs.Tx] // cache of subnetID -> transformSubnetTx; if the entry is nil, it is not in the database
 	transformedSubnetDB    database.Database
 
 	modifiedSupplies map[ids.ID]uint64             // map of subnetID -> current supply
-	supplyCache      cache.Cacher[ids.ID, *uint64] // cache of subnetID -> current supply if the entry is nil, it is not in the database
+	supplyCache      cache.Cacher[ids.ID, *uint64] // cache of subnetID -> current supply; if the entry is nil, it is not in the database
 	supplyDB         database.Database
 
 	addedChains  map[ids.ID][]*txs.Tx                    // maps subnetID -> the newly added chains to the subnet
@@ -323,6 +383,8 @@ type state struct {
 
 	// The persisted fields represent the current database value
 	timestamp, persistedTimestamp         time.Time
+	feeState, persistedFeeState           gas.State
+	accruedFees, persistedAccruedFees     uint64
 	currentSupply, persistedCurrentSupply uint64
 	// [lastAccepted] is the most recently accepted block.
 	lastAccepted, persistedLastAccepted ids.ID
@@ -349,7 +411,7 @@ type ValidatorWeightDiff struct {
 func (v *ValidatorWeightDiff) Add(negative bool, amount uint64) error {
 	if v.Decrease == negative {
 		var err error
-		v.Amount, err = safemath.Add64(v.Amount, amount)
+		v.Amount, err = safemath.Add(v.Amount, amount)
 		return err
 	}
 
@@ -377,6 +439,11 @@ type fxOwnerAndSize struct {
 	size  int
 }
 
+type chainIDAndAddr struct {
+	ChainID ids.ID `serialize:"true"`
+	Addr    []byte `serialize:"true"`
+}
+
 func txSize(_ ids.ID, tx *txs.Tx) int {
 	if tx == nil {
 		return ids.IDLen + constants.PointerOverhead
@@ -402,44 +469,13 @@ func New(
 	db database.Database,
 	genesisBytes []byte,
 	metricsReg prometheus.Registerer,
-	cfg *config.Config,
+	validators validators.Manager,
+	upgrades upgrade.Config,
 	execCfg *config.ExecutionConfig,
 	ctx *snow.Context,
 	metrics metrics.Metrics,
 	rewards reward.Calculator,
 ) (State, error) {
-	s, err := newState(
-		db,
-		metrics,
-		cfg,
-		execCfg,
-		ctx,
-		metricsReg,
-		rewards,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.sync(genesisBytes); err != nil {
-		// Drop any errors on close to return the first error
-		_ = s.Close()
-
-		return nil, err
-	}
-
-	return s, nil
-}
-
-func newState(
-	db database.Database,
-	metrics metrics.Metrics,
-	cfg *config.Config,
-	execCfg *config.ExecutionConfig,
-	ctx *snow.Context,
-	metricsReg prometheus.Registerer,
-	rewards reward.Calculator,
-) (*state, error) {
 	blockIDCache, err := metercacher.New[uint64, ids.ID](
 		"block_id_cache",
 		metricsReg,
@@ -516,6 +552,18 @@ func newState(
 		return nil, err
 	}
 
+	subnetManagerDB := prefixdb.New(SubnetManagerPrefix, baseDB)
+	subnetManagerCache, err := metercacher.New[ids.ID, chainIDAndAddr](
+		"subnet_manager_cache",
+		metricsReg,
+		cache.NewSizedLRU[ids.ID, chainIDAndAddr](execCfg.SubnetManagerCacheSize, func(_ ids.ID, f chainIDAndAddr) int {
+			return 2*ids.IDLen + len(f.Addr)
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	transformedSubnetCache, err := metercacher.New(
 		"transformed_subnet_cache",
 		metricsReg,
@@ -552,12 +600,12 @@ func newState(
 		return nil, err
 	}
 
-	return &state{
+	s := &state{
 		validatorState: newValidatorState(),
 
-		validators: cfg.Validators,
+		validators: validators,
 		ctx:        ctx,
-		cfg:        cfg,
+		upgrades:   upgrades,
 		metrics:    metrics,
 		rewards:    rewards,
 		baseDB:     baseDB,
@@ -569,6 +617,10 @@ func newState(
 		addedBlocks: make(map[ids.ID]block.Block),
 		blockCache:  blockCache,
 		blockDB:     prefixdb.New(BlockPrefix, baseDB),
+
+		expiry:     btree.NewG(defaultTreeDegree, ExpiryEntry.Less),
+		expiryDiff: newExpiryDiff(),
+		expiryDB:   prefixdb.New(ExpiryReplayProtectionPrefix, baseDB),
 
 		currentStakers: newBaseStakers(),
 		pendingStakers: newBaseStakers(),
@@ -614,6 +666,10 @@ func newState(
 		subnetOwnerDB:    subnetOwnerDB,
 		subnetOwnerCache: subnetOwnerCache,
 
+		subnetManagers:     make(map[ids.ID]chainIDAndAddr),
+		subnetManagerDB:    subnetManagerDB,
+		subnetManagerCache: subnetManagerCache,
+
 		transformedSubnets:     make(map[ids.ID]*txs.Tx),
 		transformedSubnetCache: transformedSubnetCache,
 		transformedSubnetDB:    prefixdb.New(TransformedSubnetPrefix, baseDB),
@@ -628,22 +684,53 @@ func newState(
 		chainDBCache: chainDBCache,
 
 		singletonDB: prefixdb.New(SingletonPrefix, baseDB),
-	}, nil
+	}
+
+	if err := s.sync(genesisBytes); err != nil {
+		return nil, errors.Join(
+			err,
+			s.Close(),
+		)
+	}
+
+	return s, nil
+}
+
+func (s *state) GetExpiryIterator() (iterator.Iterator[ExpiryEntry], error) {
+	return s.expiryDiff.getExpiryIterator(
+		iterator.FromTree(s.expiry),
+	), nil
+}
+
+func (s *state) HasExpiry(entry ExpiryEntry) (bool, error) {
+	if has, modified := s.expiryDiff.modified[entry]; modified {
+		return has, nil
+	}
+	return s.expiry.Has(entry), nil
+}
+
+func (s *state) PutExpiry(entry ExpiryEntry) {
+	s.expiryDiff.PutExpiry(entry)
+}
+
+func (s *state) DeleteExpiry(entry ExpiryEntry) {
+	s.expiryDiff.DeleteExpiry(entry)
 }
 
 func (s *state) GetCurrentValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker, error) {
 	return s.currentStakers.GetValidator(subnetID, nodeID)
 }
 
-func (s *state) PutCurrentValidator(staker *Staker) {
+func (s *state) PutCurrentValidator(staker *Staker) error {
 	s.currentStakers.PutValidator(staker)
+	return nil
 }
 
 func (s *state) DeleteCurrentValidator(staker *Staker) {
 	s.currentStakers.DeleteValidator(staker)
 }
 
-func (s *state) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (s *state) GetCurrentDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	return s.currentStakers.GetDelegatorIterator(subnetID, nodeID), nil
 }
 
@@ -655,7 +742,7 @@ func (s *state) DeleteCurrentDelegator(staker *Staker) {
 	s.currentStakers.DeleteDelegator(staker)
 }
 
-func (s *state) GetCurrentStakerIterator() (StakerIterator, error) {
+func (s *state) GetCurrentStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.currentStakers.GetStakerIterator(), nil
 }
 
@@ -663,15 +750,16 @@ func (s *state) GetPendingValidator(subnetID ids.ID, nodeID ids.NodeID) (*Staker
 	return s.pendingStakers.GetValidator(subnetID, nodeID)
 }
 
-func (s *state) PutPendingValidator(staker *Staker) {
+func (s *state) PutPendingValidator(staker *Staker) error {
 	s.pendingStakers.PutValidator(staker)
+	return nil
 }
 
 func (s *state) DeletePendingValidator(staker *Staker) {
 	s.pendingStakers.DeleteValidator(staker)
 }
 
-func (s *state) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (StakerIterator, error) {
+func (s *state) GetPendingDelegatorIterator(subnetID ids.ID, nodeID ids.NodeID) (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetDelegatorIterator(subnetID, nodeID), nil
 }
 
@@ -683,52 +771,39 @@ func (s *state) DeletePendingDelegator(staker *Staker) {
 	s.pendingStakers.DeleteDelegator(staker)
 }
 
-func (s *state) GetPendingStakerIterator() (StakerIterator, error) {
+func (s *state) GetPendingStakerIterator() (iterator.Iterator[*Staker], error) {
 	return s.pendingStakers.GetStakerIterator(), nil
 }
 
-func (s *state) shouldInit() (bool, error) {
-	has, err := s.singletonDB.Has(InitializedKey)
-	return !has, err
-}
-
-func (s *state) doneInit() error {
-	return s.singletonDB.Put(InitializedKey, nil)
-}
-
-func (s *state) GetSubnets() ([]*txs.Tx, error) {
-	if s.cachedSubnets != nil {
-		return s.cachedSubnets, nil
+func (s *state) GetSubnetIDs() ([]ids.ID, error) {
+	if s.cachedSubnetIDs != nil {
+		return s.cachedSubnetIDs, nil
 	}
 
 	subnetDBIt := s.subnetDB.NewIterator()
 	defer subnetDBIt.Release()
 
-	txs := []*txs.Tx(nil)
+	subnetIDs := []ids.ID{}
 	for subnetDBIt.Next() {
 		subnetIDBytes := subnetDBIt.Key()
 		subnetID, err := ids.ToID(subnetIDBytes)
 		if err != nil {
 			return nil, err
 		}
-		subnetTx, _, err := s.GetTx(subnetID)
-		if err != nil {
-			return nil, err
-		}
-		txs = append(txs, subnetTx)
+		subnetIDs = append(subnetIDs, subnetID)
 	}
 	if err := subnetDBIt.Error(); err != nil {
 		return nil, err
 	}
-	txs = append(txs, s.addedSubnets...)
-	s.cachedSubnets = txs
-	return txs, nil
+	subnetIDs = append(subnetIDs, s.addedSubnetIDs...)
+	s.cachedSubnetIDs = subnetIDs
+	return subnetIDs, nil
 }
 
-func (s *state) AddSubnet(createSubnetTx *txs.Tx) {
-	s.addedSubnets = append(s.addedSubnets, createSubnetTx)
-	if s.cachedSubnets != nil {
-		s.cachedSubnets = append(s.cachedSubnets, createSubnetTx)
+func (s *state) AddSubnet(subnetID ids.ID) {
+	s.addedSubnetIDs = append(s.addedSubnetIDs, subnetID)
+	if s.cachedSubnetIDs != nil {
+		s.cachedSubnetIDs = append(s.cachedSubnetIDs, subnetID)
 	}
 }
 
@@ -779,6 +854,35 @@ func (s *state) GetSubnetOwner(subnetID ids.ID) (fx.Owner, error) {
 
 func (s *state) SetSubnetOwner(subnetID ids.ID, owner fx.Owner) {
 	s.subnetOwners[subnetID] = owner
+}
+
+func (s *state) GetSubnetManager(subnetID ids.ID) (ids.ID, []byte, error) {
+	if chainIDAndAddr, exists := s.subnetManagers[subnetID]; exists {
+		return chainIDAndAddr.ChainID, chainIDAndAddr.Addr, nil
+	}
+
+	if chainIDAndAddr, cached := s.subnetManagerCache.Get(subnetID); cached {
+		return chainIDAndAddr.ChainID, chainIDAndAddr.Addr, nil
+	}
+
+	chainIDAndAddrBytes, err := s.subnetManagerDB.Get(subnetID[:])
+	if err != nil {
+		return ids.Empty, nil, err
+	}
+
+	var manager chainIDAndAddr
+	if _, err := block.GenesisCodec.Unmarshal(chainIDAndAddrBytes, &manager); err != nil {
+		return ids.Empty, nil, err
+	}
+	s.subnetManagerCache.Put(subnetID, manager)
+	return manager.ChainID, manager.Addr, nil
+}
+
+func (s *state) SetSubnetManager(subnetID ids.ID, chainID ids.ID, addr []byte) {
+	s.subnetManagers[subnetID] = chainIDAndAddr{
+		ChainID: chainID,
+		Addr:    addr,
+	}
 }
 
 func (s *state) GetSubnetTransformation(subnetID ids.ID) (*txs.Tx, error) {
@@ -963,8 +1067,8 @@ func (s *state) DeleteUTXO(utxoID ids.ID) {
 	s.modifiedUTXOs[utxoID] = nil
 }
 
-func (s *state) GetStartTime(nodeID ids.NodeID, subnetID ids.ID) (time.Time, error) {
-	staker, err := s.currentStakers.GetValidator(subnetID, nodeID)
+func (s *state) GetStartTime(nodeID ids.NodeID) (time.Time, error) {
+	staker, err := s.currentStakers.GetValidator(constants.PrimaryNetworkID, nodeID)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -977,6 +1081,22 @@ func (s *state) GetTimestamp() time.Time {
 
 func (s *state) SetTimestamp(tm time.Time) {
 	s.timestamp = tm
+}
+
+func (s *state) GetFeeState() gas.State {
+	return s.feeState
+}
+
+func (s *state) SetFeeState(feeState gas.State) {
+	s.feeState = feeState
+}
+
+func (s *state) GetAccruedFees() uint64 {
+	return s.accruedFees
+}
+
+func (s *state) SetAccruedFees(accruedFees uint64) {
+	s.accruedFees = accruedFees
 }
 
 func (s *state) GetLastAccepted() ids.ID {
@@ -1100,7 +1220,7 @@ func applyWeightDiff(
 	if weightDiff.Decrease {
 		// The validator's weight was decreased at this block, so in the
 		// prior block it was higher.
-		vdr.Weight, err = safemath.Add64(vdr.Weight, weightDiff.Amount)
+		vdr.Weight, err = safemath.Add(vdr.Weight, weightDiff.Amount)
 	} else {
 		// The validator's weight was increased at this block, so in the
 		// prior block it was lower.
@@ -1206,7 +1326,7 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 			stakeAmount,
 			currentSupply,
 		)
-		newCurrentSupply, err := safemath.Add64(currentSupply, potentialReward)
+		newCurrentSupply, err := safemath.Add(currentSupply, potentialReward)
 		if err != nil {
 			return err
 		}
@@ -1216,7 +1336,9 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 			return err
 		}
 
-		s.PutCurrentValidator(staker)
+		if err := s.PutCurrentValidator(staker); err != nil {
+			return err
+		}
 		s.AddTx(vdrTx, status.Committed)
 		s.SetCurrentSupply(constants.PrimaryNetworkID, newCurrentSupply)
 	}
@@ -1245,8 +1367,9 @@ func (s *state) syncGenesis(genesisBlk block.Block, genesis *genesis.Genesis) er
 
 // Load pulls data previously stored on disk that is expected to be in memory.
 func (s *state) load() error {
-	return utils.Err(
+	return errors.Join(
 		s.loadMetadata(),
+		s.loadExpiry(),
 		s.loadCurrentValidators(),
 		s.loadPendingValidators(),
 		s.initValidatorSets(),
@@ -1260,6 +1383,20 @@ func (s *state) loadMetadata() error {
 	}
 	s.persistedTimestamp = timestamp
 	s.SetTimestamp(timestamp)
+
+	feeState, err := getFeeState(s.singletonDB)
+	if err != nil {
+		return err
+	}
+	s.persistedFeeState = feeState
+	s.SetFeeState(feeState)
+
+	accruedFees, err := getAccruedFees(s.singletonDB)
+	if err != nil {
+		return err
+	}
+	s.persistedAccruedFees = accruedFees
+	s.SetAccruedFees(accruedFees)
 
 	currentSupply, err := database.GetUInt64(s.singletonDB, CurrentSupplyKey)
 	if err != nil {
@@ -1301,6 +1438,23 @@ func (s *state) loadMetadata() error {
 		return nil
 	}
 	s.indexedHeights = indexedHeights
+	return nil
+}
+
+func (s *state) loadExpiry() error {
+	it := s.expiryDB.NewIterator()
+	defer it.Release()
+
+	for it.Next() {
+		key := it.Key()
+
+		var entry ExpiryEntry
+		if err := entry.Unmarshal(key); err != nil {
+			return fmt.Errorf("failed to unmarshal ExpiryEntry during load: %w", err)
+		}
+		s.expiry.ReplaceOrInsert(entry)
+	}
+
 	return nil
 }
 
@@ -1466,7 +1620,7 @@ func (s *state) loadCurrentValidators() error {
 		}
 	}
 
-	return utils.Err(
+	return errors.Join(
 		validatorIt.Error(),
 		subnetValidatorIt.Error(),
 		delegatorIt.Error(),
@@ -1550,7 +1704,7 @@ func (s *state) loadPendingValidators() error {
 		}
 	}
 
-	return utils.Err(
+	return errors.Join(
 		validatorIt.Error(),
 		subnetValidatorIt.Error(),
 		delegatorIt.Error(),
@@ -1573,7 +1727,7 @@ func (s *state) initValidatorSets() error {
 				return err
 			}
 
-			delegatorIterator := NewTreeIterator(validator.delegators)
+			delegatorIterator := iterator.FromTree(validator.delegators)
 			for delegatorIterator.Next() {
 				delegatorStaker := delegatorIterator.Value()
 				if err := s.validators.AddWeight(subnetID, nodeID, delegatorStaker.Weight); err != nil {
@@ -1596,12 +1750,13 @@ func (s *state) initValidatorSets() error {
 
 func (s *state) write(updateValidators bool, height uint64) error {
 	codecVersion := CodecVersion1
-	if !s.cfg.IsDurangoActivated(s.GetTimestamp()) {
+	if !s.upgrades.IsDurangoActivated(s.GetTimestamp()) {
 		codecVersion = CodecVersion0
 	}
 
-	return utils.Err(
+	return errors.Join(
 		s.writeBlocks(),
+		s.writeExpiry(),
 		s.writeCurrentStakers(updateValidators, height, codecVersion),
 		s.writePendingStakers(),
 		s.WriteValidatorMetadata(s.currentValidatorList, s.currentSubnetValidatorList, codecVersion), // Must be called after writeCurrentStakers
@@ -1610,6 +1765,7 @@ func (s *state) write(updateValidators bool, height uint64) error {
 		s.writeUTXOs(),
 		s.writeSubnets(),
 		s.writeSubnetOwners(),
+		s.writeSubnetManagers(),
 		s.writeTransformedSubnets(),
 		s.writeSubnetSupplies(),
 		s.writeChains(),
@@ -1618,7 +1774,8 @@ func (s *state) write(updateValidators bool, height uint64) error {
 }
 
 func (s *state) Close() error {
-	return utils.Err(
+	return errors.Join(
+		s.expiryDB.Close(),
 		s.pendingSubnetValidatorBaseDB.Close(),
 		s.pendingSubnetDelegatorBaseDB.Close(),
 		s.pendingDelegatorBaseDB.Close(),
@@ -1644,7 +1801,7 @@ func (s *state) Close() error {
 }
 
 func (s *state) sync(genesis []byte) error {
-	shouldInit, err := s.shouldInit()
+	wasInitialized, err := isInitialized(s.singletonDB)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to check if the database is initialized: %w",
@@ -1652,9 +1809,9 @@ func (s *state) sync(genesis []byte) error {
 		)
 	}
 
-	// If the database is empty, create the platform chain anew using the
-	// provided genesis state
-	if shouldInit {
+	// If the database wasn't previously initialized, create the platform chain
+	// anew using the provided genesis state.
+	if !wasInitialized {
 		if err := s.init(genesis); err != nil {
 			return fmt.Errorf(
 				"failed to initialize the database: %w",
@@ -1690,7 +1847,7 @@ func (s *state) init(genesisBytes []byte) error {
 		return err
 	}
 
-	if err := s.doneInit(); err != nil {
+	if err := markInitialized(s.singletonDB); err != nil {
 		return err
 	}
 
@@ -1789,7 +1946,7 @@ func (s *state) GetStatelessBlock(blockID ids.ID) (block.Block, error) {
 		return nil, err
 	}
 
-	blk, err := block.Parse(block.GenesisCodec, blkBytes)
+	blk, _, err := parseStoredBlock(blkBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1823,6 +1980,28 @@ func (s *state) GetBlockIDAtHeight(height uint64) (ids.ID, error) {
 
 	s.blockIDCache.Put(height, blkID)
 	return blkID, nil
+}
+
+func (s *state) writeExpiry() error {
+	for entry, isAdded := range s.expiryDiff.modified {
+		var (
+			key = entry.Marshal()
+			err error
+		)
+		if isAdded {
+			s.expiry.ReplaceOrInsert(entry)
+			err = s.expiryDB.Put(key, nil)
+		} else {
+			s.expiry.Delete(entry)
+			err = s.expiryDB.Delete(key)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	s.expiryDiff = newExpiryDiff()
+	return nil
 }
 
 func (s *state) writeCurrentStakers(updateValidators bool, height uint64, codecVersion uint16) error {
@@ -1994,7 +2173,7 @@ func writeCurrentDelegatorDiff(
 	validatorDiff *diffValidator,
 	codecVersion uint16,
 ) error {
-	addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+	addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
 	for addedDelegatorIterator.Next() {
 		staker := addedDelegatorIterator.Value()
@@ -2068,7 +2247,7 @@ func writePendingDiff(
 		}
 	}
 
-	addedDelegatorIterator := NewTreeIterator(validatorDiff.addedDelegators)
+	addedDelegatorIterator := iterator.FromTree(validatorDiff.addedDelegators)
 	defer addedDelegatorIterator.Release()
 	for addedDelegatorIterator.Next() {
 		staker := addedDelegatorIterator.Value()
@@ -2153,14 +2332,12 @@ func (s *state) writeUTXOs() error {
 }
 
 func (s *state) writeSubnets() error {
-	for _, subnet := range s.addedSubnets {
-		subnetID := subnet.ID()
-
+	for _, subnetID := range s.addedSubnetIDs {
 		if err := s.subnetDB.Put(subnetID[:], nil); err != nil {
 			return fmt.Errorf("failed to write subnet: %w", err)
 		}
 	}
-	s.addedSubnets = nil
+	s.addedSubnetIDs = nil
 	return nil
 }
 
@@ -2182,6 +2359,26 @@ func (s *state) writeSubnetOwners() error {
 
 		if err := s.subnetOwnerDB.Put(subnetID[:], ownerBytes); err != nil {
 			return fmt.Errorf("failed to write subnet owner: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *state) writeSubnetManagers() error {
+	for subnetID, manager := range s.subnetManagers {
+		subnetID := subnetID
+		manager := manager
+		delete(s.subnetManagers, subnetID)
+
+		managerBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, &manager)
+		if err != nil {
+			return fmt.Errorf("failed to marshal subnet manager: %w", err)
+		}
+
+		s.subnetManagerCache.Put(subnetID, manager)
+
+		if err := s.subnetManagerDB.Put(subnetID[:], managerBytes); err != nil {
+			return fmt.Errorf("failed to write subnet manager: %w", err)
 		}
 	}
 	return nil
@@ -2237,6 +2434,18 @@ func (s *state) writeMetadata() error {
 		}
 		s.persistedTimestamp = s.timestamp
 	}
+	if s.feeState != s.persistedFeeState {
+		if err := putFeeState(s.singletonDB, s.feeState); err != nil {
+			return fmt.Errorf("failed to write fee state: %w", err)
+		}
+		s.persistedFeeState = s.feeState
+	}
+	if s.accruedFees != s.persistedAccruedFees {
+		if err := database.PutUInt64(s.singletonDB, AccruedFeesKey, s.accruedFees); err != nil {
+			return fmt.Errorf("failed to write accrued fees: %w", err)
+		}
+		s.persistedAccruedFees = s.accruedFees
+	}
 	if s.persistedCurrentSupply != s.currentSupply {
 		if err := database.PutUInt64(s.singletonDB, CurrentSupplyKey, s.currentSupply); err != nil {
 			return fmt.Errorf("failed to write current supply: %w", err)
@@ -2259,4 +2468,208 @@ func (s *state) writeMetadata() error {
 		}
 	}
 	return nil
+}
+
+// Returns the block and whether it is a [stateBlk].
+// Invariant: blkBytes is safe to parse with blocks.GenesisCodec
+//
+// TODO: Remove after v1.12.x is activated
+func parseStoredBlock(blkBytes []byte) (block.Block, bool, error) {
+	// Attempt to parse as blocks.Block
+	blk, err := block.Parse(block.GenesisCodec, blkBytes)
+	if err == nil {
+		return blk, false, nil
+	}
+
+	// Fallback to [stateBlk]
+	blkState := stateBlk{}
+	if _, err := block.GenesisCodec.Unmarshal(blkBytes, &blkState); err != nil {
+		return nil, false, err
+	}
+
+	blk, err = block.Parse(block.GenesisCodec, blkState.Bytes)
+	return blk, true, err
+}
+
+func (s *state) ReindexBlocks(lock sync.Locker, log logging.Logger) error {
+	has, err := s.singletonDB.Has(BlocksReindexedKey)
+	if err != nil {
+		return err
+	}
+	if has {
+		log.Info("blocks already reindexed")
+		return nil
+	}
+
+	// It is possible that new blocks are added after grabbing this iterator.
+	// New blocks are guaranteed to be persisted in the new format, so we don't
+	// need to check them.
+	blockIterator := s.blockDB.NewIterator()
+	// Releasing is done using a closure to ensure that updating blockIterator
+	// will result in having the most recent iterator released when executing
+	// the deferred function.
+	defer func() {
+		blockIterator.Release()
+	}()
+
+	log.Info("starting block reindexing")
+
+	var (
+		startTime         = time.Now()
+		lastCommit        = startTime
+		nextUpdate        = startTime.Add(indexLogFrequency)
+		numIndicesChecked = 0
+		numIndicesUpdated = 0
+	)
+
+	for blockIterator.Next() {
+		valueBytes := blockIterator.Value()
+		blk, isStateBlk, err := parseStoredBlock(valueBytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse block: %w", err)
+		}
+
+		blkID := blk.ID()
+
+		// This block was previously stored using the legacy format, update the
+		// index to remove the usage of stateBlk.
+		if isStateBlk {
+			blkBytes := blk.Bytes()
+			if err := s.blockDB.Put(blkID[:], blkBytes); err != nil {
+				return fmt.Errorf("failed to write block: %w", err)
+			}
+
+			numIndicesUpdated++
+		}
+
+		numIndicesChecked++
+
+		now := time.Now()
+		if now.After(nextUpdate) {
+			nextUpdate = now.Add(indexLogFrequency)
+
+			progress := timer.ProgressFromHash(blkID[:])
+			eta := timer.EstimateETA(
+				startTime,
+				progress,
+				math.MaxUint64,
+			)
+
+			log.Info("reindexing blocks",
+				zap.Int("numIndicesUpdated", numIndicesUpdated),
+				zap.Int("numIndicesChecked", numIndicesChecked),
+				zap.Duration("eta", eta),
+			)
+		}
+
+		if numIndicesChecked%indexIterationLimit == 0 {
+			// We must hold the lock during committing to make sure we don't
+			// attempt to commit to disk while a block is concurrently being
+			// accepted.
+			lock.Lock()
+			err := errors.Join(
+				s.Commit(),
+				blockIterator.Error(),
+			)
+			lock.Unlock()
+			if err != nil {
+				return err
+			}
+
+			// We release the iterator here to allow the underlying database to
+			// clean up deleted state.
+			blockIterator.Release()
+
+			// We take the minimum here because it's possible that the node is
+			// currently bootstrapping. This would mean that grabbing the lock
+			// could take an extremely long period of time; which we should not
+			// delay processing for.
+			indexDuration := now.Sub(lastCommit)
+			sleepDuration := min(
+				indexIterationSleepMultiplier*indexDuration,
+				indexIterationSleepCap,
+			)
+			time.Sleep(sleepDuration)
+
+			// Make sure not to include the sleep duration into the next index
+			// duration.
+			lastCommit = time.Now()
+
+			blockIterator = s.blockDB.NewIteratorWithStart(blkID[:])
+		}
+	}
+
+	// Ensure we fully iterated over all blocks before writing that indexing has
+	// finished.
+	//
+	// Note: This is needed because a transient read error could cause the
+	// iterator to stop early.
+	if err := blockIterator.Error(); err != nil {
+		return fmt.Errorf("failed to iterate over historical blocks: %w", err)
+	}
+
+	if err := s.singletonDB.Put(BlocksReindexedKey, nil); err != nil {
+		return fmt.Errorf("failed to put marked blocks as reindexed: %w", err)
+	}
+
+	// We must hold the lock during committing to make sure we don't attempt to
+	// commit to disk while a block is concurrently being accepted.
+	lock.Lock()
+	defer lock.Unlock()
+
+	log.Info("finished block reindexing",
+		zap.Int("numIndicesUpdated", numIndicesUpdated),
+		zap.Int("numIndicesChecked", numIndicesChecked),
+		zap.Duration("duration", time.Since(startTime)),
+	)
+
+	return s.Commit()
+}
+
+func (s *state) GetUptime(vdrID ids.NodeID) (time.Duration, time.Time, error) {
+	return s.validatorState.GetUptime(vdrID, constants.PrimaryNetworkID)
+}
+
+func (s *state) SetUptime(vdrID ids.NodeID, upDuration time.Duration, lastUpdated time.Time) error {
+	return s.validatorState.SetUptime(vdrID, constants.PrimaryNetworkID, upDuration, lastUpdated)
+}
+
+func markInitialized(db database.KeyValueWriter) error {
+	return db.Put(InitializedKey, nil)
+}
+
+func isInitialized(db database.KeyValueReader) (bool, error) {
+	return db.Has(InitializedKey)
+}
+
+func putFeeState(db database.KeyValueWriter, feeState gas.State) error {
+	feeStateBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, feeState)
+	if err != nil {
+		return err
+	}
+	return db.Put(FeeStateKey, feeStateBytes)
+}
+
+func getFeeState(db database.KeyValueReader) (gas.State, error) {
+	feeStateBytes, err := db.Get(FeeStateKey)
+	if err == database.ErrNotFound {
+		return gas.State{}, nil
+	}
+	if err != nil {
+		return gas.State{}, err
+	}
+
+	var feeState gas.State
+	if _, err := block.GenesisCodec.Unmarshal(feeStateBytes, &feeState); err != nil {
+		return gas.State{}, err
+	}
+	return feeState, nil
+}
+
+func getAccruedFees(db database.KeyValueReader) (uint64, error) {
+	accruedFees, err := database.GetUInt64(db, AccruedFeesKey)
+	if err == database.ErrNotFound {
+		return 0, nil
+	}
+	return accruedFees, err
 }

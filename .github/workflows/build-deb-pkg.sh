@@ -12,7 +12,7 @@ mkdir -p "$DEBIAN_CONF"
 mkdir -p "$METAL_BUILD_BIN_DIR"
 
 # Assume binaries are at default locations
-OK=$(cp ./build/avalanchego "$METAL_BUILD_BIN_DIR")
+OK=$(cp ./build/metalgo "$METAL_BUILD_BIN_DIR")
 if [[ $OK -ne 0 ]]; then
   exit "$OK";
 fi

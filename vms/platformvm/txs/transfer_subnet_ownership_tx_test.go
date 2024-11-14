@@ -16,8 +16,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/verify"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
+	"github.com/MetalBlockchain/metalgo/vms/components/verify/verifymock"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx/fxmock"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/vms/types"
@@ -620,7 +620,7 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 			name: "invalid subnetAuth",
 			txFunc: func(ctrl *gomock.Controller) *TransferSubnetOwnershipTx {
 				// This SubnetAuth fails verification.
-				invalidSubnetAuth := verify.NewMockVerifiable(ctrl)
+				invalidSubnetAuth := verifymock.NewVerifiable(ctrl)
 				invalidSubnetAuth.EXPECT().Verify().Return(errInvalidSubnetAuth)
 				return &TransferSubnetOwnershipTx{
 					// Set subnetID so we don't error on that check.
@@ -635,9 +635,9 @@ func TestTransferSubnetOwnershipTxSyntacticVerify(t *testing.T) {
 			name: "passes verification",
 			txFunc: func(ctrl *gomock.Controller) *TransferSubnetOwnershipTx {
 				// This SubnetAuth passes verification.
-				validSubnetAuth := verify.NewMockVerifiable(ctrl)
+				validSubnetAuth := verifymock.NewVerifiable(ctrl)
 				validSubnetAuth.EXPECT().Verify().Return(nil)
-				mockOwner := fx.NewMockOwner(ctrl)
+				mockOwner := fxmock.NewOwner(ctrl)
 				mockOwner.EXPECT().Verify().Return(nil)
 				return &TransferSubnetOwnershipTx{
 					// Set subnetID so we don't error on that check.

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
+	"github.com/MetalBlockchain/metalgo/chains/atomic/atomictest"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
@@ -25,7 +26,7 @@ func TestInterface(t *testing.T) {
 	chainID0 := ids.GenerateTestID()
 	chainID1 := ids.GenerateTestID()
 
-	for _, test := range atomic.SharedMemoryTests {
+	for _, test := range atomictest.SharedMemoryTests {
 		baseDB := memdb.New()
 		memoryDB := prefixdb.New([]byte{0}, baseDB)
 		testDB := prefixdb.New([]byte{1}, baseDB)

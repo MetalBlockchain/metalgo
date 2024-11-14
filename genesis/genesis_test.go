@@ -13,11 +13,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MetalBlockchain/coreth/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
@@ -343,28 +345,27 @@ func TestGenesisFromFlag(t *testing.T) {
 
 func TestGenesis(t *testing.T) {
 	tests := []struct {
-		networkID  uint32
+		config     *Config
 		expectedID string
 	}{
 		{
-			networkID:  constants.MainnetID,
+			config:     &MainnetConfig,
 			expectedID: "2QWBywoaRDBk7Z1YmnGm4W2Mid5CUqBHGWdiHg45uRTJTQ8TDD",
 		},
 		{
-			networkID:  constants.TahoeID,
+			config:     &TahoeConfig,
 			expectedID: "tZW9eSc1k8bMxQusjYSVucoJQhuRaWimezf5feGQFxiPgk85q",
 		},
 		{
-			networkID:  constants.LocalID,
-			expectedID: "LSxVrtM25cDTLmMcjeZRXBYCrof6sAKyGh2SUfN7SezxsN62x",
+			config:     &unmodifiedLocalConfig,
+			expectedID: "cJ5P2MJoE87LFevQKmWVLbE88F7oSDNWbf6ZDWN9PrzeHP8te",
 		},
 	}
 	for _, test := range tests {
-		t.Run(constants.NetworkIDToNetworkName[test.networkID], func(t *testing.T) {
+		t.Run(constants.NetworkIDToNetworkName[test.config.NetworkID], func(t *testing.T) {
 			require := require.New(t)
 
-			config := GetConfig(test.networkID)
-			genesisBytes, _, err := FromConfig(config)
+			genesisBytes, _, err := FromConfig(test.config)
 			require.NoError(err)
 
 			var genesisID ids.ID = hashing.ComputeHash256Array(genesisBytes)
@@ -417,7 +418,7 @@ func TestVMGenesis(t *testing.T) {
 				},
 				{
 					vmID:       constants.EVMID,
-					expectedID: "2CA6j5zYzasynPsFeNoqWkmTCt3VScMvXUZHbfDJ8k3oGzAPtU",
+					expectedID: "2owdGqyG6FFzTHy5qhenDXQcEghvr571KZE3gSfRJERSJinuwC",
 				},
 			},
 		},
@@ -482,6 +483,42 @@ func TestAVAXAssetID(t *testing.T) {
 				test.expectedID,
 				avaxAssetID.String(),
 				"AVAX assetID with networkID %d mismatch",
+				test.networkID,
+			)
+		})
+	}
+}
+
+func TestCChainGenesisTimestamp(t *testing.T) {
+	tests := []struct {
+		networkID           uint32
+		expectedGenesisTime uint64
+	}{
+		{
+			networkID:           constants.MainnetID,
+			expectedGenesisTime: 0,
+		},
+		{
+			networkID:           constants.TahoeID,
+			expectedGenesisTime: 0,
+		},
+		{
+			networkID:           constants.LocalID,
+			expectedGenesisTime: uint64(upgrade.InitiallyActiveTime.Unix()),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(constants.NetworkIDToNetworkName[test.networkID], func(t *testing.T) {
+			require := require.New(t)
+
+			config := GetConfig(test.networkID)
+			var cChainGenesis core.Genesis
+			require.NoError(json.Unmarshal([]byte(config.CChainGenesis), &cChainGenesis))
+			require.Equal(
+				test.expectedGenesisTime,
+				cChainGenesis.Timestamp,
+				"C-Chain genesis time with networkID %d mismatch",
 				test.networkID,
 			)
 		})

@@ -11,8 +11,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p/wallet"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
@@ -38,7 +38,7 @@ func main() {
 	log.Printf("fetched state of %s in %s\n", addrStr, time.Since(fetchStartTime))
 
 	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
-	pBackend := p.NewBackend(state.PCTX, pUTXOs, nil)
+	pBackend := wallet.NewBackend(state.PCTX, pUTXOs, nil)
 	pBuilder := builder.New(addresses, state.PCTX, pBackend)
 
 	currentBalances, err := pBuilder.GetBalance()

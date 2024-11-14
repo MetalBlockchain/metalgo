@@ -8,6 +8,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/indexer"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/x/builder"
@@ -19,6 +20,7 @@ import (
 func main() {
 	var (
 		uri       = primary.LocalAPIURI + "/ext/index/X/block"
+		xChainID  = ids.FromStringOrPanic("2eNy1mUFdmaxXNj1eQHUe7Np4gju9sJsEtWQ4MX3ToiNKuADed")
 		client    = indexer.NewClient(uri)
 		ctx       = context.Background()
 		nextIndex uint64
@@ -27,11 +29,11 @@ func main() {
 		container, err := client.GetContainerByIndex(ctx, nextIndex)
 		if err != nil {
 			time.Sleep(time.Second)
-			log.Printf("polling for next accepted block\n")
+			log.Println("polling for next accepted block")
 			continue
 		}
 
-		proposerVMBlock, err := block.Parse(container.Bytes)
+		proposerVMBlock, err := block.Parse(container.Bytes, xChainID)
 		if err != nil {
 			log.Fatalf("failed to parse proposervm block: %s\n", err)
 		}

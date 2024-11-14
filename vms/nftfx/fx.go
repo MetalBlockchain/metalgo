@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
@@ -34,7 +33,7 @@ func (fx *Fx) Initialize(vmIntf interface{}) error {
 	log.Debug("initializing nft fx")
 
 	c := fx.VM.CodecRegistry()
-	return utils.Err(
+	return errors.Join(
 		c.RegisterType(&MintOutput{}),
 		c.RegisterType(&TransferOutput{}),
 		c.RegisterType(&MintOperation{}),

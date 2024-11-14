@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/networking/router"
+	"github.com/MetalBlockchain/metalgo/snow/networking/router/routermock"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -36,7 +36,7 @@ func TestBeaconManager_DataRace(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	ctrl := gomock.NewController(t)
-	mockRouter := router.NewMockRouter(ctrl)
+	mockRouter := routermock.NewRouter(ctrl)
 
 	b := beaconManager{
 		Router:                  mockRouter,

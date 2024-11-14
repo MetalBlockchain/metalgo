@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
@@ -97,8 +98,8 @@ func TestStakerDiffIterator(t *testing.T) {
 	}
 
 	it := NewStakerDiffIterator(
-		NewSliceIterator(currentStakers...),
-		NewSliceIterator(pendingStakers...),
+		iterator.FromSlice(currentStakers...),
+		iterator.FromSlice(pendingStakers...),
 	)
 	for _, expectedStaker := range stakerDiffs {
 		require.True(it.Next())
@@ -134,7 +135,7 @@ func TestMutableStakerIterator(t *testing.T) {
 		},
 	}
 
-	it := newMutableStakerIterator(NewSliceIterator(initialStakers...))
+	it := newMutableStakerIterator(iterator.FromSlice(initialStakers...))
 
 	addedStakers := []*Staker{
 		{

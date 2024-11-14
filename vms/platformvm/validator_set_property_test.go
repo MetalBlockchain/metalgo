@@ -15,6 +15,7 @@ import (
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/chains"
@@ -25,27 +26,27 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
+	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/formatting"
-	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
-	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
-	"github.com/MetalBlockchain/metalgo/utils/units"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/api"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
+	walletcommon "github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
 const (
@@ -83,7 +84,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			}()
 			nodeID := ids.GenerateTestNodeID()
 
-			currentTime := defaultGenesisTime
+			currentTime := genesistest.DefaultValidatorStartTime
 			vm.clock.Set(currentTime)
 			vm.state.SetTimestamp(currentTime)
 
@@ -120,10 +121,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 
 				switch ev.eventType {
 				case startSubnetValidator:
-					currentSubnetValidator, err = addSubnetValidator(vm, ev, subnetID)
-					if err != nil {
-						return "could not add subnet validator: " + err.Error()
-					}
+					currentSubnetValidator = addSubnetValidator(t, vm, ev, subnetID)
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
@@ -143,10 +141,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 							return failedValidatorSnapshotString + err.Error()
 						}
 					}
-					currentPrimaryValidator, err = addPrimaryValidatorWithBLSKey(vm, ev)
-					if err != nil {
-						return "could not add primary validator with BLS key: " + err.Error()
-					}
+					currentPrimaryValidator = addPrimaryValidatorWithBLSKey(t, vm, ev)
 					if err := takeValidatorsSnapshotAtCurrentHeight(vm, validatorSetByHeightAndSubnet); err != nil {
 						return failedValidatorSnapshotString + err.Error()
 					}
@@ -252,48 +247,64 @@ func takeValidatorsSnapshotAtCurrentHeight(vm *VM, validatorsSetByHeightAndSubne
 	return nil
 }
 
-func addSubnetValidator(vm *VM, data *validatorInputData, subnetID ids.ID) (*state.Staker, error) {
-	addr := keys[0].PublicKey().Address()
-	signedTx, err := vm.txBuilder.NewAddSubnetValidatorTx(
-		vm.Config.MinValidatorStake,
-		uint64(data.startTime.Unix()),
-		uint64(data.endTime.Unix()),
-		data.nodeID,
-		subnetID,
-		[]*secp256k1.PrivateKey{keys[0], keys[1]},
-		addr,
-		nil,
+func addSubnetValidator(t testing.TB, vm *VM, data *validatorInputData, subnetID ids.ID) *state.Staker {
+	require := require.New(t)
+
+	wallet := newWallet(t, vm, walletConfig{
+		subnetIDs: []ids.ID{subnetID},
+	})
+	tx, err := wallet.IssueAddSubnetValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: data.nodeID,
+				Start:  uint64(data.startTime.Unix()),
+				End:    uint64(data.endTime.Unix()),
+				Wght:   vm.Config.MinValidatorStake,
+			},
+			Subnet: subnetID,
+		},
 	)
-	if err != nil {
-		return nil, fmt.Errorf("could not create AddSubnetValidatorTx: %w", err)
-	}
-	return internalAddValidator(vm, signedTx)
+	require.NoError(err)
+
+	staker, err := internalAddValidator(vm, tx)
+	require.NoError(err)
+	return staker
 }
 
-func addPrimaryValidatorWithBLSKey(vm *VM, data *validatorInputData) (*state.Staker, error) {
-	addr := keys[0].PublicKey().Address()
+func addPrimaryValidatorWithBLSKey(t testing.TB, vm *VM, data *validatorInputData) *state.Staker {
+	require := require.New(t)
+
+	wallet := newWallet(t, vm, walletConfig{})
 
 	sk, err := bls.NewSecretKey()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate BLS key: %w", err)
+	require.NoError(err)
+
+	rewardsOwner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 
-	signedTx, err := vm.txBuilder.NewAddPermissionlessValidatorTx(
-		vm.Config.MinValidatorStake,
-		uint64(data.startTime.Unix()),
-		uint64(data.endTime.Unix()),
-		data.nodeID,
+	tx, err := wallet.IssueAddPermissionlessValidatorTx(
+		&txs.SubnetValidator{
+			Validator: txs.Validator{
+				NodeID: data.nodeID,
+				Start:  uint64(data.startTime.Unix()),
+				End:    uint64(data.endTime.Unix()),
+				Wght:   vm.Config.MinValidatorStake,
+			},
+			Subnet: constants.PrimaryNetworkID,
+		},
 		signer.NewProofOfPossession(sk),
-		addr,
+		vm.ctx.AVAXAssetID,
+		rewardsOwner,
+		rewardsOwner,
 		reward.PercentDenominator,
-		[]*secp256k1.PrivateKey{keys[0], keys[1]},
-		addr,
-		nil,
 	)
-	if err != nil {
-		return nil, fmt.Errorf("could not create AddPermissionlessValidatorTx: %w", err)
-	}
-	return internalAddValidator(vm, signedTx)
+	require.NoError(err)
+
+	staker, err := internalAddValidator(vm, tx)
+	require.NoError(err)
+	return staker
 }
 
 func internalAddValidator(vm *VM, signedTx *txs.Tx) (*state.Staker, error) {
@@ -609,29 +620,26 @@ func TestTimestampListGenerator(t *testing.T) {
 // add a single validator at the end of times,
 // to make sure it won't pollute our tests
 func buildVM(t *testing.T) (*VM, ids.ID, error) {
-	forkTime := defaultGenesisTime
 	vm := &VM{Config: config.Config{
 		Chains:                 chains.TestManager,
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		SybilProtectionEnabled: true,
 		Validators:             validators.NewManager(),
-		TxFee:                  defaultTxFee,
-		CreateSubnetTxFee:      100 * defaultTxFee,
-		TransformSubnetTxFee:   100 * defaultTxFee,
-		CreateBlockchainTxFee:  100 * defaultTxFee,
-		MinValidatorStake:      defaultMinValidatorStake,
-		MaxValidatorStake:      defaultMaxValidatorStake,
-		MinDelegatorStake:      defaultMinDelegatorStake,
-		MinStakeDuration:       defaultMinStakingDuration,
-		MaxStakeDuration:       defaultMaxStakingDuration,
-		RewardConfig:           defaultRewardConfig,
-		ApricotPhase3Time:      forkTime,
-		ApricotPhase5Time:      forkTime,
-		BanffTime:              forkTime,
-		CortinaTime:            forkTime,
-		EUpgradeTime:           mockable.MaxTime,
+		StaticFeeConfig: fee.StaticConfig{
+			TxFee:                 defaultTxFee,
+			CreateSubnetTxFee:     100 * defaultTxFee,
+			TransformSubnetTxFee:  100 * defaultTxFee,
+			CreateBlockchainTxFee: 100 * defaultTxFee,
+		},
+		MinValidatorStake: defaultMinValidatorStake,
+		MaxValidatorStake: defaultMaxValidatorStake,
+		MinDelegatorStake: defaultMinDelegatorStake,
+		MinStakeDuration:  defaultMinStakingDuration,
+		MaxStakeDuration:  defaultMaxStakingDuration,
+		RewardConfig:      defaultRewardConfig,
+		UpgradeConfig:     upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, genesistest.DefaultValidatorStartTime),
 	}}
-	vm.clock.Set(forkTime.Add(time.Second))
+	vm.clock.Set(genesistest.DefaultValidatorStartTime.Add(time.Second))
 
 	baseDB := memdb.New()
 	chainDB := prefixdb.New([]byte{0}, baseDB)
@@ -645,22 +653,22 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 
 	ctx.Lock.Lock()
 	defer ctx.Lock.Unlock()
-	appSender := &common.SenderTest{}
+	appSender := &enginetest.Sender{}
 	appSender.CantSendAppGossip = true
 	appSender.SendAppGossipF = func(context.Context, common.SendConfig, []byte) error {
 		return nil
 	}
 
-	genesisBytes, err := buildCustomGenesis(ctx.AVAXAssetID)
-	if err != nil {
-		return nil, ids.Empty, err
-	}
-
-	err = vm.Initialize(
+	err := vm.Initialize(
 		context.Background(),
 		ctx,
 		chainDB,
-		genesisBytes,
+		genesistest.NewBytes(t, genesistest.Config{
+			NodeIDs: []ids.NodeID{
+				genesistest.DefaultNodeIDs[len(genesistest.DefaultNodeIDs)-1],
+			},
+			ValidatorEndTime: mockable.MaxTime,
+		}),
 		nil,
 		nil,
 		msgChan,
@@ -679,16 +687,19 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	// Create a subnet and store it in testSubnet1
 	// Note: following Banff activation, block acceptance will move
 	// chain time ahead
-	testSubnet1, err = vm.txBuilder.NewCreateSubnetTx(
-		1, // threshold
-		[]ids.ShortID{keys[0].PublicKey().Address()},
-		[]*secp256k1.PrivateKey{keys[len(keys)-1]}, // pays tx fee
-		keys[0].PublicKey().Address(),              // change addr
-		nil,
+	wallet := newWallet(t, vm, walletConfig{})
+	owner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs:     []ids.ShortID{genesistest.DefaultFundedKeys[0].Address()},
+	}
+	testSubnet1, err = wallet.IssueCreateSubnetTx(
+		owner,
+		walletcommon.WithChangeOwner(owner),
 	)
 	if err != nil {
 		return nil, ids.Empty, err
 	}
+
 	vm.ctx.Lock.Unlock()
 	err = vm.issueTxFromRPC(testSubnet1)
 	vm.ctx.Lock.Lock()
@@ -711,72 +722,4 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	}
 
 	return vm, testSubnet1.ID(), nil
-}
-
-func buildCustomGenesis(avaxAssetID ids.ID) ([]byte, error) {
-	genesisUTXOs := make([]api.UTXO, len(keys))
-	for i, key := range keys {
-		id := key.PublicKey().Address()
-		addr, err := address.FormatBech32(constants.UnitTestHRP, id.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		genesisUTXOs[i] = api.UTXO{
-			Amount:  json.Uint64(defaultBalance),
-			Address: addr,
-		}
-	}
-
-	// we need at least a validator, otherwise BuildBlock would fail, since it
-	// won't find next staker to promote/evict from stakers set. Contrary to
-	// what happens with production code we push such validator at the end of
-	// times, so to avoid interference with our tests
-	nodeID := genesisNodeIDs[len(genesisNodeIDs)-1]
-	addr, err := address.FormatBech32(constants.UnitTestHRP, nodeID.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	starTime := mockable.MaxTime.Add(-1 * defaultMinStakingDuration)
-	endTime := mockable.MaxTime
-	genesisValidator := api.GenesisPermissionlessValidator{
-		GenesisValidator: api.GenesisValidator{
-			StartTime: json.Uint64(starTime.Unix()),
-			EndTime:   json.Uint64(endTime.Unix()),
-			NodeID:    nodeID,
-		},
-		RewardOwner: &api.Owner{
-			Threshold: 1,
-			Addresses: []string{addr},
-		},
-		Staked: []api.UTXO{{
-			Amount:  json.Uint64(defaultWeight),
-			Address: addr,
-		}},
-		DelegationFee: reward.PercentDenominator,
-	}
-
-	buildGenesisArgs := api.BuildGenesisArgs{
-		Encoding:      formatting.Hex,
-		NetworkID:     json.Uint32(constants.UnitTestID),
-		AvaxAssetID:   avaxAssetID,
-		UTXOs:         genesisUTXOs,
-		Validators:    []api.GenesisPermissionlessValidator{genesisValidator},
-		Chains:        nil,
-		Time:          json.Uint64(defaultGenesisTime.Unix()),
-		InitialSupply: json.Uint64(360 * units.MegaAvax),
-	}
-
-	buildGenesisResponse := api.BuildGenesisReply{}
-	platformvmSS := api.StaticService{}
-	if err := platformvmSS.BuildGenesis(nil, &buildGenesisArgs, &buildGenesisResponse); err != nil {
-		return nil, err
-	}
-
-	genesisBytes, err := formatting.Decode(buildGenesisResponse.Encoding, buildGenesisResponse.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return genesisBytes, nil
 }

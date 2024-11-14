@@ -58,12 +58,20 @@ func GetCanonicalValidatorSet(
 		return nil, 0, err
 	}
 
+	// Convert the validator set into the canonical ordering.
+	return FlattenValidatorSet(vdrSet)
+}
+
+// FlattenValidatorSet converts the provided [vdrSet] into a canonical ordering.
+// Also returns the total weight of the validator set.
+func FlattenValidatorSet(vdrSet map[ids.NodeID]*validators.GetValidatorOutput) ([]*Validator, uint64, error) {
 	var (
 		vdrs        = make(map[string]*Validator, len(vdrSet))
 		totalWeight uint64
+		err         error
 	)
 	for _, vdr := range vdrSet {
-		totalWeight, err = math.Add64(totalWeight, vdr.Weight)
+		totalWeight, err = math.Add(totalWeight, vdr.Weight)
 		if err != nil {
 			return nil, 0, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}
@@ -128,7 +136,7 @@ func SumWeight(vdrs []*Validator) (uint64, error) {
 		err    error
 	)
 	for _, vdr := range vdrs {
-		weight, err = math.Add64(weight, vdr.Weight)
+		weight, err = math.Add(weight, vdr.Weight)
 		if err != nil {
 			return 0, fmt.Errorf("%w: %w", ErrWeightOverflow, err)
 		}

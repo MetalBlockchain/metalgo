@@ -13,7 +13,6 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/proposer"
@@ -36,6 +35,7 @@ var (
 	errTimeTooAdvanced          = errors.New("time is too far advanced")
 	errProposerWindowNotStarted = errors.New("proposer window hasn't started")
 	errUnexpectedProposer       = errors.New("unexpected proposer for current window")
+	errProposerMismatch         = errors.New("proposer mismatch")
 	errProposersNotActivated    = errors.New("proposers haven't been activated yet")
 	errPChainHeightTooLow       = errors.New("block P-chain height is too low")
 )
@@ -64,7 +64,6 @@ type Block interface {
 type PostForkBlock interface {
 	Block
 
-	setStatus(choices.Status)
 	getStatelessBlk() block.Block
 	setInnerBlk(snowman.Block)
 }
@@ -73,7 +72,6 @@ type PostForkBlock interface {
 type postForkCommonComponents struct {
 	vm       *VM
 	innerBlk snowman.Block
-	status   choices.Status
 }
 
 // Return the inner block's height
@@ -143,7 +141,7 @@ func (p *postForkCommonComponents) Verify(
 		}
 
 		var shouldHaveProposer bool
-		if p.vm.IsDurangoActivated(parentTimestamp) {
+		if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
 			shouldHaveProposer, err = p.verifyPostDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
 		} else {
 			shouldHaveProposer, err = p.verifyPreDurangoBlockDelay(ctx, parentTimestamp, parentPChainHeight, child)
@@ -152,9 +150,9 @@ func (p *postForkCommonComponents) Verify(
 			return err
 		}
 
-		// Verify the signature of the node
-		if err := child.SignedBlock.Verify(shouldHaveProposer, p.vm.ctx.ChainID); err != nil {
-			return err
+		hasProposer := child.SignedBlock.Proposer() != ids.EmptyNodeID
+		if shouldHaveProposer != hasProposer {
+			return fmt.Errorf("%w: shouldHaveProposer (%v) != hasProposer (%v)", errProposerMismatch, shouldHaveProposer, hasProposer)
 		}
 
 		p.vm.ctx.Log.Debug("verified post-fork block",
@@ -199,7 +197,7 @@ func (p *postForkCommonComponents) buildChild(
 	}
 
 	var shouldBuildSignedBlock bool
-	if p.vm.IsDurangoActivated(parentTimestamp) {
+	if p.vm.Upgrades.IsDurangoActivated(parentTimestamp) {
 		shouldBuildSignedBlock, err = p.shouldBuildSignedBlockPostDurango(
 			ctx,
 			parentID,
@@ -267,7 +265,6 @@ func (p *postForkCommonComponents) buildChild(
 		postForkCommonComponents: postForkCommonComponents{
 			vm:       p.vm,
 			innerBlk: innerBlock,
-			status:   choices.Processing,
 		},
 	}
 
@@ -275,6 +272,7 @@ func (p *postForkCommonComponents) buildChild(
 		zap.Stringer("blkID", child.ID()),
 		zap.Stringer("innerBlkID", innerBlock.ID()),
 		zap.Uint64("height", child.Height()),
+		zap.Uint64("pChainHeight", pChainHeight),
 		zap.Time("parentTimestamp", parentTimestamp),
 		zap.Time("blockTimestamp", newTimestamp),
 	)
@@ -367,7 +365,10 @@ func (p *postForkCommonComponents) verifyPostDurangoBlockDelay(
 		currentSlot  = proposer.TimeToSlot(parentTimestamp, blkTimestamp)
 		proposerID   = blk.Proposer()
 	)
+	// populate the slot for the block.
+	blk.slot = &currentSlot
 
+	// find the expected proposer
 	expectedProposerID, err := p.vm.Windower.ExpectedProposer(
 		ctx,
 		blkHeight,
@@ -450,6 +451,11 @@ func (p *postForkCommonComponents) shouldBuildSignedBlockPostDurango(
 		)
 		return false, err
 	}
+
+	// report the build slot to the metrics.
+	p.vm.proposerBuildSlotGauge.Set(float64(proposer.TimeToSlot(parentTimestamp, nextStartTime)))
+
+	// set the scheduler to let us know when the next block need to be built.
 	p.vm.Scheduler.SetBuildBlockTime(nextStartTime)
 
 	// In case the inner VM only issued one pendingTxs message, we should

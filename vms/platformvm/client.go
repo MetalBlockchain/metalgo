@@ -16,7 +16,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
 	"github.com/MetalBlockchain/metalgo/utils/json"
 	"github.com/MetalBlockchain/metalgo/utils/rpc"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var _ Client = (*client)(nil)
@@ -88,16 +91,6 @@ type Client interface {
 	GetTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error)
 	// GetTxStatus returns the status of the transaction corresponding to [txID]
 	GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Option) (*GetTxStatusResponse, error)
-	// AwaitTxDecided polls [GetTxStatus] until a status is returned that
-	// implies the tx may be decided.
-	// TODO: Move this function off of the Client interface into a utility
-	// function.
-	AwaitTxDecided(
-		ctx context.Context,
-		txID ids.ID,
-		freq time.Duration,
-		options ...rpc.Option,
-	) (*GetTxStatusResponse, error)
 	// GetStake returns the amount of nAVAX that [addrs] have cumulatively
 	// staked on the Primary Network.
 	//
@@ -131,6 +124,10 @@ type Client interface {
 	GetBlock(ctx context.Context, blockID ids.ID, options ...rpc.Option) ([]byte, error)
 	// GetBlockByHeight returns the block at the given [height].
 	GetBlockByHeight(ctx context.Context, height uint64, options ...rpc.Option) ([]byte, error)
+	// GetFeeConfig returns the dynamic fee config of the chain.
+	GetFeeConfig(ctx context.Context, options ...rpc.Option) (*gas.Config, error)
+	// GetFeeState returns the current fee state of the chain.
+	GetFeeState(ctx context.Context, options ...rpc.Option) (gas.State, gas.Price, time.Time, error)
 }
 
 // Client implementation for interacting with the P Chain endpoint
@@ -238,6 +235,9 @@ type GetSubnetClientResponse struct {
 	Locktime    uint64
 	// subnet transformation tx ID for a permissionless subnet
 	SubnetTransformationTxID ids.ID
+	// subnet manager information for a permissionless L1
+	ManagerChainID ids.ID
+	ManagerAddress []byte
 }
 
 func (c *client) GetSubnet(ctx context.Context, subnetID ids.ID, options ...rpc.Option) (GetSubnetClientResponse, error) {
@@ -259,6 +259,8 @@ func (c *client) GetSubnet(ctx context.Context, subnetID ids.ID, options ...rpc.
 		Threshold:                uint32(res.Threshold),
 		Locktime:                 uint64(res.Locktime),
 		SubnetTransformationTxID: res.SubnetTransformationTxID,
+		ManagerChainID:           res.ManagerChainID,
+		ManagerAddress:           res.ManagerAddress,
 	}, nil
 }
 
@@ -372,7 +374,7 @@ func (c *client) GetBlockchains(ctx context.Context, options ...rpc.Option) ([]A
 func (c *client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Option) (ids.ID, error) {
 	txStr, err := formatting.Encode(formatting.Hex, txBytes)
 	if err != nil {
-		return ids.ID{}, err
+		return ids.Empty, err
 	}
 
 	res := &api.JSONTxID{}
@@ -407,27 +409,6 @@ func (c *client) GetTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Op
 		options...,
 	)
 	return res, err
-}
-
-func (c *client) AwaitTxDecided(ctx context.Context, txID ids.ID, freq time.Duration, options ...rpc.Option) (*GetTxStatusResponse, error) {
-	ticker := time.NewTicker(freq)
-	defer ticker.Stop()
-
-	for {
-		res, err := c.GetTxStatus(ctx, txID, options...)
-		if err == nil {
-			switch res.Status {
-			case status.Committed, status.Aborted, status.Dropped:
-				return res, nil
-			}
-		}
-
-		select {
-		case <-ticker.C:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
 }
 
 func (c *client) GetStake(
@@ -544,4 +525,66 @@ func (c *client) GetBlockByHeight(ctx context.Context, height uint64, options ..
 		return nil, err
 	}
 	return formatting.Decode(res.Encoding, res.Block)
+}
+
+func (c *client) GetFeeConfig(ctx context.Context, options ...rpc.Option) (*gas.Config, error) {
+	res := &gas.Config{}
+	err := c.requester.SendRequest(ctx, "platform.getFeeConfig", struct{}{}, res, options...)
+	return res, err
+}
+
+func (c *client) GetFeeState(ctx context.Context, options ...rpc.Option) (gas.State, gas.Price, time.Time, error) {
+	res := &GetFeeStateReply{}
+	err := c.requester.SendRequest(ctx, "platform.getFeeState", struct{}{}, res, options...)
+	return res.State, res.Price, res.Time, err
+}
+
+func AwaitTxAccepted(
+	c Client,
+	ctx context.Context,
+	txID ids.ID,
+	freq time.Duration,
+	options ...rpc.Option,
+) error {
+	ticker := time.NewTicker(freq)
+	defer ticker.Stop()
+
+	for {
+		res, err := c.GetTxStatus(ctx, txID, options...)
+		if err != nil {
+			return err
+		}
+
+		switch res.Status {
+		case status.Committed, status.Aborted:
+			return nil
+		}
+
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
+// GetSubnetOwners returns a map of subnet ID to current subnet's owner
+func GetSubnetOwners(
+	c Client,
+	ctx context.Context,
+	subnetIDs ...ids.ID,
+) (map[ids.ID]fx.Owner, error) {
+	subnetOwners := map[ids.ID]fx.Owner{}
+	for _, subnetID := range subnetIDs {
+		subnetInfo, err := c.GetSubnet(ctx, subnetID)
+		if err != nil {
+			return nil, err
+		}
+		subnetOwners[subnetID] = &secp256k1fx.OutputOwners{
+			Locktime:  subnetInfo.Locktime,
+			Threshold: subnetInfo.Threshold,
+			Addrs:     subnetInfo.ControlKeys,
+		}
+	}
+	return subnetOwners, nil
 }

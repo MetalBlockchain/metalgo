@@ -14,7 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -287,7 +287,7 @@ func TestInitializeChainState(t *testing.T) {
 	require.NoError(err)
 
 	stopVertexID := ids.GenerateTestID()
-	genesisTimestamp := version.DefaultUpgradeTime
+	genesisTimestamp := upgrade.InitiallyActiveTime
 	require.NoError(s.InitializeChainState(stopVertexID, genesisTimestamp))
 
 	lastAcceptedID := s.GetLastAccepted()

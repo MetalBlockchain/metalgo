@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
@@ -25,29 +26,29 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowstorm"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/json"
-	"github.com/MetalBlockchain/metalgo/utils/linkedhashmap"
+	"github.com/MetalBlockchain/metalgo/utils/linked"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/version"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/config"
-	"github.com/MetalBlockchain/metalgo/vms/avm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/avm/network"
 	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/avm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/index"
 	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/avm/block/builder"
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/avm/block/executor"
 	extensions "github.com/MetalBlockchain/metalgo/vms/avm/fxs"
+	avmmetrics "github.com/MetalBlockchain/metalgo/vms/avm/metrics"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
+	xmempool "github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 )
 
 const assetToFxCacheSize = 1024
@@ -65,10 +66,9 @@ type VM struct {
 
 	config.Config
 
-	metrics metrics.Metrics
+	metrics avmmetrics.Metrics
 
 	avax.AddressManager
-	avax.AtomicUTXOManager
 	ids.Aliaser
 	utxo.Spender
 
@@ -173,16 +173,15 @@ func (vm *VM) Initialize(
 		zap.Reflect("config", avmConfig),
 	)
 
-	registerer := prometheus.NewRegistry()
-	if err := ctx.Metrics.Register(registerer); err != nil {
+	vm.registerer, err = metrics.MakeAndRegister(ctx.Metrics, "")
+	if err != nil {
 		return err
 	}
-	vm.registerer = registerer
 
 	vm.connectedPeers = make(map[ids.NodeID]*version.Application)
 
 	// Initialize metrics as soon as possible
-	vm.metrics, err = metrics.New("", registerer)
+	vm.metrics, err = avmmetrics.New(vm.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to initialize metrics: %w", err)
 	}
@@ -227,7 +226,6 @@ func (vm *VM) Initialize(
 	}
 
 	codec := vm.parser.Codec()
-	vm.AtomicUTXOManager = avax.NewAtomicUTXOManager(ctx.SharedMemory, codec)
 	vm.Spender = utxo.NewSpender(&vm.clock, codec)
 
 	state, err := state.New(
@@ -247,7 +245,7 @@ func (vm *VM) Initialize(
 	}
 
 	vm.walletService.vm = vm
-	vm.walletService.pendingTxs = linkedhashmap.New[ids.ID, *txs.Tx]()
+	vm.walletService.pendingTxs = linked.NewHashmap[ids.ID, *txs.Tx]()
 
 	// use no op impl when disabled in config
 	if avmConfig.IndexTransactions {
@@ -321,7 +319,7 @@ func (vm *VM) Shutdown(context.Context) error {
 	vm.onShutdownCtxCancel()
 	vm.awaitShutdown.Wait()
 
-	return utils.Err(
+	return errors.Join(
 		vm.state.Close(),
 		vm.baseDB.Close(),
 	)
@@ -397,13 +395,13 @@ func (vm *VM) GetBlockIDAtHeight(_ context.Context, height uint64) (ids.ID, erro
  */
 
 func (vm *VM) Linearize(ctx context.Context, stopVertexID ids.ID, toEngine chan<- common.Message) error {
-	time := version.GetCortinaTime(vm.ctx.NetworkID)
+	time := vm.Config.Upgrades.CortinaTime
 	err := vm.state.InitializeChainState(stopVertexID, time)
 	if err != nil {
 		return err
 	}
 
-	mempool, err := mempool.New("mempool", vm.registerer, toEngine)
+	mempool, err := xmempool.New("mempool", vm.registerer, toEngine)
 	if err != nil {
 		return fmt.Errorf("failed to create mempool: %w", err)
 	}
@@ -642,7 +640,7 @@ func (vm *VM) lookupAssetID(asset string) (ids.ID, error) {
 	if assetID, err := ids.FromString(asset); err == nil {
 		return assetID, nil
 	}
-	return ids.ID{}, fmt.Errorf("asset '%s' not found", asset)
+	return ids.Empty, fmt.Errorf("asset '%s' not found", asset)
 }
 
 // Invariant: onAccept is called when [tx] is being marked as accepted, but

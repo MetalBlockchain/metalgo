@@ -4,6 +4,7 @@
 package state
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/vms/avm/block"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
@@ -408,7 +408,7 @@ func (s *state) CommitBatch() (database.Batch, error) {
 }
 
 func (s *state) Close() error {
-	return utils.Err(
+	return errors.Join(
 		s.utxoDB.Close(),
 		s.txDB.Close(),
 		s.blockIDDB.Close(),
@@ -419,7 +419,7 @@ func (s *state) Close() error {
 }
 
 func (s *state) write() error {
-	return utils.Err(
+	return errors.Join(
 		s.writeUTXOs(),
 		s.writeTxs(),
 		s.writeBlockIDs(),

@@ -14,7 +14,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/vms/proposervm/block"
 )
@@ -44,22 +43,20 @@ func testBlockState(require *require.Assertions, bs BlockState) {
 	)
 	require.NoError(err)
 
-	_, _, err = bs.GetBlock(b.ID())
+	_, err = bs.GetBlock(b.ID())
 	require.Equal(database.ErrNotFound, err)
 
-	_, _, err = bs.GetBlock(b.ID())
+	_, err = bs.GetBlock(b.ID())
 	require.Equal(database.ErrNotFound, err)
 
-	require.NoError(bs.PutBlock(b, choices.Accepted))
+	require.NoError(bs.PutBlock(b))
 
-	fetchedBlock, fetchedStatus, err := bs.GetBlock(b.ID())
+	fetchedBlock, err := bs.GetBlock(b.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, fetchedStatus)
 	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 
-	fetchedBlock, fetchedStatus, err = bs.GetBlock(b.ID())
+	fetchedBlock, err = bs.GetBlock(b.ID())
 	require.NoError(err)
-	require.Equal(choices.Accepted, fetchedStatus)
 	require.Equal(b.Bytes(), fetchedBlock.Bytes())
 }
 

@@ -28,6 +28,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/components/keystore"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
@@ -36,8 +37,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/builder"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
+	"github.com/MetalBlockchain/metalgo/vms/types"
 
 	avajson "github.com/MetalBlockchain/metalgo/utils/json"
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
@@ -50,6 +51,9 @@ const (
 
 	// Max number of addresses that can be passed in as argument to GetStake
 	maxGetStakeAddrs = 256
+
+	// Max number of items allowed in a page
+	maxPageSize = 1024
 
 	// Note: Staker attributes cache should be large enough so that no evictions
 	// happen when the API loops through all stakers.
@@ -190,14 +194,14 @@ utxoFor:
 		switch out := utxo.Out.(type) {
 		case *secp256k1fx.TransferOutput:
 			if out.Locktime <= currentTime {
-				newBalance, err := safemath.Add64(unlockeds[assetID], out.Amount())
+				newBalance, err := safemath.Add(unlockeds[assetID], out.Amount())
 				if err != nil {
 					unlockeds[assetID] = math.MaxUint64
 				} else {
 					unlockeds[assetID] = newBalance
 				}
 			} else {
-				newBalance, err := safemath.Add64(lockedNotStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add(lockedNotStakeables[assetID], out.Amount())
 				if err != nil {
 					lockedNotStakeables[assetID] = math.MaxUint64
 				} else {
@@ -213,21 +217,21 @@ utxoFor:
 				)
 				continue utxoFor
 			case innerOut.Locktime > currentTime:
-				newBalance, err := safemath.Add64(lockedNotStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add(lockedNotStakeables[assetID], out.Amount())
 				if err != nil {
 					lockedNotStakeables[assetID] = math.MaxUint64
 				} else {
 					lockedNotStakeables[assetID] = newBalance
 				}
 			case out.Locktime <= currentTime:
-				newBalance, err := safemath.Add64(unlockeds[assetID], out.Amount())
+				newBalance, err := safemath.Add(unlockeds[assetID], out.Amount())
 				if err != nil {
 					unlockeds[assetID] = math.MaxUint64
 				} else {
 					unlockeds[assetID] = newBalance
 				}
 			default:
-				newBalance, err := safemath.Add64(lockedStakeables[assetID], out.Amount())
+				newBalance, err := safemath.Add(lockedStakeables[assetID], out.Amount())
 				if err != nil {
 					lockedStakeables[assetID] = math.MaxUint64
 				} else {
@@ -243,7 +247,7 @@ utxoFor:
 
 	balances := maps.Clone(lockedStakeables)
 	for assetID, amount := range lockedNotStakeables {
-		newBalance, err := safemath.Add64(balances[assetID], amount)
+		newBalance, err := safemath.Add(balances[assetID], amount)
 		if err != nil {
 			balances[assetID] = math.MaxUint64
 		} else {
@@ -251,7 +255,7 @@ utxoFor:
 		}
 	}
 	for assetID, amount := range unlockeds {
-		newBalance, err := safemath.Add64(balances[assetID], amount)
+		newBalance, err := safemath.Add(balances[assetID], amount)
 		if err != nil {
 			balances[assetID] = math.MaxUint64
 		} else {
@@ -365,8 +369,8 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 		endUTXOID ids.ID
 	)
 	limit := int(args.Limit)
-	if limit <= 0 || builder.MaxPageSize < limit {
-		limit = builder.MaxPageSize
+	if limit <= 0 || maxPageSize < limit {
+		limit = maxPageSize
 	}
 
 	s.vm.ctx.Lock.Lock()
@@ -381,7 +385,9 @@ func (s *Service) GetUTXOs(_ *http.Request, args *api.GetUTXOsArgs, response *ap
 			limit,
 		)
 	} else {
-		utxos, endAddr, endUTXOID, err = s.vm.atomicUtxosManager.GetAtomicUTXOs(
+		utxos, endAddr, endUTXOID, err = avax.GetAtomicUTXOs(
+			s.vm.ctx.SharedMemory,
+			txs.Codec,
 			sourceChain,
 			addrSet,
 			startAddr,
@@ -431,8 +437,11 @@ type GetSubnetResponse struct {
 	ControlKeys []string       `json:"controlKeys"`
 	Threshold   avajson.Uint32 `json:"threshold"`
 	Locktime    avajson.Uint64 `json:"locktime"`
-	// subnet transformation tx ID for a permissionless subnet
+	// subnet transformation tx ID for an elastic subnet
 	SubnetTransformationTxID ids.ID `json:"subnetTransformationTxID"`
+	// subnet manager information for a permissionless L1
+	ManagerChainID ids.ID              `json:"managerChainID"`
+	ManagerAddress types.JSONByteSlice `json:"managerAddress"`
 }
 
 func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetSubnetResponse) error {
@@ -481,6 +490,18 @@ func (s *Service) GetSubnet(_ *http.Request, args *GetSubnetArgs, response *GetS
 		return err
 	}
 
+	switch chainID, addr, err := s.vm.state.GetSubnetManager(args.SubnetID); err {
+	case nil:
+		response.IsPermissioned = false
+		response.ManagerChainID = chainID
+		response.ManagerAddress = addr
+	case database.ErrNotFound:
+		response.ManagerChainID = ids.Empty
+		response.ManagerAddress = []byte(nil)
+	default:
+		return err
+	}
+
 	return nil
 }
 
@@ -523,14 +544,13 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 
 	getAll := len(args.IDs) == 0
 	if getAll {
-		subnets, err := s.vm.state.GetSubnets() // all subnets
+		subnetIDs, err := s.vm.state.GetSubnetIDs() // all subnets
 		if err != nil {
 			return fmt.Errorf("error getting subnets from database: %w", err)
 		}
 
-		response.Subnets = make([]APISubnet, len(subnets)+1)
-		for i, subnet := range subnets {
-			subnetID := subnet.ID()
+		response.Subnets = make([]APISubnet, len(subnetIDs)+1)
+		for i, subnetID := range subnetIDs {
 			if _, err := s.vm.state.GetSubnetTransformation(subnetID); err == nil {
 				response.Subnets[i] = APISubnet{
 					ID:          subnetID,
@@ -540,15 +560,23 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 				continue
 			}
 
-			unsignedTx := subnet.Unsigned.(*txs.CreateSubnetTx)
-			owner := unsignedTx.Owner.(*secp256k1fx.OutputOwners)
-			controlAddrs := []string{}
-			for _, controlKeyID := range owner.Addrs {
+			subnetOwner, err := s.vm.state.GetSubnetOwner(subnetID)
+			if err != nil {
+				return err
+			}
+
+			owner, ok := subnetOwner.(*secp256k1fx.OutputOwners)
+			if !ok {
+				return fmt.Errorf("expected *secp256k1fx.OutputOwners but got %T", subnetOwner)
+			}
+
+			controlAddrs := make([]string, len(owner.Addrs))
+			for i, controlKeyID := range owner.Addrs {
 				addr, err := s.addrManager.FormatLocalAddress(controlKeyID)
 				if err != nil {
 					return fmt.Errorf("problem formatting address: %w", err)
 				}
-				controlAddrs = append(controlAddrs, addr)
+				controlAddrs[i] = addr
 			}
 			response.Subnets[i] = APISubnet{
 				ID:          subnetID,
@@ -557,7 +585,7 @@ func (s *Service) GetSubnets(_ *http.Request, args *GetSubnetsArgs, response *Ge
 			}
 		}
 		// Include primary network
-		response.Subnets[len(subnets)] = APISubnet{
+		response.Subnets[len(subnetIDs)] = APISubnet{
 			ID:          constants.PrimaryNetworkID,
 			ControlKeys: []string{},
 			Threshold:   avajson.Uint32(0),
@@ -819,13 +847,26 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 
 			shares := attr.shares
 			delegationFee := avajson.Float32(100 * float32(shares) / float32(reward.PercentDenominator))
-
-			uptime, err := s.getAPIUptime(currentStaker)
-			if err != nil {
-				return err
+			var (
+				uptime    *avajson.Float32
+				connected *bool
+			)
+			if args.SubnetID == constants.PrimaryNetworkID {
+				rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(currentStaker.NodeID, currentStaker.StartTime)
+				if err != nil {
+					return err
+				}
+				// Transform this to a percentage (0-100) to make it consistent
+				// with observedUptime in info.peers API
+				currentUptime := avajson.Float32(rawUptime * 100)
+				if err != nil {
+					return err
+				}
+				isConnected := s.vm.uptimeManager.IsConnected(currentStaker.NodeID)
+				connected = &isConnected
+				uptime = &currentUptime
 			}
 
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
 			var (
 				validationRewardOwner *platformapi.Owner
 				delegationRewardOwner *platformapi.Owner
@@ -885,15 +926,8 @@ func (s *Service) GetCurrentValidators(_ *http.Request, args *GetCurrentValidato
 			vdrToDelegators[delegator.NodeID] = append(vdrToDelegators[delegator.NodeID], delegator)
 
 		case txs.SubnetPermissionedValidatorCurrentPriority:
-			uptime, err := s.getAPIUptime(currentStaker)
-			if err != nil {
-				return err
-			}
-			connected := s.vm.uptimeManager.IsConnected(nodeID, args.SubnetID)
 			reply.Validators = append(reply.Validators, platformapi.PermissionedValidator{
-				Staker:    apiStaker,
-				Connected: connected,
-				Uptime:    uptime,
+				Staker: apiStaker,
 			})
 
 		default:
@@ -1222,14 +1256,13 @@ func (s *Service) GetBlockchains(_ *http.Request, _ *struct{}, response *GetBloc
 	s.vm.ctx.Lock.Lock()
 	defer s.vm.ctx.Lock.Unlock()
 
-	subnets, err := s.vm.state.GetSubnets()
+	subnetIDs, err := s.vm.state.GetSubnetIDs()
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve subnets: %w", err)
 	}
 
 	response.Blockchains = []APIBlockchain{}
-	for _, subnet := range subnets {
-		subnetID := subnet.ID()
+	for _, subnetID := range subnetIDs {
 		chains, err := s.vm.state.GetChains(subnetID)
 		if err != nil {
 			return fmt.Errorf(
@@ -1818,20 +1851,47 @@ func (s *Service) GetBlockByHeight(_ *http.Request, args *api.GetBlockByHeightAr
 	return err
 }
 
-func (s *Service) getAPIUptime(staker *state.Staker) (*avajson.Float32, error) {
-	// Only report uptimes that we have been actively tracking.
-	if constants.PrimaryNetworkID != staker.SubnetID && !s.vm.TrackedSubnets.Contains(staker.SubnetID) {
-		return nil, nil
+// GetFeeConfig returns the dynamic fee config of the chain.
+func (s *Service) GetFeeConfig(_ *http.Request, _ *struct{}, reply *gas.Config) error {
+	s.vm.ctx.Log.Debug("API called",
+		zap.String("service", "platform"),
+		zap.String("method", "getFeeConfig"),
+	)
+
+	// TODO: Remove after Etna is activated.
+	now := time.Now()
+	if !s.vm.Config.UpgradeConfig.IsEtnaActivated(now) {
+		return nil
 	}
 
-	rawUptime, err := s.vm.uptimeManager.CalculateUptimePercentFrom(staker.NodeID, staker.SubnetID, staker.StartTime)
-	if err != nil {
-		return nil, err
-	}
-	// Transform this to a percentage (0-100) to make it consistent
-	// with observedUptime in info.peers API
-	uptime := avajson.Float32(rawUptime * 100)
-	return &uptime, nil
+	*reply = s.vm.DynamicFeeConfig
+	return nil
+}
+
+type GetFeeStateReply struct {
+	gas.State
+	Price gas.Price `json:"price"`
+	Time  time.Time `json:"timestamp"`
+}
+
+// GetFeeState returns the current fee state of the chain.
+func (s *Service) GetFeeState(_ *http.Request, _ *struct{}, reply *GetFeeStateReply) error {
+	s.vm.ctx.Log.Debug("API called",
+		zap.String("service", "platform"),
+		zap.String("method", "getFeeState"),
+	)
+
+	s.vm.ctx.Lock.Lock()
+	defer s.vm.ctx.Lock.Unlock()
+
+	reply.State = s.vm.state.GetFeeState()
+	reply.Price = gas.CalculatePrice(
+		s.vm.DynamicFeeConfig.MinPrice,
+		reply.State.Excess,
+		s.vm.DynamicFeeConfig.ExcessConversionConstant,
+	)
+	reply.Time = s.vm.state.GetTimestamp()
+	return nil
 }
 
 func (s *Service) getAPIOwner(owner *secp256k1fx.OutputOwners) (*platformapi.Owner, error) {
@@ -1888,7 +1948,7 @@ func getStakeHelper(tx *txs.Tx, addrs set.Set[ids.ShortID], totalAmountStaked ma
 		}
 
 		assetID := output.AssetID()
-		newAmount, err := safemath.Add64(totalAmountStaked[assetID], secpOut.Amt)
+		newAmount, err := safemath.Add(totalAmountStaked[assetID], secpOut.Amt)
 		if err != nil {
 			newAmount = math.MaxUint64
 		}

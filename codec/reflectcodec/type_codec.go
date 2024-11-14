@@ -25,8 +25,6 @@ const (
 var (
 	_ codec.Codec = (*genericCodec)(nil)
 
-	errMarshalNil              = errors.New("can't marshal nil pointer or interface")
-	errUnmarshalNil            = errors.New("can't unmarshal nil")
 	errNeedPointer             = errors.New("argument to unmarshal must be a pointer")
 	errRecursiveInterfaceTypes = errors.New("recursive interface types")
 )
@@ -84,7 +82,7 @@ func New(typer TypeCodec, tagNames []string) codec.Codec {
 
 func (c *genericCodec) Size(value interface{}) (int, error) {
 	if value == nil {
-		return 0, errMarshalNil // can't marshal nil
+		return 0, codec.ErrMarshalNil
 	}
 
 	size, _, err := c.size(reflect.ValueOf(value), nil /*=typeStack*/)
@@ -120,14 +118,14 @@ func (c *genericCodec) size(
 		return wrappers.StringLen(value.String()), false, nil
 	case reflect.Ptr:
 		if value.IsNil() {
-			return 0, false, errMarshalNil
+			return 0, false, codec.ErrMarshalNil
 		}
 
 		return c.size(value.Elem(), typeStack)
 
 	case reflect.Interface:
 		if value.IsNil() {
-			return 0, false, errMarshalNil
+			return 0, false, codec.ErrMarshalNil
 		}
 
 		underlyingValue := value.Interface()
@@ -294,7 +292,7 @@ func (c *genericCodec) size(
 // To marshal an interface, [value] must be a pointer to the interface
 func (c *genericCodec) MarshalInto(value interface{}, p *wrappers.Packer) error {
 	if value == nil {
-		return errMarshalNil // can't marshal nil
+		return codec.ErrMarshalNil
 	}
 
 	return c.marshal(reflect.ValueOf(value), p, nil /*=typeStack*/)
@@ -341,13 +339,13 @@ func (c *genericCodec) marshal(
 		return p.Err
 	case reflect.Ptr:
 		if value.IsNil() {
-			return errMarshalNil
+			return codec.ErrMarshalNil
 		}
 
 		return c.marshal(value.Elem(), p, typeStack)
 	case reflect.Interface:
 		if value.IsNil() {
-			return errMarshalNil
+			return codec.ErrMarshalNil
 		}
 
 		underlyingValue := value.Interface()
@@ -498,31 +496,18 @@ func (c *genericCodec) marshal(
 	}
 }
 
-// Unmarshal unmarshals [bytes] into [dest], where [dest] must be a pointer or
+// UnmarshalFrom unmarshals [p.Bytes] into [dest], where [dest] must be a pointer or
 // interface
-func (c *genericCodec) Unmarshal(bytes []byte, dest interface{}) error {
+func (c *genericCodec) UnmarshalFrom(p *wrappers.Packer, dest interface{}) error {
 	if dest == nil {
-		return errUnmarshalNil
+		return codec.ErrUnmarshalNil
 	}
 
-	p := wrappers.Packer{
-		Bytes: bytes,
-	}
 	destPtr := reflect.ValueOf(dest)
 	if destPtr.Kind() != reflect.Ptr {
 		return errNeedPointer
 	}
-	if err := c.unmarshal(&p, destPtr.Elem(), nil /*=typeStack*/); err != nil {
-		return err
-	}
-	if p.Offset != len(bytes) {
-		return fmt.Errorf("%w: read %d provided %d",
-			codec.ErrExtraSpace,
-			p.Offset,
-			len(bytes),
-		)
-	}
-	return nil
+	return c.unmarshal(p, destPtr.Elem(), nil /*=typeStack*/)
 }
 
 // Unmarshal from p.Bytes into [value]. [value] must be addressable.
@@ -675,7 +660,7 @@ func (c *genericCodec) unmarshal(
 		if err != nil {
 			return fmt.Errorf("couldn't unmarshal struct: %w", err)
 		}
-		// Go through the fields and umarshal into them
+		// Go through the fields and unmarshal into them
 		for _, fieldIndex := range serializedFieldIndices {
 			if err := c.unmarshal(p, value.Field(fieldIndex), typeStack); err != nil {
 				return err

@@ -5,24 +5,24 @@ package peer
 
 import (
 	"crypto"
-	"net"
+	"net/netip"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/staking"
+	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/ips"
 )
 
 func TestIPSigner(t *testing.T) {
 	require := require.New(t)
 
-	dynIP := ips.NewDynamicIPPort(
-		net.IPv6loopback,
+	dynIP := utils.NewAtomic(netip.AddrPortFrom(
+		netip.IPv6Loopback(),
 		0,
-	)
+	))
 
 	tlsCert, err := staking.NewTLSCert()
 	require.NoError(err)
@@ -37,22 +37,25 @@ func TestIPSigner(t *testing.T) {
 
 	signedIP1, err := s.GetSignedIP()
 	require.NoError(err)
-	require.Equal(dynIP.IPPort(), signedIP1.IPPort)
+	require.Equal(dynIP.Get(), signedIP1.AddrPort)
 	require.Equal(uint64(10), signedIP1.Timestamp)
 
 	s.clock.Set(time.Unix(11, 0))
 
 	signedIP2, err := s.GetSignedIP()
 	require.NoError(err)
-	require.Equal(dynIP.IPPort(), signedIP2.IPPort)
+	require.Equal(dynIP.Get(), signedIP2.AddrPort)
 	require.Equal(uint64(10), signedIP2.Timestamp)
 	require.Equal(signedIP1.TLSSignature, signedIP2.TLSSignature)
 
-	dynIP.SetIP(net.IPv4(1, 2, 3, 4))
+	dynIP.Set(netip.AddrPortFrom(
+		netip.AddrFrom4([4]byte{1, 2, 3, 4}),
+		dynIP.Get().Port(),
+	))
 
 	signedIP3, err := s.GetSignedIP()
 	require.NoError(err)
-	require.Equal(dynIP.IPPort(), signedIP3.IPPort)
+	require.Equal(dynIP.Get(), signedIP3.AddrPort)
 	require.Equal(uint64(11), signedIP3.Timestamp)
 	require.NotEqual(signedIP2.TLSSignature, signedIP3.TLSSignature)
 }

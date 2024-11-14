@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -18,19 +19,27 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
+	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/status"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 	txexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/executor"
 )
 
-// targetBlockSize is maximum number of transaction bytes to place into a
-// StandardBlock
-const targetBlockSize = 128 * units.KiB
+const (
+	// targetBlockSize is maximum number of transaction bytes to place into a
+	// StandardBlock
+	targetBlockSize = 128 * units.KiB
+
+	// maxTimeToSleep is the maximum time to sleep between checking if a block
+	// should be produced.
+	maxTimeToSleep = time.Hour
+)
 
 var (
 	_ Builder = (*builder)(nil)
@@ -61,12 +70,12 @@ type Builder interface {
 	// BuildBlock can be called to attempt to create a new block
 	BuildBlock(context.Context) (snowman.Block, error)
 
-	// PackBlockTxs returns an array of txs that can fit into a valid block of
-	// size [targetBlockSize]. The returned txs are all verified against the
-	// preferred state.
+	// PackAllBlockTxs returns an array of all txs that could be packed into a
+	// valid block of infinite size. The returned txs are all verified against
+	// the preferred state.
 	//
 	// Note: This function does not call the consensus engine.
-	PackBlockTxs(targetBlockSize int) ([]*txs.Tx, error)
+	PackAllBlockTxs() ([]*txs.Tx, error)
 }
 
 // builder implements a simple builder to convert txs into valid blocks
@@ -171,12 +180,13 @@ func (b *builder) durationToSleep() (time.Duration, error) {
 		return 0, fmt.Errorf("%w: %s", errMissingPreferredState, preferredID)
 	}
 
-	nextStakerChangeTime, err := txexecutor.GetNextStakerChangeTime(preferredState)
+	now := b.txExecutorBackend.Clk.Time()
+	maxTimeToAwake := now.Add(maxTimeToSleep)
+	nextStakerChangeTime, err := state.GetNextStakerChangeTime(preferredState, maxTimeToAwake)
 	if err != nil {
 		return 0, fmt.Errorf("%w of %s: %w", errCalculatingNextStakerTime, preferredID, err)
 	}
 
-	now := b.txExecutorBackend.Clk.Time()
 	return nextStakerChangeTime.Sub(now), nil
 }
 
@@ -216,7 +226,7 @@ func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 		return nil, fmt.Errorf("%w: %s", state.ErrMissingParentState, preferredID)
 	}
 
-	timestamp, timeWasCapped, err := txexecutor.NextBlockTime(preferredState, b.txExecutorBackend.Clk)
+	timestamp, timeWasCapped, err := state.NextBlockTime(preferredState, b.txExecutorBackend.Clk)
 	if err != nil {
 		return nil, fmt.Errorf("could not calculate next staker change time: %w", err)
 	}
@@ -236,21 +246,37 @@ func (b *builder) BuildBlock(context.Context) (snowman.Block, error) {
 	return b.blkManager.NewBlock(statelessBlk), nil
 }
 
-func (b *builder) PackBlockTxs(targetBlockSize int) ([]*txs.Tx, error) {
+func (b *builder) PackAllBlockTxs() ([]*txs.Tx, error) {
 	preferredID := b.blkManager.Preferred()
 	preferredState, ok := b.blkManager.GetState(preferredID)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", errMissingPreferredState, preferredID)
 	}
 
-	return packBlockTxs(
+	timestamp, _, err := state.NextBlockTime(preferredState, b.txExecutorBackend.Clk)
+	if err != nil {
+		return nil, fmt.Errorf("could not calculate next staker change time: %w", err)
+	}
+
+	if !b.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+		return packDurangoBlockTxs(
+			preferredID,
+			preferredState,
+			b.Mempool,
+			b.txExecutorBackend,
+			b.blkManager,
+			timestamp,
+			math.MaxInt,
+		)
+	}
+	return packEtnaBlockTxs(
 		preferredID,
 		preferredState,
 		b.Mempool,
 		b.txExecutorBackend,
 		b.blkManager,
-		b.txExecutorBackend.Clk.Time(),
-		targetBlockSize,
+		timestamp,
+		math.MaxUint64,
 	)
 }
 
@@ -263,15 +289,31 @@ func buildBlock(
 	forceAdvanceTime bool,
 	parentState state.Chain,
 ) (block.Block, error) {
-	blockTxs, err := packBlockTxs(
-		parentID,
-		parentState,
-		builder.Mempool,
-		builder.txExecutorBackend,
-		builder.blkManager,
-		timestamp,
-		targetBlockSize,
+	var (
+		blockTxs []*txs.Tx
+		err      error
 	)
+	if builder.txExecutorBackend.Config.UpgradeConfig.IsEtnaActivated(timestamp) {
+		blockTxs, err = packEtnaBlockTxs(
+			parentID,
+			parentState,
+			builder.Mempool,
+			builder.txExecutorBackend,
+			builder.blkManager,
+			timestamp,
+			0, // minCapacity is 0 as we want to honor the capacity in state.
+		)
+	} else {
+		blockTxs, err = packDurangoBlockTxs(
+			parentID,
+			parentState,
+			builder.Mempool,
+			builder.txExecutorBackend,
+			builder.blkManager,
+			timestamp,
+			targetBlockSize,
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack block txs: %w", err)
 	}
@@ -313,7 +355,7 @@ func buildBlock(
 	)
 }
 
-func packBlockTxs(
+func packDurangoBlockTxs(
 	parentID ids.ID,
 	parentState state.Chain,
 	mempool mempool.Mempool,
@@ -332,10 +374,10 @@ func packBlockTxs(
 	}
 
 	var (
-		blockTxs []*txs.Tx
-		inputs   set.Set[ids.ID]
+		blockTxs      []*txs.Tx
+		inputs        set.Set[ids.ID]
+		feeCalculator = state.PickFeeCalculator(backend.Config, stateDiff)
 	)
-
 	for {
 		tx, exists := mempool.Peek()
 		if !exists {
@@ -345,45 +387,22 @@ func packBlockTxs(
 		if txSize > remainingSize {
 			break
 		}
-		mempool.Remove(tx)
 
-		// Invariant: [tx] has already been syntactically verified.
-
-		txDiff, err := state.NewDiffOn(stateDiff)
+		shouldAdd, err := executeTx(
+			parentID,
+			stateDiff,
+			mempool,
+			backend,
+			manager,
+			&inputs,
+			feeCalculator,
+			tx,
+		)
 		if err != nil {
 			return nil, err
 		}
-
-		executor := &txexecutor.StandardTxExecutor{
-			Backend: backend,
-			State:   txDiff,
-			Tx:      tx,
-		}
-
-		err = tx.Unsigned.Visit(executor)
-		if err != nil {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, err)
+		if !shouldAdd {
 			continue
-		}
-
-		if inputs.Overlaps(executor.Inputs) {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, blockexecutor.ErrConflictingBlockTxs)
-			continue
-		}
-		err = manager.VerifyUniqueInputs(parentID, executor.Inputs)
-		if err != nil {
-			txID := tx.ID()
-			mempool.MarkDropped(txID, err)
-			continue
-		}
-		inputs.Union(executor.Inputs)
-
-		txDiff.AddTx(tx, status.Committed)
-		err = txDiff.Apply(stateDiff)
-		if err != nil {
-			return nil, err
 		}
 
 		remainingSize -= txSize
@@ -391,6 +410,129 @@ func packBlockTxs(
 	}
 
 	return blockTxs, nil
+}
+
+func packEtnaBlockTxs(
+	parentID ids.ID,
+	parentState state.Chain,
+	mempool mempool.Mempool,
+	backend *txexecutor.Backend,
+	manager blockexecutor.Manager,
+	timestamp time.Time,
+	minCapacity gas.Gas,
+) ([]*txs.Tx, error) {
+	stateDiff, err := state.NewDiffOn(parentState)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := txexecutor.AdvanceTimeTo(backend, stateDiff, timestamp); err != nil {
+		return nil, err
+	}
+
+	feeState := stateDiff.GetFeeState()
+	capacity := max(feeState.Capacity, minCapacity)
+
+	var (
+		blockTxs        []*txs.Tx
+		inputs          set.Set[ids.ID]
+		blockComplexity gas.Dimensions
+		feeCalculator   = state.PickFeeCalculator(backend.Config, stateDiff)
+	)
+	for {
+		tx, exists := mempool.Peek()
+		if !exists {
+			break
+		}
+
+		txComplexity, err := fee.TxComplexity(tx.Unsigned)
+		if err != nil {
+			return nil, err
+		}
+		newBlockComplexity, err := blockComplexity.Add(&txComplexity)
+		if err != nil {
+			return nil, err
+		}
+		newBlockGas, err := newBlockComplexity.ToGas(backend.Config.DynamicFeeConfig.Weights)
+		if err != nil {
+			return nil, err
+		}
+		if newBlockGas > capacity {
+			break
+		}
+
+		shouldAdd, err := executeTx(
+			parentID,
+			stateDiff,
+			mempool,
+			backend,
+			manager,
+			&inputs,
+			feeCalculator,
+			tx,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if !shouldAdd {
+			continue
+		}
+
+		blockComplexity = newBlockComplexity
+		blockTxs = append(blockTxs, tx)
+	}
+
+	return blockTxs, nil
+}
+
+func executeTx(
+	parentID ids.ID,
+	stateDiff state.Diff,
+	mempool mempool.Mempool,
+	backend *txexecutor.Backend,
+	manager blockexecutor.Manager,
+	inputs *set.Set[ids.ID],
+	feeCalculator fee.Calculator,
+	tx *txs.Tx,
+) (bool, error) {
+	mempool.Remove(tx)
+
+	// Invariant: [tx] has already been syntactically verified.
+
+	txDiff, err := state.NewDiffOn(stateDiff)
+	if err != nil {
+		return false, err
+	}
+
+	executor := &txexecutor.StandardTxExecutor{
+		Backend:       backend,
+		State:         txDiff,
+		FeeCalculator: feeCalculator,
+		Tx:            tx,
+	}
+
+	err = tx.Unsigned.Visit(executor)
+	if err != nil {
+		txID := tx.ID()
+		mempool.MarkDropped(txID, err)
+		return false, nil
+	}
+
+	if inputs.Overlaps(executor.Inputs) {
+		txID := tx.ID()
+		mempool.MarkDropped(txID, blockexecutor.ErrConflictingBlockTxs)
+		return false, nil
+	}
+	err = manager.VerifyUniqueInputs(parentID, executor.Inputs)
+	if err != nil {
+		txID := tx.ID()
+		mempool.MarkDropped(txID, err)
+		return false, nil
+	}
+	inputs.Union(executor.Inputs)
+
+	txDiff.AddTx(tx, status.Committed)
+	return true, txDiff.Apply(stateDiff)
 }
 
 // getNextStakerToReward returns the next staker txID to remove from the staking

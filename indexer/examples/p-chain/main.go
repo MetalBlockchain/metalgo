@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/indexer"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
 
 	platformvmblock "github.com/MetalBlockchain/metalgo/vms/platformvm/block"
@@ -28,12 +29,12 @@ func main() {
 		container, err := client.GetContainerByIndex(ctx, nextIndex)
 		if err != nil {
 			time.Sleep(time.Second)
-			log.Printf("polling for next accepted block\n")
+			log.Println("polling for next accepted block")
 			continue
 		}
 
 		platformvmBlockBytes := container.Bytes
-		proposerVMBlock, err := proposervmblock.Parse(container.Bytes)
+		proposerVMBlock, err := proposervmblock.Parse(container.Bytes, constants.PlatformChainID)
 		if err == nil {
 			platformvmBlockBytes = proposerVMBlock.Block()
 		}
