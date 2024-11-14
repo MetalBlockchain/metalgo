@@ -41,8 +41,8 @@ if [[ -z "${SKIP_BUILD_RACE}" && $image_tag == *"-r" ]]; then
   exit 1
 fi
 
-# The published name should be 'avaplatform/avalanchego', but to avoid unintentional
-# pushes it is defaulted to 'avalanchego' (without a repo or registry name) which can
+# The published name should be 'MetalBlockchain/metalgo', but to avoid unintentional
+# pushes it is defaulted to 'metalgo' (without a repo or registry name) which can
 # only be used to create local images.
 DOCKER_IMAGE="${DOCKER_IMAGE:-metalgo}"
 

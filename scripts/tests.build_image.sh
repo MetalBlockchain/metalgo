@@ -9,9 +9,9 @@ set -euo pipefail
 # TODO(marun) Perform more extensive validation (e.g. e2e testing) against one or more images
 
 # Directory above this script
-AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
-source "$AVALANCHE_PATH"/scripts/constants.sh
+source "$METAL_PATH"/scripts/constants.sh
 
 build_and_test() {
   local image_name=$1
@@ -52,15 +52,15 @@ build_and_test() {
         echo "image is for arm64 and binary is compiled with race detection"
         echo "amd64 github workers are known to run kernels incompatible with these images"
       else
-        echo "checking sanity of image $target_image for $arch by running 'avalanchego --version'"
-        docker run  -t --rm --platform "linux/$arch" "$target_image" /avalanchego/build/avalanchego --version
+        echo "checking sanity of image $target_image for $arch by running 'metalgo --version'"
+        docker run  -t --rm --platform "linux/$arch" "$target_image" /metalgo/build/metalgo --version
       fi
     done
   done
 }
 
 echo "checking build of single-arch images"
-build_and_test avalanchego
+build_and_test metalgo
 
 echo "starting local docker registry to allow verification of multi-arch image builds"
 REGISTRY_CONTAINER_ID="$(docker run --rm -d -P registry:2)"
@@ -81,4 +81,4 @@ function cleanup {
 trap cleanup EXIT
 
 echo "checking build of multi-arch images"
-build_and_test "localhost:${REGISTRY_PORT}/avalanchego"
+build_and_test "localhost:${REGISTRY_PORT}/metalgo"

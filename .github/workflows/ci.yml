@@ -202,29 +202,29 @@ jobs:
         shell: bash
         run: bash -x scripts/tests.build_image.sh
   test_build_antithesis_avalanchego_images:
-    name: Build Antithesis avalanchego images
+    name: Build Antithesis metalgo images
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - name: Build AvalancheGo Binary
+      - name: Build MetalGo Binary
         shell: bash
         run: ./scripts/build.sh -r
       - name: Check that the avalanchego workload is sane
         shell: bash
-        run: go run ./tests/antithesis/avalanchego --avalanchego-path=./build/avalanchego --duration=60s
+        run: go run ./tests/antithesis/avalanchego --metalgo-path=./build/metalgo --duration=60s
       - name: Check image build for avalanchego test setup
         shell: bash
         run: bash -x scripts/tests.build_antithesis_images.sh
         env:
-          TEST_SETUP: avalanchego
+          TEST_SETUP: metalgo
   test_build_antithesis_xsvm_images:
     name: Build Antithesis xsvm images
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-go-for-project
-      - name: Build AvalancheGo Binary
+      - name: Build MetalGo Binary
         shell: bash
         run: ./scripts/build.sh -r
       - name: Build xsvm binary
@@ -232,7 +232,7 @@ jobs:
         run: ./scripts/build_xsvm.sh
       - name: Check that the xsvm workload is sane
         shell: bash
-        run: go run ./tests/antithesis/xsvm --avalanchego-path=./build/avalanchego --duration=60s
+        run: go run ./tests/antithesis/xsvm --metalgo-path=./build/metalgo --duration=60s
       - name: Check image build for xsvm test setup
         shell: bash
         run: bash -x scripts/tests.build_antithesis_images.sh
