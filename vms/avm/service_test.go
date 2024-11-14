@@ -547,7 +547,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -559,7 +559,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 				}
 			},
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -573,9 +573,9 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"outputIndex": 2,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -634,7 +634,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -648,9 +648,9 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"outputIndex": 2,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -664,7 +664,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		"destinationChain": "2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w",
 		"exportedOutputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -774,7 +774,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -788,9 +788,9 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"outputIndex": 2,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -946,7 +946,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -960,9 +960,9 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "rSiY2aqcahSU5vyJeMiNBnwtPwfJFxsxskAGbU3HxHvAkrdpy",
+				"txID": "Zo68eLmXeFCA2cmqhg7UY5bF1x16ASBa4Tm3yW7VesFFs8Qm3",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1091,7 +1091,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1105,9 +1105,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "BBhSA95iv6ueXc7xrMSka1bByBqcwJxyvMiyjy5H8ccAgxy4P",
+				"txID": "RUHFNtJcKhYo4gue8xbNn3EuX9RWPvKAFYho7vgMHhkKqGmpm",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1266,7 +1266,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1280,9 +1280,9 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2YhAg3XUdub5syHHePZG7q3yFjKAy7ahsvQDxq5SMrYbN1s5Gn",
+				"txID": "24zV3eVRh4o8zsswNh6eBFT5NRPArxdfUFAXRRf1weh2DSFgQt",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1413,7 +1413,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1427,9 +1427,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2vxorPLUw5sneb7Mdhhjuws3H5AqaDp1V8ETz6fEuzvn835rVX",
+				"txID": "2qbUm2Jb8vmdEumH7qicyNpgXoezfe4tN48Je6X7myZb8sP6QA",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1591,7 +1591,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1605,9 +1605,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "nNUGBjszswU3ZmhCb8hBNWmg335UZqGWmNrYTAGyMF4bFpMXm",
+				"txID": "2q6W5XHsrNsbkMFnY42SZv4Tu7TeToJHPz7FN7YCMeuYkwb2ys",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1733,7 +1733,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1747,9 +1747,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		],
 		"inputs": [
 			{
-				"txID": "2NV5AGoQQHVRY6VkT8sht8bhZDHR7uwta7fk7JwAZpacqMRWCa",
+				"txID": "MUGyfNF2gNLL7dbPmHMmebbQFyXDmJKvdbA4Fszm1zVcrtxwb",
 				"outputIndex": 0,
-				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
+				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
