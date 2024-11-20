@@ -11,6 +11,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/message"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/payload"
+	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
 var (
@@ -51,31 +55,11 @@ func (b *backendVisitor) CreateChainTx(tx *txs.CreateChainTx) error {
 }
 
 func (b *backendVisitor) CreateSubnetTx(tx *txs.CreateSubnetTx) error {
-	b.b.setSubnetOwner(
+	b.b.setOwner(
 		b.txID,
 		tx.Owner,
 	)
 	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
-	b.b.setSubnetOwner(
-		tx.Subnet,
-		tx.Owner,
-	)
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) ConvertSubnetTx(tx *txs.ConvertSubnetTx) error {
-	return b.baseTx(&tx.BaseTx)
-}
-
-func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
-	return b.baseTx(tx)
 }
 
 func (b *backendVisitor) ImportTx(tx *txs.ImportTx) error {
@@ -111,6 +95,10 @@ func (b *backendVisitor) ExportTx(tx *txs.ExportTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
+func (b *backendVisitor) RemoveSubnetValidatorTx(tx *txs.RemoveSubnetValidatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
 func (b *backendVisitor) TransformSubnetTx(tx *txs.TransformSubnetTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
@@ -120,6 +108,67 @@ func (b *backendVisitor) AddPermissionlessValidatorTx(tx *txs.AddPermissionlessV
 }
 
 func (b *backendVisitor) AddPermissionlessDelegatorTx(tx *txs.AddPermissionlessDelegatorTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) TransferSubnetOwnershipTx(tx *txs.TransferSubnetOwnershipTx) error {
+	b.b.setOwner(
+		tx.Subnet,
+		tx.Owner,
+	)
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) BaseTx(tx *txs.BaseTx) error {
+	return b.baseTx(tx)
+}
+
+func (b *backendVisitor) ConvertSubnetToL1Tx(tx *txs.ConvertSubnetToL1Tx) error {
+	for i, vdr := range tx.Validators {
+		b.b.setOwner(
+			tx.Subnet.Append(uint32(i)),
+			&secp256k1fx.OutputOwners{
+				Threshold: vdr.DeactivationOwner.Threshold,
+				Addrs:     vdr.DeactivationOwner.Addresses,
+			},
+		)
+	}
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) RegisterL1ValidatorTx(tx *txs.RegisterL1ValidatorTx) error {
+	warpMessage, err := warp.ParseMessage(tx.Message)
+	if err != nil {
+		return err
+	}
+	addressedCallPayload, err := payload.ParseAddressedCall(warpMessage.Payload)
+	if err != nil {
+		return err
+	}
+	registerL1ValidatorMessage, err := message.ParseRegisterL1Validator(addressedCallPayload.Payload)
+	if err != nil {
+		return err
+	}
+
+	b.b.setOwner(
+		registerL1ValidatorMessage.ValidationID(),
+		&secp256k1fx.OutputOwners{
+			Threshold: registerL1ValidatorMessage.DisableOwner.Threshold,
+			Addrs:     registerL1ValidatorMessage.DisableOwner.Addresses,
+		},
+	)
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) SetL1ValidatorWeightTx(tx *txs.SetL1ValidatorWeightTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) IncreaseL1ValidatorBalanceTx(tx *txs.IncreaseL1ValidatorBalanceTx) error {
+	return b.baseTx(&tx.BaseTx)
+}
+
+func (b *backendVisitor) DisableL1ValidatorTx(tx *txs.DisableL1ValidatorTx) error {
 	return b.baseTx(&tx.BaseTx)
 }
 
