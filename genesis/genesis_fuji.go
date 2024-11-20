@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	//go:embed genesis_tahoe.json
+	//go:embed genesis_fuji.json
 	tahoeGenesisConfigJSON []byte
 
 	// TahoeParams are the params used for the tahoe testnet
