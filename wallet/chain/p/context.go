@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/MetalBlockchain/metalgo/api/info"
-	"github.com/MetalBlockchain/metalgo/vms/avm"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
@@ -21,42 +21,40 @@ const gasPriceMultiplier = 2
 
 func NewContextFromURI(ctx context.Context, uri string) (*builder.Context, error) {
 	infoClient := info.NewClient(uri)
-	xChainClient := avm.NewClient(uri, "X")
-	pChainClient := platformvm.NewClient(uri)
-	return NewContextFromClients(ctx, infoClient, xChainClient, pChainClient)
+	chainClient := platformvm.NewClient(uri)
+	return NewContextFromClients(ctx, infoClient, chainClient)
 }
 
 func NewContextFromClients(
 	ctx context.Context,
 	infoClient info.Client,
-	xChainClient avm.Client,
-	pChainClient platformvm.Client,
+	chainClient platformvm.Client,
 ) (*builder.Context, error) {
 	networkID, err := infoClient.GetNetworkID(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	asset, err := xChainClient.GetAssetDescription(ctx, "METAL")
+	avaxAssetID, err := chainClient.GetStakingAssetID(ctx, constants.PrimaryNetworkID)
 	if err != nil {
 		return nil, err
 	}
 
-	dynamicFeeConfig, err := pChainClient.GetFeeConfig(ctx)
+	dynamicFeeConfig, err := chainClient.GetFeeConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: After Etna is activated, assume the gas price is always non-zero.
 	if dynamicFeeConfig.MinPrice != 0 {
-		_, gasPrice, _, err := pChainClient.GetFeeState(ctx)
+		_, gasPrice, _, err := chainClient.GetFeeState(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		return &builder.Context{
 			NetworkID:         networkID,
-			AVAXAssetID:       asset.AssetID,
+			AVAXAssetID:       avaxAssetID,
 			ComplexityWeights: dynamicFeeConfig.Weights,
 			GasPrice:          gasPriceMultiplier * gasPrice,
 		}, nil
@@ -69,7 +67,7 @@ func NewContextFromClients(
 
 	return &builder.Context{
 		NetworkID:   networkID,
-		AVAXAssetID: asset.AssetID,
+		AVAXAssetID: avaxAssetID,
 		StaticFeeConfig: fee.StaticConfig{
 			TxFee:                         uint64(staticFeeConfig.TxFee),
 			CreateSubnetTxFee:             uint64(staticFeeConfig.CreateSubnetTxFee),
