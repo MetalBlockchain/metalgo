@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/app"
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/version"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 )
 
 func main() {
@@ -59,6 +60,8 @@ func main() {
 
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Println(app.Header)
+	} else {
+		executor.EtnaActivationWasLogged.Set(true)
 	}
 
 	nodeApp, err := app.New(nodeConfig)

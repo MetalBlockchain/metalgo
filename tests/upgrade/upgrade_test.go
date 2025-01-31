@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
-	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
+
+	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 )
 
 func TestUpgrade(t *testing.T) {
@@ -50,7 +51,15 @@ var _ = ginkgo.Describe("[Upgrade]", func() {
 		require.NoError(err)
 		network.Genesis = genesis
 
-		e2e.StartNetwork(tc, network, avalancheGoExecPath, "" /* pluginDir */, 0 /* shutdownDelay */, false /* reuseNetwork */)
+		e2e.StartNetwork(
+			tc,
+			network,
+			avalancheGoExecPath,
+			"",    /* pluginDir */
+			0,     /* shutdownDelay */
+			false, /* skipShutdown */
+			false, /* reuseNetwork */
+		)
 
 		tc.By(fmt.Sprintf("restarting all nodes with %q binary", avalancheGoExecPathToUpgradeTo))
 		for _, node := range network.Nodes {

@@ -17,6 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common/commonmock"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool/mempoolmock"
 	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
@@ -27,7 +28,7 @@ import (
 var (
 	errTest = errors.New("test error")
 
-	testConfig = Config{
+	testConfig = config.Network{
 		MaxValidatorSetStaleness:                    time.Second,
 		TargetGossipSize:                            1,
 		PushGossipNumValidators:                     1,
@@ -175,6 +176,9 @@ func TestNetworkIssueTxFromRPC(t *testing.T) {
 				tt.mempoolFunc(ctrl),
 				tt.partialSyncPrimaryNetwork,
 				tt.appSenderFunc(ctrl),
+				nil,
+				nil,
+				nil,
 				prometheus.NewRegistry(),
 				testConfig,
 			)
