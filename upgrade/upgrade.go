@@ -34,7 +34,7 @@ var (
 		// Ref: https://subnets.avax.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
 		DurangoTime:               time.Date(2024, time.May, 6, 8, 0, 0, 0, time.UTC),
-		EtnaTime:                  time.Date(2025, time.February, 11, 10, 0, 0, 0, time.UTC),
+		EtnaTime:                  time.Date(2025, time.February, 25, 10, 0, 0, 0, time.UTC),
 	}
 	Tahoe = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
