@@ -34,7 +34,7 @@ var (
 		// Ref: https://subnets.avax.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
 		DurangoTime:               time.Date(2024, time.May, 6, 8, 0, 0, 0, time.UTC),
-		EtnaTime:                  UnscheduledActivationTime,
+		EtnaTime:                  time.Date(2025, time.February, 25, 10, 0, 0, 0, time.UTC),
 	}
 	Tahoe = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
@@ -54,7 +54,7 @@ var (
 		// Ref: https://subnets-test.avax.network/x-chain/block/0
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk"),
 		DurangoTime:               time.Date(2024, time.April, 4, 0, 0, 0, 0, time.UTC),
-		EtnaTime:                  UnscheduledActivationTime,
+		EtnaTime:                  time.Date(2025, time.January, 9, 21, 0, 0, 0, time.UTC),
 	}
 	Default = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
@@ -70,9 +70,7 @@ var (
 		CortinaTime:                  InitiallyActiveTime,
 		CortinaXChainStopVertexID:    ids.Empty,
 		DurangoTime:                  InitiallyActiveTime,
-		// Etna is left unactivated by default on local networks. It can be configured to
-		// activate by overriding the activation time in the upgrade file.
-		EtnaTime: UnscheduledActivationTime,
+		EtnaTime:                     InitiallyActiveTime,
 	}
 
 	ErrInvalidUpgradeTimes = errors.New("invalid upgrade configuration")

@@ -4,9 +4,12 @@
 package main
 
 import (
-	"log"
+	"os"
+
+	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/genesis"
+	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/tests/antithesis"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/subnet"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
@@ -21,6 +24,9 @@ func main() {
 		subnet.NewXSVMOrPanic("xsvm", genesis.VMRQKey, network.Nodes...),
 	}
 	if err := antithesis.GenerateComposeConfig(network, baseImageName, "" /* runtimePluginDir */); err != nil {
-		log.Fatalf("failed to generate compose config: %v", err)
+		tests.NewDefaultLogger("").Fatal("failed to generate compose config",
+			zap.Error(err),
+		)
+		os.Exit(1)
 	}
 }
