@@ -52,6 +52,8 @@ github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/MetalBlockchain/coreth v0.13.9-rc.1 h1:ejGD36P7jUYTJ5pwOLfOe6gPG1OGdbb06GrcaxHR3SQ=
 github.com/MetalBlockchain/coreth v0.13.9-rc.1/go.mod h1:KioRlZMTeA6QYw29LwH8x9SlhD/lqifzaQMwJ84Mjk4=
+github.com/MetalBlockchain/coreth v0.13.9-rc.2 h1:jEi6qSW23XKIKcP2krEFVB80rKBIrnsGx7eWsFt5Kmw=
+github.com/MetalBlockchain/coreth v0.13.9-rc.2/go.mod h1:KioRlZMTeA6QYw29LwH8x9SlhD/lqifzaQMwJ84Mjk4=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
