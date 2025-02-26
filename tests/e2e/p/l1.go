@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/peer"
@@ -70,17 +69,6 @@ var _ = e2e.DescribePChain("[L1]", func() {
 	ginkgo.It("creates and updates L1 validators", func() {
 		env := e2e.GetEnv(tc)
 		nodeURI := env.GetRandomNodeURI()
-
-		tc.By("verifying Etna is activated", func() {
-			infoClient := info.NewClient(nodeURI.URI)
-			upgrades, err := infoClient.Upgrades(tc.DefaultContext())
-			require.NoError(err)
-
-			now := time.Now()
-			if !upgrades.IsEtnaActivated(now) {
-				ginkgo.Skip("Etna is not activated. L1s are enabled post-Etna, skipping test.")
-			}
-		})
 
 		tc.By("loading the wallet")
 		var (

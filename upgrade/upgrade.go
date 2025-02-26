@@ -35,6 +35,7 @@ var (
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
 		DurangoTime:               time.Date(2024, time.May, 6, 8, 0, 0, 0, time.UTC),
 		EtnaTime:                  time.Date(2025, time.February, 25, 10, 0, 0, 0, time.UTC),
+		FUpgradeTime:              UnscheduledActivationTime,
 	}
 	Tahoe = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
@@ -55,6 +56,7 @@ var (
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("RdWKZYgjgU2NicKHv8mpkR6jgo41W5aNwVhsX5sJgqshDAbQk"),
 		DurangoTime:               time.Date(2024, time.April, 4, 0, 0, 0, 0, time.UTC),
 		EtnaTime:                  time.Date(2025, time.January, 9, 21, 0, 0, 0, time.UTC),
+		FUpgradeTime:              UnscheduledActivationTime,
 	}
 	Default = Config{
 		ApricotPhase1Time:            InitiallyActiveTime,
@@ -71,6 +73,7 @@ var (
 		CortinaXChainStopVertexID:    ids.Empty,
 		DurangoTime:                  InitiallyActiveTime,
 		EtnaTime:                     InitiallyActiveTime,
+		FUpgradeTime:                 UnscheduledActivationTime,
 	}
 
 	ErrInvalidUpgradeTimes = errors.New("invalid upgrade configuration")
@@ -91,6 +94,7 @@ type Config struct {
 	CortinaXChainStopVertexID    ids.ID    `json:"cortinaXChainStopVertexID"`
 	DurangoTime                  time.Time `json:"durangoTime"`
 	EtnaTime                     time.Time `json:"etnaTime"`
+	FUpgradeTime                 time.Time `json:"fUpgradeTime"`
 }
 
 func (c *Config) Validate() error {
@@ -107,6 +111,7 @@ func (c *Config) Validate() error {
 		c.CortinaTime,
 		c.DurangoTime,
 		c.EtnaTime,
+		c.FUpgradeTime,
 	}
 	for i := 0; i < len(upgrades)-1; i++ {
 		if upgrades[i].After(upgrades[i+1]) {
@@ -168,6 +173,10 @@ func (c *Config) IsDurangoActivated(t time.Time) bool {
 
 func (c *Config) IsEtnaActivated(t time.Time) bool {
 	return !t.Before(c.EtnaTime)
+}
+
+func (c *Config) IsFUpgradeActivated(t time.Time) bool {
+	return !t.Before(c.FUpgradeTime)
 }
 
 func GetConfig(networkID uint32) Config {

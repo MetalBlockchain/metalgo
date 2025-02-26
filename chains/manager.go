@@ -17,7 +17,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/api/health"
-	"github.com/MetalBlockchain/metalgo/api/keystore"
 	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/api/server"
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
@@ -29,6 +28,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/network"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
+	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/bootstrap/queue"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/state"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
@@ -186,7 +186,7 @@ type ManagerConfig struct {
 	SybilProtectionEnabled bool
 	StakingTLSSigner       crypto.Signer
 	StakingTLSCert         *staking.Certificate
-	StakingBLSKey          *bls.SecretKey
+	StakingBLSKey          bls.Signer
 	TracingEnabled         bool
 	// Must not be used unless [TracingEnabled] is true as this may be nil.
 	Tracer                    trace.Tracer
@@ -205,7 +205,6 @@ type ManagerConfig struct {
 	NetworkID                 uint32                     // ID of the network this node is connected to
 	PartialSyncPrimaryNetwork bool
 	Server                    server.Server // Handles HTTP API calls
-	Keystore                  keystore.Keystore
 	AtomicMemory              *atomic.Memory
 	AVAXAssetID               ids.ID
 	XChainID                  ids.ID          // ID of the X-Chain,
@@ -497,7 +496,7 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			SubnetID:        chainParams.SubnetID,
 			ChainID:         chainParams.ID,
 			NodeID:          m.NodeID,
-			PublicKey:       bls.PublicFromSecretKey(m.StakingBLSKey),
+			PublicKey:       m.StakingBLSKey.PublicKey(),
 			NetworkUpgrades: m.Upgrades,
 
 			XChainID:    m.XChainID,
@@ -505,7 +504,6 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 			AVAXAssetID: m.AVAXAssetID,
 
 			Log:          chainLog,
-			Keystore:     m.Keystore.NewBlockchainKeyStore(chainParams.ID),
 			SharedMemory: m.AtomicMemory.NewSharedMemory(chainParams.ID),
 			BCLookup:     m,
 			Metrics:      metrics.NewPrefixGatherer(),
@@ -920,7 +918,7 @@ func (m *manager) createAvalancheChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var snowmanConsensus smcon.Consensus = &smcon.Topological{}
+	var snowmanConsensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
 	if m.TracingEnabled {
 		snowmanConsensus = smcon.Trace(snowmanConsensus, m.Tracer)
 	}
@@ -1313,7 +1311,7 @@ func (m *manager) createSnowmanChain(
 		return nil, fmt.Errorf("couldn't initialize snow base message handler: %w", err)
 	}
 
-	var consensus smcon.Consensus = &smcon.Topological{}
+	var consensus smcon.Consensus = &smcon.Topological{Factory: snowball.SnowflakeFactory}
 	if m.TracingEnabled {
 		consensus = smcon.Trace(consensus, m.Tracer)
 	}

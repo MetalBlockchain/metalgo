@@ -8,8 +8,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/MetalBlockchain/coreth/plugin/evm"
-
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
@@ -24,7 +22,7 @@ func main() {
 	uri := primary.LocalAPIURI
 	kc := secp256k1fx.NewKeychain(key)
 	avaxAddr := key.Address()
-	ethAddr := evm.PublicKeyToEthAddress(key.PublicKey())
+	ethAddr := key.PublicKey().EthAddress()
 
 	ctx := context.Background()
 

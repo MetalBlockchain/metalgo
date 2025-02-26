@@ -10,26 +10,8 @@ set -euo pipefail
 
 METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
-# Where MetalGo binary goes
+# Where AvalancheGo binary goes
 metalgo_path="$METAL_PATH/build/metalgo"
-
-# Image tag based on current branch  (shared between image build and its test script)
-# TODO: fix "fatal: No names found, cannot describe anything" in github CI
-image_tag=$(git symbolic-ref -q --short HEAD || git describe --tags --exact-match || true)
-if [[ -z $image_tag ]]; then
-  # Supply a default tag when one is not discovered
-  image_tag=ci_dummy
-elif [[ "$image_tag" == */* ]]; then
-  # Slashes are not legal for docker image tags - replace with dashes
-  image_tag=$(echo "$image_tag" | tr '/' '-')
-fi
-
-# Current commit (shared between image build and its test script)
-# WARNING: this will use the most recent commit even if there are un-committed changes present
-full_commit_hash="$(git --git-dir="$METAL_PATH/.git" rev-parse HEAD)"
-commit_hash="${full_commit_hash::8}"
-
-git_commit=${METALGO_COMMIT:-$( git rev-list -1 HEAD )}
 
 # Static compilation
 static_ld_flags=''

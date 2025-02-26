@@ -6,7 +6,7 @@ package c
 import (
 	"math/big"
 
-	"github.com/MetalBlockchain/coreth/plugin/evm"
+	"github.com/MetalBlockchain/coreth/plugin/evm/atomic"
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
@@ -59,7 +59,7 @@ func (b *builderWithOptions) NewImportTx(
 	to ethcommon.Address,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*evm.UnsignedImportTx, error) {
+) (*atomic.UnsignedImportTx, error) {
 	return b.Builder.NewImportTx(
 		chainID,
 		to,
@@ -73,7 +73,7 @@ func (b *builderWithOptions) NewExportTx(
 	outputs []*secp256k1fx.TransferOutput,
 	baseFee *big.Int,
 	options ...common.Option,
-) (*evm.UnsignedExportTx, error) {
+) (*atomic.UnsignedExportTx, error) {
 	return b.Builder.NewExportTx(
 		chainID,
 		outputs,

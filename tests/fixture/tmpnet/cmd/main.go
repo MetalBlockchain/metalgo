@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/tests"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/version"
@@ -48,7 +49,7 @@ func main() {
 			if len(version.GitCommit) > 0 {
 				msg += ", commit=" + version.GitCommit
 			}
-			fmt.Fprintf(os.Stdout, msg+"\n")
+			fmt.Fprintln(os.Stdout, msg)
 			return nil
 		},
 	}
@@ -117,9 +118,15 @@ func main() {
 			return nil
 		},
 	}
+	// TODO(marun) Enable reuse of flags across tmpnetctl and e2e
 	startNetworkCmd.PersistentFlags().StringVar(&rootDir, "root-dir", os.Getenv(tmpnet.RootDirEnvName), "The path to the root directory for temporary networks")
-	startNetworkCmd.PersistentFlags().StringVar(&avalancheGoPath, "metalgo-path", os.Getenv(tmpnet.AvalancheGoPathEnvName), "The path to a metalgo binary")
-	startNetworkCmd.PersistentFlags().StringVar(&pluginDir, "plugin-dir", os.ExpandEnv("$HOME/.avalanchego/plugins"), "[optional] the dir containing VM plugins")
+	startNetworkCmd.PersistentFlags().StringVar(&avalancheGoPath, "metalgo-path", os.Getenv(tmpnet.AvalancheGoPathEnvName), "The path to an metalgo binary")
+	startNetworkCmd.PersistentFlags().StringVar(
+		&pluginDir,
+		"plugin-dir",
+		e2e.GetEnvWithDefault(tmpnet.AvalancheGoPluginDirEnvName, os.ExpandEnv("$HOME/.metalgo/plugins")),
+		"[optional] the dir containing VM plugins",
+	)
 	startNetworkCmd.PersistentFlags().Uint8Var(&nodeCount, "node-count", tmpnet.DefaultNodeCount, "Number of nodes the network should initially consist of")
 	startNetworkCmd.PersistentFlags().StringVar(&networkOwner, "network-owner", "", "The string identifying the intended owner of the network")
 	rootCmd.AddCommand(startNetworkCmd)

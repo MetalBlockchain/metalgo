@@ -12,7 +12,6 @@ import (
 
 	"github.com/MetalBlockchain/coreth/core"
 	"github.com/MetalBlockchain/coreth/params"
-	"github.com/MetalBlockchain/coreth/plugin/evm"
 
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -117,7 +116,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[evm.GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[key.EthAddress()] = core.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}

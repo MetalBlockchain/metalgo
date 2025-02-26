@@ -16,11 +16,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 	"github.com/MetalBlockchain/metalgo/utils/set"
-	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
@@ -196,12 +194,6 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:          "post-fork - incorrectly priced",
-			time:          ap3Time,
-			fee:           100*defaultTxFee - 1*units.NanoAvax,
-			expectedError: utxo.ErrInsufficientUnlockedFunds,
-		},
-		{
 			name:          "post-fork - correctly priced",
 			time:          ap3Time,
 			fee:           100 * defaultTxFee,
@@ -223,7 +215,6 @@ func TestCreateChainTxAP3FeeChange(t *testing.T) {
 			env.state.SetTimestamp(test.time) // to duly set fee
 
 			config := *env.config
-			config.StaticFeeConfig.CreateBlockchainTxFee = test.fee
 			subnetID := testSubnet1.ID()
 			wallet := newWallet(t, env, walletConfig{
 				config:    &config,
