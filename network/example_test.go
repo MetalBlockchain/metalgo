@@ -93,7 +93,7 @@ func ExampleNewTestNetwork() {
 	metrics := prometheus.NewRegistry()
 	cfg, err := NewTestNetworkConfig(
 		metrics,
-		constants.FujiID,
+		constants.TahoeID,
 		validators,
 		trackedSubnets,
 	)

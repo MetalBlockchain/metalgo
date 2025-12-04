@@ -8,7 +8,7 @@ go 1.22.8
 
 require (
 	github.com/DataDog/zstd v1.5.2
-	github.com/MetalBlockchain/coreth v0.13.9-rc.2
+	github.com/MetalBlockchain/coreth v0.13.9-rc.4-encapsulate-signer
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20241009183145-e6f90a8a1a60
@@ -43,7 +43,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.9.0
-	github.com/supranational/blst v0.3.13
+	github.com/supranational/blst v0.3.14
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	github.com/thepudds/fzgen v0.4.2
 	github.com/tyler-smith/go-bip32 v1.0.0
