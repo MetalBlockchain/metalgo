@@ -41,7 +41,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
 	blockexecutor "github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
@@ -625,19 +624,13 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		UptimeLockedCalculator: uptime.NewLockedCalculator(),
 		SybilProtectionEnabled: true,
 		Validators:             validators.NewManager(),
-		StaticFeeConfig: fee.StaticConfig{
-			TxFee:                 defaultTxFee,
-			CreateSubnetTxFee:     100 * defaultTxFee,
-			TransformSubnetTxFee:  100 * defaultTxFee,
-			CreateBlockchainTxFee: 100 * defaultTxFee,
-		},
-		MinValidatorStake: defaultMinValidatorStake,
-		MaxValidatorStake: defaultMaxValidatorStake,
-		MinDelegatorStake: defaultMinDelegatorStake,
-		MinStakeDuration:  defaultMinStakingDuration,
-		MaxStakeDuration:  defaultMaxStakingDuration,
-		RewardConfig:      defaultRewardConfig,
-		UpgradeConfig:     upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, genesistest.DefaultValidatorStartTime),
+		MinValidatorStake:      defaultMinValidatorStake,
+		MaxValidatorStake:      defaultMaxValidatorStake,
+		MinDelegatorStake:      defaultMinDelegatorStake,
+		MinStakeDuration:       defaultMinStakingDuration,
+		MaxStakeDuration:       defaultMaxStakingDuration,
+		RewardConfig:           defaultRewardConfig,
+		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, genesistest.DefaultValidatorStartTime),
 	}}
 	vm.clock.Set(genesistest.DefaultValidatorStartTime.Add(time.Second))
 

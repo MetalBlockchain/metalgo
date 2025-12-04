@@ -9,7 +9,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
 )
 
 const Alias = "P"
@@ -17,7 +16,6 @@ const Alias = "P"
 type Context struct {
 	NetworkID         uint32
 	AVAXAssetID       ids.ID
-	StaticFeeConfig   fee.StaticConfig
 	ComplexityWeights gas.Dimensions
 	GasPrice          gas.Price
 }

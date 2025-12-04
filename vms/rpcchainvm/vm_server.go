@@ -14,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/metalgo/api/keystore/gkeystore"
 	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/chains/atomic/gsharedmemory"
 	"github.com/MetalBlockchain/metalgo/database"
@@ -42,7 +41,6 @@ import (
 	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 	appsenderpb "github.com/MetalBlockchain/metalgo/proto/pb/appsender"
 	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
-	keystorepb "github.com/MetalBlockchain/metalgo/proto/pb/keystore"
 	messengerpb "github.com/MetalBlockchain/metalgo/proto/pb/messenger"
 	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 	sharedmemorypb "github.com/MetalBlockchain/metalgo/proto/pb/sharedmemory"
@@ -211,7 +209,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 	vm.connCloser.Add(clientConn)
 
 	msgClient := messenger.NewClient(messengerpb.NewMessengerClient(clientConn))
-	keystoreClient := gkeystore.NewClient(keystorepb.NewKeystoreClient(clientConn))
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
@@ -248,7 +245,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		AVAXAssetID: avaxAssetID,
 
 		Log:          vm.log,
-		Keystore:     keystoreClient,
 		SharedMemory: sharedMemoryClient,
 		BCLookup:     bcLookupClient,
 		Metrics:      vmMetrics,
@@ -871,6 +867,10 @@ func convertNetworkUpgrades(pbUpgrades *vmpb.NetworkUpgrades) (upgrade.Config, e
 	if err != nil {
 		return upgrade.Config{}, err
 	}
+	fupgrade, err := grpcutils.TimestampAsTime(pbUpgrades.FUpgradeTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
 
 	cortinaXChainStopVertexID, err := ids.ToID(pbUpgrades.CortinaXChainStopVertexId)
 	if err != nil {
@@ -892,5 +892,6 @@ func convertNetworkUpgrades(pbUpgrades *vmpb.NetworkUpgrades) (upgrade.Config, e
 		CortinaXChainStopVertexID:    cortinaXChainStopVertexID,
 		DurangoTime:                  durango,
 		EtnaTime:                     etna,
+		FUpgradeTime:                 fupgrade,
 	}, nil
 }

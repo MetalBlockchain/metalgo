@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/MetalBlockchain/metalgo/api/keystore/gkeystore"
 	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/chains/atomic/gsharedmemory"
 	"github.com/MetalBlockchain/metalgo/database"
@@ -45,7 +44,6 @@ import (
 	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 	appsenderpb "github.com/MetalBlockchain/metalgo/proto/pb/appsender"
 	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
-	keystorepb "github.com/MetalBlockchain/metalgo/proto/pb/keystore"
 	messengerpb "github.com/MetalBlockchain/metalgo/proto/pb/messenger"
 	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 	sharedmemorypb "github.com/MetalBlockchain/metalgo/proto/pb/sharedmemory"
@@ -91,7 +89,6 @@ type VMClient struct {
 	metricsGatherer metrics.MultiGatherer
 
 	messenger            *messenger.Server
-	keystore             *gkeystore.Server
 	sharedMemory         *gsharedmemory.Server
 	bcLookup             *galiasreader.Server
 	appSender            *appsender.Server
@@ -169,7 +166,6 @@ func (vm *VMClient) Initialize(
 	)
 
 	vm.messenger = messenger.NewServer(toEngine)
-	vm.keystore = gkeystore.NewServer(chainCtx.Keystore)
 	vm.sharedMemory = gsharedmemory.NewServer(chainCtx.SharedMemory, db)
 	vm.bcLookup = galiasreader.NewServer(chainCtx.BCLookup)
 	vm.appSender = appsender.NewServer(appSender)
@@ -202,6 +198,7 @@ func (vm *VMClient) Initialize(
 		CortinaXChainStopVertexId:     chainCtx.NetworkUpgrades.CortinaXChainStopVertexID[:],
 		DurangoTime:                   grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.DurangoTime),
 		EtnaTime:                      grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.EtnaTime),
+		FUpgradeTime:                  grpcutils.TimestampFromTime(chainCtx.NetworkUpgrades.FUpgradeTime),
 	}
 
 	resp, err := vm.client.Initialize(ctx, &vmpb.InitializeRequest{
@@ -308,7 +305,6 @@ func (vm *VMClient) newInitServer() *grpc.Server {
 
 	// Register services
 	messengerpb.RegisterMessengerServer(server, vm.messenger)
-	keystorepb.RegisterKeystoreServer(server, vm.keystore)
 	sharedmemorypb.RegisterSharedMemoryServer(server, vm.sharedMemory)
 	aliasreaderpb.RegisterAliasReaderServer(server, vm.bcLookup)
 	appsenderpb.RegisterAppSenderServer(server, vm.appSender)

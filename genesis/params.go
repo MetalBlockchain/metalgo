@@ -9,9 +9,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-
-	txfee "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
-	validatorfee "github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
 )
 
 type StakingConfig struct {
@@ -38,10 +36,10 @@ type StakingConfig struct {
 }
 
 type TxFeeConfig struct {
-	CreateAssetTxFee   uint64              `json:"createAssetTxFee"`
-	StaticFeeConfig    txfee.StaticConfig  `json:"staticFeeConfig"`
-	DynamicFeeConfig   gas.Config          `json:"dynamicFeeConfig"`
-	ValidatorFeeConfig validatorfee.Config `json:"validatorFeeConfig"`
+	CreateAssetTxFee   uint64     `json:"createAssetTxFee"`
+	TxFee              uint64     `json:"txFee"`
+	DynamicFeeConfig   gas.Config `json:"dynamicFeeConfig"`
+	ValidatorFeeConfig fee.Config `json:"validatorFeeConfig"`
 }
 
 type Params struct {
