@@ -11,7 +11,7 @@ go 1.22.8
 
 require (
 	github.com/DataDog/zstd v1.5.2
-	github.com/MetalBlockchain/coreth v0.13.9-rc.4-encapsulate-signer
+	github.com/MetalBlockchain/coreth v0.14.1-rc.1-1764861401
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8
 	github.com/ava-labs/ledger-avalanche/go v0.0.0-20241009183145-e6f90a8a1a60
@@ -61,7 +61,6 @@ require (
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
-	golang.org/x/mod v0.18.0
 	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/term v0.27.0

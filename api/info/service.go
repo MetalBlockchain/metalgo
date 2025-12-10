@@ -440,7 +440,7 @@ func (i *Info) GetTxFee(_ *http.Request, _ *struct{}, reply *GetTxFeeResponse) e
 	switch i.NetworkID {
 	case constants.MainnetID:
 		*reply = mainnetGetTxFeeResponse
-	case constants.FujiID:
+	case constants.TahoeID:
 		*reply = fujiGetTxFeeResponse
 	default:
 		*reply = defaultGetTxFeeResponse
