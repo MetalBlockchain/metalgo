@@ -2594,7 +2594,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 		{
 			name:                 "no override - primary network",
 			time:                 beforeOverrideEnds,
-			networkID:            constants.FujiID,
+			networkID:            constants.TahoeID,
 			subnetID:             constants.PrimaryNetworkID,
 			currentPChainHeight:  fujiOverridePChainHeightUntilHeight + 2,
 			minPChainHeight:      fujiOverridePChainHeightUntilHeight - 5,
@@ -2603,7 +2603,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 		{
 			name:                 "no override - expired network",
 			time:                 fujiOverridePChainHeightUntilTimestamp,
-			networkID:            constants.FujiID,
+			networkID:            constants.TahoeID,
 			subnetID:             ids.GenerateTestID(),
 			currentPChainHeight:  fujiOverridePChainHeightUntilHeight + 2,
 			minPChainHeight:      fujiOverridePChainHeightUntilHeight - 5,
@@ -2612,7 +2612,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 		{
 			name:                 "no override - chain previously advanced",
 			time:                 beforeOverrideEnds,
-			networkID:            constants.FujiID,
+			networkID:            constants.TahoeID,
 			subnetID:             ids.GenerateTestID(),
 			currentPChainHeight:  fujiOverridePChainHeightUntilHeight + 2,
 			minPChainHeight:      fujiOverridePChainHeightUntilHeight + 1,
@@ -2621,7 +2621,7 @@ func TestSelectChildPChainHeight(t *testing.T) {
 		{
 			name:                 "override",
 			time:                 beforeOverrideEnds,
-			networkID:            constants.FujiID,
+			networkID:            constants.TahoeID,
 			subnetID:             ids.GenerateTestID(),
 			currentPChainHeight:  fujiOverridePChainHeightUntilHeight + 2,
 			minPChainHeight:      fujiOverridePChainHeightUntilHeight - 5,
