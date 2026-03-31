@@ -113,6 +113,9 @@ var (
 		propertyfx.ID:  &propertyfx.Factory{},
 	}
 
+	mainnetCChainID = ids.FromStringOrPanic("28fJD1hMz2PSRJKJt7YT41urTPR37rUNUcdeJ8daoiwP6DGnAR")
+	tahoeCChainID   = ids.FromStringOrPanic("t34kbq3fgdNaurCHn4aJpayuE46vh5AozKPZZG6MrjE2F7XP6")
+
 	_ Manager = (*manager)(nil)
 )
 
@@ -518,6 +521,22 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 		BlockAcceptor:  m.BlockAcceptorGroup,
 		TxAcceptor:     m.TxAcceptorGroup,
 		VertexAcceptor: m.VertexAcceptorGroup,
+	}
+
+	// The Banff timestamp for mainnet c-chain needs to change, no way around this
+	if chainParams.ID == mainnetCChainID {
+		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase4Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase5Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.BanffTime = time.Date(2022, time.October, 19, 14, 0, 0, 0, time.UTC)
+	} else if chainParams.ID == tahoeCChainID {
+		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase4Time = time.Unix(0, 0)
+		ctx.NetworkUpgrades.ApricotPhase5Time = time.Unix(0, 0)
 	}
 
 	// Get a factory for the vm we want to use on our chain

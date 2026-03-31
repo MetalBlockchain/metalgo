@@ -8,13 +8,13 @@ tasks:
   default: ./scripts/run_task.sh --list
 
   build:
-    desc: Builds avalanchego
+    desc: Builds metalgo
     cmd: ./scripts/build.sh
 
   build-antithesis-images-avalanchego:
-    desc: Builds docker images for antithesis for the avalanchego test setup
+    desc: Builds docker images for antithesis for the metalgo test setup
     env:
-      TEST_SETUP: avalanchego
+      TEST_SETUP: metalgo
     cmd: bash -x ./scripts/build_antithesis_images.sh
 
   build-antithesis-images-xsvm:
@@ -32,11 +32,11 @@ tasks:
     cmd: ./scripts/build_bootstrap_monitor_image.sh
 
   build-image:
-    desc: Builds docker image for avalanchego
+    desc: Builds docker image for metalgo
     cmd: ./scripts/build_image.sh
 
   build-race:
-    desc: Builds avalanchego with race detection enabled
+    desc: Builds metalgo with race detection enabled
     cmd: ./scripts/build.sh -r
 
   build-tmpnetctl:
@@ -234,7 +234,7 @@ tasks:
   test-build-antithesis-images-avalanchego:
     desc: Tests the build of antithesis images for the metalgo test setup
     env:
-      TEST_SETUP: avalanchego
+      TEST_SETUP: metalgo
     cmds:
       - task: build-race
       - cmd: go run ./tests/antithesis/metalgo --metalgo-path=./build/metalgo --duration=120s

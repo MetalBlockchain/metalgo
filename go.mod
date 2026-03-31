@@ -13,7 +13,7 @@ require (
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/grpcreflect v1.3.0
 	github.com/DataDog/zstd v1.5.2
-	github.com/MetalBlockchain/coreth v0.15.4-rc.3-1774976639
+	github.com/MetalBlockchain/coreth v0.15.4-rc.3-1774987596
 	github.com/MetalBlockchain/libevm v1.13.14-0.3.0.rc.6-1774959320
 	github.com/StephenButtolph/canoto v0.17.1
 	github.com/antithesishq/antithesis-sdk-go v0.3.8

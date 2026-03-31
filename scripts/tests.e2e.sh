@@ -20,21 +20,14 @@ fi
 # the instructions to build non-portable BLST.
 source ./scripts/constants.sh
 
-#################################
-echo "building e2e.test"
-# to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build ./tests/e2e
-./tests/e2e/e2e.test --help
+E2E_ARGS=("${@}")
 
-# Enable subnet testing by building xsvm
-./scripts/build_xsvm.sh
-echo ""
-
-# Ensure an absolute path to avoid dependency on the working directory
-# of script execution.
-METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
-E2E_ARGS="--metalgo-path=${METALGO_PATH}"
+# If not running in kubernetes, default to using a local metalgo binary
+if ! [[ "${E2E_ARGS[*]}" =~ "--runtime=kube" && ! "${E2E_ARGS[*]}" =~ "--metalgo-path" ]]; then
+  # Ensure an absolute path to avoid dependency on the working directory of script execution.
+  METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
+  E2E_ARGS+=("--metalgo-path=${METALGO_PATH}")
+fi
 
 #################################
 # Determine ginkgo args
@@ -66,4 +59,4 @@ fi
 
 #################################
 # shellcheck disable=SC2086
-ginkgo ${GINKGO_ARGS} -v ./tests/e2e/e2e.test -- "${E2E_ARGS[@]}" "${@}"
+./bin/ginkgo ${GINKGO_ARGS} -v ./tests/e2e -- "${E2E_ARGS[@]}"

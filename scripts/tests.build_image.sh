@@ -12,6 +12,8 @@ set -euo pipefail
 METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
 source "$METAL_PATH"/scripts/constants.sh
+source "$METAL_PATH"/scripts/git_commit.sh
+source "$METAL_PATH"/scripts/image_tag.sh
 
 build_and_test() {
   local image_name=$1
