@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
@@ -153,7 +153,7 @@ func TestGetValidatorsSetProperty(t *testing.T) {
 			// Checks: let's look back at validator sets at previous heights and
 			// make sure they match the snapshots already taken
 			snapshotHeights := maps.Keys(validatorSetByHeightAndSubnet)
-			sort.Slice(snapshotHeights, func(i, j int) bool { return snapshotHeights[i] < snapshotHeights[j] })
+			slices.Sort(snapshotHeights)
 			for idx, snapShotHeight := range snapshotHeights {
 				lastAcceptedHeight, err := vm.GetCurrentHeight(context.Background())
 				if err != nil {
@@ -275,7 +275,9 @@ func addPrimaryValidatorWithBLSKey(t testing.TB, vm *VM, data *validatorInputDat
 
 	wallet := newWallet(t, vm, walletConfig{})
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -293,7 +295,7 @@ func addPrimaryValidatorWithBLSKey(t testing.TB, vm *VM, data *validatorInputDat
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -402,7 +404,6 @@ type validatorInputData struct {
 	startTime time.Time
 	endTime   time.Time
 	nodeID    ids.NodeID
-	publicKey *bls.PublicKey
 }
 
 // buildTimestampsList creates validators start and end time, given the event list.
@@ -413,17 +414,11 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 	currentTime = currentTime.Add(txexecutor.SyncBound)
 	switch endTime := currentTime.Add(defaultMinStakingDuration); events[0] {
 	case startPrimaryWithBLS:
-		sk, err := bls.NewSigner()
-		if err != nil {
-			return nil, fmt.Errorf("could not make private key: %w", err)
-		}
-
 		res = append(res, &validatorInputData{
 			eventType: startPrimaryWithBLS,
 			startTime: currentTime,
 			endTime:   endTime,
 			nodeID:    nodeID,
-			publicKey: sk.PublicKey(),
 		})
 	default:
 		return nil, fmt.Errorf("unexpected initial event %d", events[0])
@@ -443,7 +438,6 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 				startTime: currentTime,
 				endTime:   endTime,
 				nodeID:    nodeID,
-				publicKey: nil,
 			})
 
 			currentPrimaryVal.endTime = endTime.Add(time.Second)
@@ -451,18 +445,12 @@ func buildTimestampsList(events []uint8, currentTime time.Time, nodeID ids.NodeI
 
 		case startPrimaryWithBLS:
 			currentTime = currentPrimaryVal.endTime.Add(txexecutor.SyncBound)
-			sk, err := bls.NewSigner()
-			if err != nil {
-				return nil, fmt.Errorf("could not make private key: %w", err)
-			}
-
 			endTime := currentTime.Add(defaultMinStakingDuration)
 			val := &validatorInputData{
 				eventType: startPrimaryWithBLS,
 				startTime: currentTime,
 				endTime:   endTime,
 				nodeID:    nodeID,
-				publicKey: sk.PublicKey(),
 			}
 			res = append(res, val)
 			currentPrimaryVal = val
@@ -638,7 +626,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 	chainDB := prefixdb.New([]byte{0}, baseDB)
 	atomicDB := prefixdb.New([]byte{1}, baseDB)
 
-	msgChan := make(chan common.Message, 1)
 	ctx := snowtest.Context(t, snowtest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
@@ -664,7 +651,6 @@ func buildVM(t *testing.T) (*VM, ids.ID, error) {
 		}),
 		nil,
 		nil,
-		msgChan,
 		nil,
 		appSender,
 	)

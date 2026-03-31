@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer/signermock"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
@@ -202,9 +202,10 @@ func TestNewPendingStaker(t *testing.T) {
 
 func generateStakerTx(require *require.Assertions) *txs.AddPermissionlessValidatorTx {
 	nodeID := ids.GenerateTestNodeID()
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
-	pop := signer.NewProofOfPossession(sk)
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
 	subnetID := ids.GenerateTestID()
 	weight := uint64(12345)
 	startTime := time.Now().Truncate(time.Second)

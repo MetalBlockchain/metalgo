@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	"github.com/MetalBlockchain/metalgo/snow"
@@ -65,7 +65,7 @@ func New(
 		outstandingRequests:     bimap.New[common.Request, ids.ID](),
 		outstandingRequestTimes: make(map[common.Request]time.Time),
 
-		processedCache: &cache.LRU[ids.ID, struct{}]{Size: cacheSize},
+		processedCache: lru.NewCache[ids.ID, struct{}](cacheSize),
 		onFinished:     onFinished,
 	}
 	return b, b.metrics.Initialize(reg)
@@ -75,7 +75,6 @@ func New(
 // not used until after the Bootstrapper has been Started.
 type Bootstrapper struct {
 	Config
-	common.Halter
 
 	// list of NoOpsHandler for messages dropped by Bootstrapper
 	common.StateSummaryFrontierHandler
@@ -98,7 +97,7 @@ type Bootstrapper struct {
 	needToFetch set.Set[ids.ID]
 
 	// Contains IDs of vertices that have recently been processed
-	processedCache *cache.LRU[ids.ID, struct{}]
+	processedCache *lru.Cache[ids.ID, struct{}]
 
 	// Tracks the last requestID that was used in a request
 	requestID uint32
@@ -321,7 +320,7 @@ func (b *Bootstrapper) Start(ctx context.Context, startReqID uint32) error {
 	b.Ctx.Log.Info("starting bootstrap")
 
 	b.Ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_AVALANCHE,
+		Type:  p2p.EngineType_ENGINE_TYPE_DAG,
 		State: snow.Bootstrapping,
 	})
 	if err := b.VM.SetState(ctx, snow.Bootstrapping); err != nil {

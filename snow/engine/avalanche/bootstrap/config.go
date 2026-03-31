@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -39,4 +39,7 @@ type Config struct {
 	// If StopVertexID is empty, the engine will generate the stop vertex based
 	// on the current state.
 	StopVertexID ids.ID
+
+	// Haltable signals when the engine is stopped
+	common.Haltable
 }

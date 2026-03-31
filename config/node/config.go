@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package node
@@ -19,7 +19,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/upgrade"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/profiler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -76,11 +75,18 @@ type StakingConfig struct {
 	SybilProtectionEnabled        bool            `json:"sybilProtectionEnabled"`
 	PartialSyncPrimaryNetwork     bool            `json:"partialSyncPrimaryNetwork"`
 	StakingTLSCert                tls.Certificate `json:"-"`
-	StakingSigningKey             bls.Signer      `json:"-"`
 	SybilProtectionDisabledWeight uint64          `json:"sybilProtectionDisabledWeight"`
-	StakingKeyPath                string          `json:"stakingKeyPath"`
-	StakingCertPath               string          `json:"stakingCertPath"`
-	StakingSignerPath             string          `json:"stakingSignerPath"`
+	StakingTLSKeyPath             string          `json:"stakingTLSKeyPath"`
+	StakingTLSCertPath            string          `json:"stakingTLSCertPath"`
+	StakingSignerConfig           `json:"stakingSingerConfig"`
+}
+
+type StakingSignerConfig struct {
+	EphemeralSignerEnabled bool   `json:"ephemeralSignerEnabled"`
+	KeyContent             string `json:"signerKeyContent"`
+	KeyPath                string `json:"keyPath"`
+	RPCEndpoint            string `json:"RPCEndpoint"`
+	KeyPathIsSet           bool   `json:"keyPathIsSet"`
 }
 
 type StateSyncConfig struct {

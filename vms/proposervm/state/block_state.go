@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/cache/metercacher"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -58,11 +59,8 @@ func cachedBlockSize(_ ids.ID, bw *blockWrapper) int {
 
 func NewBlockState(db database.Database) BlockState {
 	return &blockState{
-		blkCache: cache.NewSizedLRU[ids.ID, *blockWrapper](
-			blockCacheSize,
-			cachedBlockSize,
-		),
-		db: db,
+		blkCache: lru.NewSizedCache(blockCacheSize, cachedBlockSize),
+		db:       db,
 	}
 }
 
@@ -70,10 +68,7 @@ func NewMeteredBlockState(db database.Database, namespace string, metrics promet
 	blkCache, err := metercacher.New[ids.ID, *blockWrapper](
 		metric.AppendNamespace(namespace, "block_cache"),
 		metrics,
-		cache.NewSizedLRU[ids.ID, *blockWrapper](
-			blockCacheSize,
-			cachedBlockSize,
-		),
+		lru.NewSizedCache(blockCacheSize, cachedBlockSize),
 	)
 
 	return &blockState{

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package mockable
@@ -36,9 +36,6 @@ func (c *Clock) UnixTime() time.Time {
 
 // Unix returns the unix timestamp on this clock.
 func (c *Clock) Unix() uint64 {
-	unix := c.Time().Unix()
-	if unix < 0 {
-		unix = 0
-	}
+	unix := max(c.Time().Unix(), 0)
 	return uint64(unix)
 }

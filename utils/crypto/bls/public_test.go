@@ -1,9 +1,10 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bls
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,28 +23,25 @@ func TestPublicKeyFromCompressedBytesWrongSize(t *testing.T) {
 func TestPublicKeyBytes(t *testing.T) {
 	require := require.New(t)
 
-	sk, err := NewSigner()
+	pkBytes, err := base64.StdEncoding.DecodeString("h5qt9SPxaCo+vOx6sn+QkkpP7Y40Yja7SEAs2MGb/mZT7oKTWgLogjy5c4/wWIGC")
 	require.NoError(err)
 
-	pk := sk.PublicKey()
-	pkBytes := PublicKeyToCompressedBytes(pk)
-
-	pk2, err := PublicKeyFromCompressedBytes(pkBytes)
+	pk, err := PublicKeyFromCompressedBytes(pkBytes)
 	require.NoError(err)
-	pk2Bytes := PublicKeyToCompressedBytes(pk2)
 
-	require.Equal(pk, pk2)
+	pk2Bytes := PublicKeyToCompressedBytes(pk)
+
 	require.Equal(pkBytes, pk2Bytes)
 }
 
 func TestAggregatePublicKeysNoop(t *testing.T) {
 	require := require.New(t)
 
-	sk, err := NewSigner()
+	pkBytes, err := base64.StdEncoding.DecodeString("h5qt9SPxaCo+vOx6sn+QkkpP7Y40Yja7SEAs2MGb/mZT7oKTWgLogjy5c4/wWIGC")
 	require.NoError(err)
 
-	pk := sk.PublicKey()
-	pkBytes := PublicKeyToCompressedBytes(pk)
+	pk, err := PublicKeyFromCompressedBytes(pkBytes)
+	require.NoError(err)
 
 	aggPK, err := AggregatePublicKeys([]*PublicKey{pk})
 	require.NoError(err)

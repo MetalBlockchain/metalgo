@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -13,6 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/message"
@@ -37,7 +38,7 @@ func main() {
 		log.Fatalf("failed to decode secret key: %s\n", err)
 	}
 
-	sk, err := bls.SecretKeyFromBytes(blsSKBytes)
+	sk, err := localsigner.FromBytes(blsSKBytes)
 	if err != nil {
 		log.Fatalf("failed to parse secret key: %s\n", err)
 	}
@@ -90,15 +91,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create unsigned Warp message: %s\n", err)
 	}
+	signedWarp, err := sk.Sign(unsignedWarp.Bytes())
+	if err != nil {
+		log.Fatalf("failed to sign Warp message: %s\n", err)
+	}
 
 	warp, err := warp.NewMessage(
 		unsignedWarp,
 		&warp.BitSetSignature{
 			Signers: set.NewBits(0).Bytes(),
 			Signature: ([bls.SignatureLen]byte)(
-				bls.SignatureToBytes(
-					sk.Sign(unsignedWarp.Bytes()),
-				),
+				bls.SignatureToBytes(signedWarp),
 			),
 		},
 	)

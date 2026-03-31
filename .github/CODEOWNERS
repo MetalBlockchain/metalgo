@@ -1,11 +1,33 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax
 
 # Code owners are the final gate for PR approval to their named section of code.
-# If a single PR involves multiple code owners, every code owner should approve
-# a PR prior to merging.
+# If a single PR modifies multiple files with different code owner groups, at
+# least one code owner of the touched file should approve the PR prior to
+# merging.
 
 * @StephenButtolph
-/.github/ @marun
+*.md @meaghanfitzgerald @StephenButtolph
+/.dockerignore @maru-ava
+/.envrc @joshua-kim @maru-ava
+/.github/ @joshua-kim @maru-ava
+/.github/*.md @joshua-kim @maru-ava @meaghanfitzgerald
+/.github/CODEOWNERS @StephenButtolph
+/.github/actions/c-chain-reexecution-benchmark/ @aaronbuchwald
+/.github/workflows/c-chain-reexecution-benchmark* @aaronbuchwald
+/.gitignore @joshua-kim @maru-ava @StephenButtolph
+/.golangci.yml @joshua-kim @maru-ava @StephenButtolph
+/Dockerfile @joshua-kim @maru-ava
+/Taskfile.yml @joshua-kim @maru-ava
+/flake.lock @joshua-kim @maru-ava
+/flake.nix @joshua-kim @maru-ava
 /network/p2p/ @joshua-kim
-/scripts/ @marun
-/tests/ @marun
+/network/p2p/*.md @joshua-kim @meaghanfitzgerald
+/scripts/ @joshua-kim @maru-ava
+/scripts/*.md @joshua-kim @maru-ava @meaghanfitzgerald
+/scripts/benchmark_cchain_range.sh @aaronbuchwald
+/tests/ @joshua-kim @maru-ava
+/tests/*.md @joshua-kim @maru-ava @meaghanfitzgerald
+/tests/reexecute/ @aaronbuchwald
+/x/blockdb @DracoLi
+/x/merkledb @joshua-kim @rrazvan1
+/x/sync @joshua-kim @rrazvan1

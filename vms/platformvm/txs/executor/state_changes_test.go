@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -13,6 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -228,7 +229,7 @@ func TestAdvanceTimeTo_RemovesStaleExpiries(t *testing.T) {
 }
 
 func TestAdvanceTimeTo_UpdateL1Validators(t *testing.T) {
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(t, err)
 
 	const (

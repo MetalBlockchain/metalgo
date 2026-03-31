@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package secp256k1
@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/MetalBlockchain/libevm/common"
+	"github.com/MetalBlockchain/libevm/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4/ecdsa"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/cb58"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
@@ -109,7 +110,13 @@ func RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, error) {
 }
 
 type RecoverCache struct {
-	cache.LRU[ids.ID, *PublicKey]
+	cache cache.Cacher[ids.ID, *PublicKey]
+}
+
+func NewRecoverCache(size int) *RecoverCache {
+	return &RecoverCache{
+		cache: lru.NewCache[ids.ID, *PublicKey](size),
+	}
 }
 
 func (r *RecoverCache) RecoverPublicKey(msg, sig []byte) (*PublicKey, error) {
@@ -117,11 +124,16 @@ func (r *RecoverCache) RecoverPublicKey(msg, sig []byte) (*PublicKey, error) {
 }
 
 func (r *RecoverCache) RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, error) {
+	// TODO: This type should always be initialized by calling NewRecoverCache.
+	if r == nil || r.cache == nil {
+		return RecoverPublicKeyFromHash(hash, sig)
+	}
+
 	cacheBytes := make([]byte, len(hash)+len(sig))
 	copy(cacheBytes, hash)
 	copy(cacheBytes[len(hash):], sig)
 	id := hashing.ComputeHash256Array(cacheBytes)
-	if cachedPublicKey, ok := r.Get(id); ok {
+	if cachedPublicKey, ok := r.cache.Get(id); ok {
 		return cachedPublicKey, nil
 	}
 
@@ -130,7 +142,7 @@ func (r *RecoverCache) RecoverPublicKeyFromHash(hash, sig []byte) (*PublicKey, e
 		return nil, err
 	}
 
-	r.Put(id, pubKey)
+	r.cache.Put(id, pubKey)
 	return pubKey, nil
 }
 

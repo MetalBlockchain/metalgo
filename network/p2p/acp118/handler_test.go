@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package acp118
@@ -11,11 +11,14 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/network/p2p/p2ptest"
 	"github.com/MetalBlockchain/metalgo/proto/pb/sdk"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
 )
@@ -50,10 +53,8 @@ func TestHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "signature is cached",
-			cacher: &cache.LRU[ids.ID, []byte]{
-				Size: 1,
-			},
+			name:   "signature is cached",
+			cacher: lru.NewCache[ids.ID, []byte](1),
 			verifier: &testVerifier{
 				Errs: []*common.AppError{
 					nil,
@@ -72,7 +73,7 @@ func TestHandler(t *testing.T) {
 			require := require.New(t)
 
 			ctx := context.Background()
-			sk, err := bls.NewSigner()
+			sk, err := localsigner.New()
 			require.NoError(err)
 			pk := sk.PublicKey()
 			networkID := uint32(123)
@@ -84,9 +85,10 @@ func TestHandler(t *testing.T) {
 			c := p2ptest.NewClient(
 				t,
 				ctx,
-				h,
 				clientNodeID,
+				p2p.NoOpHandler{},
 				serverNodeID,
+				h,
 			)
 
 			unsignedMessage, err := warp.NewUnsignedMessage(
@@ -134,7 +136,7 @@ func TestHandler(t *testing.T) {
 			}
 
 			for _, expectedErr = range tt.expectedErrs {
-				require.NoError(c.AppRequest(ctx, set.Of(clientNodeID), requestBytes, onResponse))
+				require.NoError(c.AppRequest(ctx, set.Of(serverNodeID), requestBytes, onResponse))
 				<-handled
 			}
 		})

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp_test
@@ -10,7 +10,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/signertest"
 )
@@ -18,7 +18,7 @@ import (
 func TestSigner(t *testing.T) {
 	for name, test := range signertest.SignerTests {
 		t.Run(name, func(t *testing.T) {
-			sk, err := bls.NewSigner()
+			sk, err := localsigner.New()
 			require.NoError(t, err)
 
 			chainID := ids.GenerateTestID()

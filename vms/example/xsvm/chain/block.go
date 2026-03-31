@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package chain
@@ -98,7 +98,6 @@ func (b *block) Accept(context.Context) error {
 	}
 
 	b.chain.lastAcceptedID = b.id
-	b.chain.lastAcceptedHeight = b.Height()
 	delete(b.chain.verifiedBlocks, b.ParentID)
 	b.state = nil
 	return nil

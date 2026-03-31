@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -16,6 +16,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
 
+var _ tests.TestContext = (*GinkgoTestContext)(nil)
+
 type ginkgoWriteCloser struct{}
 
 func (*ginkgoWriteCloser) Write(p []byte) (n int, err error) {
@@ -31,24 +33,24 @@ func (*ginkgoWriteCloser) Close() error {
 // Define a simple encoder config appropriate for logging with ginkgo
 var ginkgoEncoderConfig = zapcore.EncoderConfig{
 	// Time, name and caller are omitted for consistency with previous output.
-	// TODO(marun) Maybe revisit this decision
-	TimeKey:       "",
-	LevelKey:      "level",
-	NameKey:       "",
-	CallerKey:     "",
-	MessageKey:    "msg",
-	StacktraceKey: "stacktrace",
-	EncodeLevel:   logging.ConsoleColorLevelEncoder,
+	TimeKey:        "",
+	LevelKey:       "level",
+	NameKey:        "",
+	CallerKey:      "",
+	MessageKey:     "msg",
+	StacktraceKey:  "stacktrace",
+	EncodeLevel:    logging.ConsoleColorLevelEncoder,
+	EncodeDuration: zapcore.StringDurationEncoder,
 }
 
 // NewGinkgoLogger returns a logger with limited output
-func newGinkgoLogger() logging.Logger {
+func newGinkgoLogger(cfg zapcore.Encoder) logging.Logger {
 	return logging.NewLogger(
 		"",
 		logging.NewWrappedCore(
-			logging.Verbo,
+			logging.Info,
 			&ginkgoWriteCloser{},
-			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),
+			cfg,
 		),
 	)
 }
@@ -57,9 +59,22 @@ type GinkgoTestContext struct {
 	logger logging.Logger
 }
 
+// NewEventHandlerTestContext provides a logger with full output to
+// account for the limited context otherwise provided in an event
+// handler e.g. SynchronizedBeforeSuite.
+func NewEventHandlerTestContext() *GinkgoTestContext {
+	return &GinkgoTestContext{
+		logger: newGinkgoLogger(logging.Auto.ConsoleEncoder()),
+	}
+}
+
+// NewTestContext provides a logger with limited output to account for
+// the context already provided by ginkgo for test logging.
 func NewTestContext() *GinkgoTestContext {
 	return &GinkgoTestContext{
-		logger: newGinkgoLogger(),
+		logger: newGinkgoLogger(
+			zapcore.NewConsoleEncoder(ginkgoEncoderConfig),
+		),
 	}
 }
 
@@ -100,6 +115,10 @@ func (tc *GinkgoTestContext) DefaultContext() context.Context {
 // Helper simplifying use via an option of a timed context configured with the default timeout.
 func (tc *GinkgoTestContext) WithDefaultContext() common.Option {
 	return tests.WithDefaultContext(tc)
+}
+
+func (*GinkgoTestContext) GetDefaultContextParent() context.Context {
+	return context.Background()
 }
 
 // Re-implementation of testify/require.Eventually that is compatible with ginkgo. testify's

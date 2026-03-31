@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -57,6 +57,7 @@ func TestGossiperGossip(t *testing.T) {
 		responder              []*testTx // what the peer we're requesting gossip from has
 		expectedPossibleValues []*testTx // possible values we can have
 		expectedLen            int
+		expectedHitRate        float64
 	}{
 		{
 			name: "no gossip - no one knows anything",
@@ -75,6 +76,7 @@ func TestGossiperGossip(t *testing.T) {
 			responder:              []*testTx{{id: ids.ID{0}}},
 			expectedPossibleValues: []*testTx{{id: ids.ID{0}}},
 			expectedLen:            1,
+			expectedHitRate:        100,
 		},
 		{
 			name:                   "gossip - requester knows nothing",
@@ -82,6 +84,7 @@ func TestGossiperGossip(t *testing.T) {
 			responder:              []*testTx{{id: ids.ID{0}}},
 			expectedPossibleValues: []*testTx{{id: ids.ID{0}}},
 			expectedLen:            1,
+			expectedHitRate:        0,
 		},
 		{
 			name:                   "gossip - requester knows less than responder",
@@ -90,6 +93,7 @@ func TestGossiperGossip(t *testing.T) {
 			responder:              []*testTx{{id: ids.ID{0}}, {id: ids.ID{1}}},
 			expectedPossibleValues: []*testTx{{id: ids.ID{0}}, {id: ids.ID{1}}},
 			expectedLen:            2,
+			expectedHitRate:        50,
 		},
 		{
 			name:                   "gossip - target response size exceeded",
@@ -97,6 +101,7 @@ func TestGossiperGossip(t *testing.T) {
 			responder:              []*testTx{{id: ids.ID{0}}, {id: ids.ID{1}}, {id: ids.ID{2}}},
 			expectedPossibleValues: []*testTx{{id: ids.ID{0}}, {id: ids.ID{1}}, {id: ids.ID{2}}},
 			expectedLen:            2,
+			expectedHitRate:        0,
 		},
 	}
 
@@ -108,7 +113,12 @@ func TestGossiperGossip(t *testing.T) {
 			responseSender := &enginetest.SenderStub{
 				SentAppResponse: make(chan []byte, 1),
 			}
-			responseNetwork, err := p2p.NewNetwork(logging.NoLog{}, responseSender, prometheus.NewRegistry(), "")
+			responseNetwork, err := p2p.NewNetwork(
+				logging.NoLog{},
+				responseSender,
+				prometheus.NewRegistry(),
+				"",
+			)
 			require.NoError(err)
 
 			responseBloom, err := NewBloomFilter(prometheus.NewRegistry(), "", 1000, 0.01, 0.05)
@@ -123,6 +133,12 @@ func TestGossiperGossip(t *testing.T) {
 
 			metrics, err := NewMetrics(prometheus.NewRegistry(), "")
 			require.NoError(err)
+
+			testHistogram := &testHistogram{
+				Histogram: metrics.bloomFilterHitRate,
+			}
+			metrics.bloomFilterHitRate = testHistogram
+
 			marshaller := testMarshaller{}
 			handler := NewHandler[*testTx](
 				logging.NoLog{},
@@ -138,7 +154,14 @@ func TestGossiperGossip(t *testing.T) {
 				SentAppRequest: make(chan []byte, 1),
 			}
 
-			requestNetwork, err := p2p.NewNetwork(logging.NoLog{}, requestSender, prometheus.NewRegistry(), "")
+			peers := &p2p.Peers{}
+			requestNetwork, err := p2p.NewNetwork(
+				logging.NoLog{},
+				requestSender,
+				prometheus.NewRegistry(),
+				"",
+				peers,
+			)
 			require.NoError(err)
 			require.NoError(requestNetwork.Connected(context.Background(), ids.EmptyNodeID, nil))
 
@@ -152,7 +175,10 @@ func TestGossiperGossip(t *testing.T) {
 				require.NoError(requestSet.Add(item))
 			}
 
-			requestClient := requestNetwork.NewClient(0x0)
+			requestClient := requestNetwork.NewClient(
+				0x0,
+				p2p.PeerSampler{Peers: peers},
+			)
 
 			require.NoError(err)
 			gossiper := NewPullGossiper[*testTx](
@@ -175,6 +201,8 @@ func TestGossiperGossip(t *testing.T) {
 
 			require.Len(requestSet.txs, tt.expectedLen)
 			require.Subset(tt.expectedPossibleValues, maps.Values(requestSet.txs))
+			require.Equal(len(tt.responder) > 0, testHistogram.observed)
+			require.InDelta(tt.expectedHitRate, testHistogram.observedVal, 0)
 
 			// we should not receive anything that we already had before we
 			// requested the gossip
@@ -513,16 +541,7 @@ func TestPushGossiper(t *testing.T) {
 			sender := &enginetest.SenderStub{
 				SentAppGossip: make(chan []byte, 2),
 			}
-			network, err := p2p.NewNetwork(
-				logging.NoLog{},
-				sender,
-				prometheus.NewRegistry(),
-				"",
-			)
-			require.NoError(err)
-			client := network.NewClient(0)
 			validators := p2p.NewValidators(
-				&p2p.Peers{},
 				logging.NoLog{},
 				constants.PrimaryNetworkID,
 				&validatorstest.State{
@@ -535,6 +554,15 @@ func TestPushGossiper(t *testing.T) {
 				},
 				time.Hour,
 			)
+			network, err := p2p.NewNetwork(
+				logging.NoLog{},
+				sender,
+				prometheus.NewRegistry(),
+				"",
+				validators,
+			)
+			require.NoError(err)
+			client := network.NewClient(0, p2p.PeerSampler{Peers: &p2p.Peers{}})
 			metrics, err := NewMetrics(prometheus.NewRegistry(), "")
 			require.NoError(err)
 			marshaller := testMarshaller{}
@@ -608,6 +636,22 @@ type testValidatorSet struct {
 	validators set.Set[ids.NodeID]
 }
 
+func (t testValidatorSet) Len(context.Context) int {
+	return len(t.validators)
+}
+
 func (t testValidatorSet) Has(_ context.Context, nodeID ids.NodeID) bool {
 	return t.validators.Contains(nodeID)
+}
+
+type testHistogram struct {
+	prometheus.Histogram
+	observedVal float64
+	observed    bool
+}
+
+func (t *testHistogram) Observe(value float64) {
+	t.Histogram.Observe(value)
+	t.observedVal = value
+	t.observed = true
 }

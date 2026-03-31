@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package warp
@@ -49,6 +49,9 @@ func (s *signer) Sign(msg *UnsignedMessage) ([]byte, error) {
 	}
 
 	msgBytes := msg.Bytes()
-	sig := s.sk.Sign(msgBytes)
+	sig, err := s.sk.Sign(msgBytes)
+	if err != nil {
+		return nil, err
+	}
 	return bls.SignatureToBytes(sig), nil
 }

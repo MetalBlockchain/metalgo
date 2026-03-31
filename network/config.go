@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -25,6 +25,10 @@ import (
 type HealthConfig struct {
 	// Marks if the health check should be enabled
 	Enabled bool `json:"-"`
+
+	// NoIngressValidatorConnectionGracePeriod denotes the time after which the health check fails
+	// for primary network validators with no ingress connections.
+	NoIngressValidatorConnectionGracePeriod time.Duration
 
 	// MinConnectedPeers is the minimum number of peers that the network should
 	// be connected to be considered healthy.

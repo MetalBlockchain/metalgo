@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -17,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/MetalBlockchain/libevm/common"
 )
 
 var (

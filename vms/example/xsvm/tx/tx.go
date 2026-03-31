@@ -1,20 +1,15 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tx
 
 import (
-	"github.com/MetalBlockchain/metalgo/cache"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/hashing"
 )
 
-var secpCache = secp256k1.RecoverCache{
-	LRU: cache.LRU[ids.ID, *secp256k1.PublicKey]{
-		Size: 2048,
-	},
-}
+var secpCache = secp256k1.NewRecoverCache(2048)
 
 type Tx struct {
 	Unsigned  `serialize:"true" json:"unsigned"`

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package corruptabledb
@@ -15,13 +15,14 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/databasemock"
 	"github.com/MetalBlockchain/metalgo/database/dbtest"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var errTest = errors.New("non-nil error")
 
 func newDB() *Database {
 	baseDB := memdb.New()
-	return New(baseDB)
+	return New(baseDB, logging.NoLog{})
 }
 
 func TestInterface(t *testing.T) {
@@ -184,7 +185,7 @@ func TestIterator(t *testing.T) {
 			// Put a key-value pair in the database.
 			require.NoError(corruptableDB.Put([]byte{0}, []byte{1}))
 
-			// Mark database as corupted, if applicable
+			// Mark database as corrupted, if applicable
 			_ = corruptableDB.handleError(tt.databaseErrBefore)
 
 			// Make an iterator

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Package state manages the meta-data required by consensus for an avalanche
@@ -9,7 +9,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -50,7 +50,6 @@ type SerializerConfig struct {
 
 func NewSerializer(config SerializerConfig) vertex.Manager {
 	versionDB := versiondb.New(config.DB)
-	dbCache := &cache.LRU[ids.ID, any]{Size: dbCacheSize}
 	s := Serializer{
 		SerializerConfig: config,
 		versionDB:        versionDB,
@@ -59,7 +58,7 @@ func NewSerializer(config SerializerConfig) vertex.Manager {
 	rawState := &state{
 		serializer: &s,
 		log:        config.Log,
-		dbCache:    dbCache,
+		dbCache:    lru.NewCache[ids.ID, any](dbCacheSize),
 		db:         versionDB,
 	}
 

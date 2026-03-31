@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesistest
@@ -58,6 +58,7 @@ func init() {
 }
 
 type Config struct {
+	NetworkID          uint32
 	NodeIDs            []ids.NodeID
 	ValidatorWeight    uint64
 	ValidatorStartTime time.Time
@@ -68,6 +69,9 @@ type Config struct {
 }
 
 func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
+	if c.NetworkID == 0 {
+		c.NetworkID = constants.UnitTestID
+	}
 	if len(c.NodeIDs) == 0 {
 		c.NodeIDs = DefaultNodeIDs
 	}
@@ -123,7 +127,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 		}
 		validator := &txs.AddValidatorTx{
 			BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
-				NetworkID:    constants.UnitTestID,
+				NetworkID:    c.NetworkID,
 				BlockchainID: constants.PlatformChainID,
 			}},
 			Validator: txs.Validator{
@@ -152,7 +156,7 @@ func New(t testing.TB, c Config) *platformvmgenesis.Genesis {
 
 	chain := &txs.CreateChainTx{
 		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
-			NetworkID:    constants.UnitTestID,
+			NetworkID:    c.NetworkID,
 			BlockchainID: constants.PlatformChainID,
 		}},
 		SubnetID:   constants.PrimaryNetworkID,

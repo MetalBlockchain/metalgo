@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -82,7 +82,9 @@ func (r *rejector) rejectBlock(b block.Block, blockType string) error {
 		}
 	}
 
-	r.Mempool.RequestBuildBlock(false /*=emptyBlockPermitted*/)
+	if r.Mempool.Len() == 0 {
+		return nil
+	}
 
 	return nil
 }

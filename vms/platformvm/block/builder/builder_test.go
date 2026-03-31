@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package builder
@@ -16,7 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -112,7 +112,9 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		validatorEndTime      = validatorStartTime.Add(360 * 24 * time.Hour)
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardOwners := &secp256k1fx.OutputOwners{
@@ -131,7 +133,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.AVAXAssetID,
 		rewardOwners,
 		rewardOwners,
@@ -155,7 +157,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 	require.Equal([]*txs.Tx{tx}, blk.(*blockexecutor.Block).Block.Txs())
 	require.NoError(blk.Verify(context.Background()))
 	require.NoError(blk.Accept(context.Background()))
-	require.True(env.blkManager.SetPreference(blk.ID()))
+	env.blkManager.SetPreference(blk.ID())
 
 	// Validator should now be current
 	staker, err := env.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
@@ -194,7 +196,7 @@ func TestBuildBlockShouldReward(t *testing.T) {
 		require.NoError(blk.Accept(context.Background()))
 		require.NoError(commit.Verify(context.Background()))
 		require.NoError(commit.Accept(context.Background()))
-		require.True(env.blkManager.SetPreference(commit.ID()))
+		env.blkManager.SetPreference(commit.ID())
 
 		// Stop rewarding once our staker is rewarded
 		if staker.TxID == txID {
@@ -320,7 +322,9 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 		validatorEndTime = now.Add(env.config.MaxStakeDuration)
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -337,7 +341,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -353,7 +357,9 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 	// Add a validator ending past [MaxStakeDuration]
 	validator2EndTime := now.Add(env.config.MaxStakeDuration + time.Second)
 
-	sk, err = bls.NewSigner()
+	sk, err = localsigner.New()
+	require.NoError(err)
+	pop, err = signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	tx2, err := wallet.IssueAddPermissionlessValidatorTx(
@@ -366,7 +372,7 @@ func TestBuildBlockInvalidStakingDurations(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -448,15 +454,12 @@ func TestPreviouslyDroppedTxsCannotBeReAddedToMempool(t *testing.T) {
 }
 
 func TestNoErrorOnUnexpectedSetPreferenceDuringBootstrapping(t *testing.T) {
-	require := require.New(t)
-
 	env := newEnvironment(t, upgradetest.Latest)
 	env.ctx.Lock.Lock()
 	defer env.ctx.Lock.Unlock()
 
 	env.isBootstrapped.Set(false)
-
-	require.True(env.blkManager.SetPreference(ids.GenerateTestID())) // should not panic
+	env.blkManager.SetPreference(ids.GenerateTestID()) // should not panic
 }
 
 func TestGetNextStakerToReward(t *testing.T) {

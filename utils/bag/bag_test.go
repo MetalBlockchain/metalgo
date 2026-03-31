@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bag
@@ -286,4 +286,16 @@ func TestBagEquals(t *testing.T) {
 	bag2.Add(0)
 	require.True(bag1.Equals(bag2))
 	require.True(bag2.Equals(bag1))
+}
+
+func TestBagClone(t *testing.T) {
+	require := require.New(t)
+	bag := Bag[int]{}
+	bag.AddCount(100, 1)
+	bag.AddCount(200, 2)
+	bag.AddCount(300, 3)
+
+	clonedBag := bag.Clone()
+
+	require.Equal(bag, clonedBag)
 }

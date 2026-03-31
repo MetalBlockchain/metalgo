@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
@@ -34,9 +33,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/trace"
 	"github.com/MetalBlockchain/metalgo/upgrade"
+	"github.com/MetalBlockchain/metalgo/utils/bag"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/ips"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
@@ -77,12 +76,11 @@ var (
 	errCannotTrackPrimaryNetwork              = errors.New("cannot track primary network")
 	errStakingKeyContentUnset                 = fmt.Errorf("%s key not set but %s set", StakingTLSKeyContentKey, StakingCertContentKey)
 	errStakingCertContentUnset                = fmt.Errorf("%s key set but %s not set", StakingTLSKeyContentKey, StakingCertContentKey)
-	errMissingStakingSigningKeyFile           = errors.New("missing staking signing key file")
-	errTracingEndpointEmpty                   = fmt.Errorf("%s cannot be empty", TracingEndpointKey)
 	errPluginDirNotADirectory                 = errors.New("plugin dir is not a directory")
 	errCannotReadDirectory                    = errors.New("cannot read directory")
 	errUnmarshalling                          = errors.New("unmarshalling failed")
 	errFileDoesNotExist                       = errors.New("file does not exist")
+	errInvalidSignerConfig                    = fmt.Errorf("only one of the following flags can be set: %s, %s, %s, %s", StakingEphemeralSignerEnabledKey, StakingSignerKeyContentKey, StakingSignerKeyPathKey, StakingRPCSignerEndpointKey)
 )
 
 func getConsensusConfig(v *viper.Viper) snowball.Parameters {
@@ -105,7 +103,7 @@ func getConsensusConfig(v *viper.Viper) snowball.Parameters {
 
 func getLoggingConfig(v *viper.Viper) (logging.Config, error) {
 	loggingConfig := logging.Config{}
-	loggingConfig.Directory = GetExpandedArg(v, LogsDirKey)
+	loggingConfig.Directory = getExpandedArg(v, LogsDirKey)
 	var err error
 	loggingConfig.LogLevel, err = logging.ToLevel(v.GetString(LogLevelKey))
 	if err != nil {
@@ -143,7 +141,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 			return node.HTTPConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	case v.IsSet(HTTPSKeyFileKey):
-		httpsKeyFilepath := GetExpandedArg(v, HTTPSKeyFileKey)
+		httpsKeyFilepath := getExpandedArg(v, HTTPSKeyFileKey)
 		httpsKey, err = os.ReadFile(filepath.Clean(httpsKeyFilepath))
 		if err != nil {
 			return node.HTTPConfig{}, err
@@ -158,7 +156,7 @@ func getHTTPConfig(v *viper.Viper) (node.HTTPConfig, error) {
 			return node.HTTPConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	case v.IsSet(HTTPSCertFileKey):
-		httpsCertFilepath := GetExpandedArg(v, HTTPSCertFileKey)
+		httpsCertFilepath := getExpandedArg(v, HTTPSCertFileKey)
 		httpsCert, err = os.ReadFile(filepath.Clean(httpsCertFilepath))
 		if err != nil {
 			return node.HTTPConfig{}, err
@@ -326,13 +324,14 @@ func getNetworkConfig(
 		},
 
 		HealthConfig: network.HealthConfig{
-			Enabled:                      sybilProtectionEnabled,
-			MaxTimeSinceMsgSent:          v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
-			MaxTimeSinceMsgReceived:      v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
-			MaxPortionSendQueueBytesFull: v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
-			MinConnectedPeers:            v.GetUint(NetworkHealthMinPeersKey),
-			MaxSendFailRate:              v.GetFloat64(NetworkHealthMaxSendFailRateKey),
-			SendFailRateHalflife:         halflife,
+			Enabled:                                 sybilProtectionEnabled,
+			MaxTimeSinceMsgSent:                     v.GetDuration(NetworkHealthMaxTimeSinceMsgSentKey),
+			MaxTimeSinceMsgReceived:                 v.GetDuration(NetworkHealthMaxTimeSinceMsgReceivedKey),
+			MaxPortionSendQueueBytesFull:            v.GetFloat64(NetworkHealthMaxPortionSendQueueFillKey),
+			MinConnectedPeers:                       v.GetUint(NetworkHealthMinPeersKey),
+			MaxSendFailRate:                         v.GetFloat64(NetworkHealthMaxSendFailRateKey),
+			SendFailRateHalflife:                    halflife,
+			NoIngressValidatorConnectionGracePeriod: v.GetDuration(NetworkNoIngressValidatorConnectionsGracePeriodKey),
 		},
 
 		ProxyEnabled:           v.GetBool(NetworkTCPProxyEnabledKey),
@@ -557,7 +556,7 @@ func getIPConfig(v *viper.Viper) (node.IPConfig, error) {
 
 func getProfilerConfig(v *viper.Viper) (profiler.Config, error) {
 	config := profiler.Config{
-		Dir:         GetExpandedArg(v, ProfileDirKey),
+		Dir:         getExpandedArg(v, ProfileDirKey),
 		Enabled:     v.GetBool(ProfileContinuousEnabledKey),
 		Freq:        v.GetDuration(ProfileContinuousFreqKey),
 		MaxNumFiles: v.GetInt(ProfileContinuousMaxFilesKey),
@@ -591,8 +590,8 @@ func getStakingTLSCertFromFlag(v *viper.Viper) (tls.Certificate, error) {
 
 func getStakingTLSCertFromFile(v *viper.Viper) (tls.Certificate, error) {
 	// Parse the staking key/cert paths and expand environment variables
-	stakingKeyPath := GetExpandedArg(v, StakingTLSKeyPathKey)
-	stakingCertPath := GetExpandedArg(v, StakingCertPathKey)
+	stakingKeyPath := getExpandedArg(v, StakingTLSKeyPathKey)
+	stakingCertPath := getExpandedArg(v, StakingCertPathKey)
 
 	// If staking key/cert locations are specified but not found, error
 	if v.IsSet(StakingTLSKeyPathKey) || v.IsSet(StakingCertPathKey) {
@@ -638,74 +637,15 @@ func getStakingTLSCert(v *viper.Viper) (tls.Certificate, error) {
 	}
 }
 
-func getStakingSigner(v *viper.Viper) (bls.Signer, error) {
-	if v.GetBool(StakingEphemeralSignerEnabledKey) {
-		key, err := bls.NewSigner()
-		if err != nil {
-			return nil, fmt.Errorf("couldn't generate ephemeral signing key: %w", err)
-		}
-		return key, nil
-	}
-
-	if v.IsSet(StakingSignerKeyContentKey) {
-		signerKeyRawContent := v.GetString(StakingSignerKeyContentKey)
-		signerKeyContent, err := base64.StdEncoding.DecodeString(signerKeyRawContent)
-		if err != nil {
-			return nil, fmt.Errorf("unable to decode base64 content: %w", err)
-		}
-		key, err := bls.SecretKeyFromBytes(signerKeyContent)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
-		}
-		return key, nil
-	}
-
-	signingKeyPath := GetExpandedArg(v, StakingSignerKeyPathKey)
-	_, err := os.Stat(signingKeyPath)
-	if !errors.Is(err, fs.ErrNotExist) {
-		signingKeyBytes, err := os.ReadFile(signingKeyPath)
-		if err != nil {
-			return nil, err
-		}
-		key, err := bls.SecretKeyFromBytes(signingKeyBytes)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't parse signing key: %w", err)
-		}
-		return key, nil
-	}
-
-	if v.IsSet(StakingSignerKeyPathKey) {
-		return nil, errMissingStakingSigningKeyFile
-	}
-
-	key, err := bls.NewSigner()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't generate new signing key: %w", err)
-	}
-
-	if err := os.MkdirAll(filepath.Dir(signingKeyPath), perms.ReadWriteExecute); err != nil {
-		return nil, fmt.Errorf("couldn't create path for signing key at %s: %w", signingKeyPath, err)
-	}
-
-	keyBytes := key.ToBytes()
-	if err := os.WriteFile(signingKeyPath, keyBytes, perms.ReadWrite); err != nil {
-		return nil, fmt.Errorf("couldn't write new signing key to %s: %w", signingKeyPath, err)
-	}
-	if err := os.Chmod(signingKeyPath, perms.ReadOnly); err != nil {
-		return nil, fmt.Errorf("couldn't restrict permissions on new signing key at %s: %w", signingKeyPath, err)
-	}
-	return key, nil
-}
-
 func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, error) {
 	config := node.StakingConfig{
 		SybilProtectionEnabled:        v.GetBool(SybilProtectionEnabledKey),
 		SybilProtectionDisabledWeight: v.GetUint64(SybilProtectionDisabledWeightKey),
 		PartialSyncPrimaryNetwork:     v.GetBool(PartialSyncPrimaryNetworkKey),
-		StakingKeyPath:                GetExpandedArg(v, StakingTLSKeyPathKey),
-		StakingCertPath:               GetExpandedArg(v, StakingCertPathKey),
-		StakingSignerPath:             GetExpandedArg(v, StakingSignerKeyPathKey),
+		StakingTLSKeyPath:             getExpandedArg(v, StakingTLSKeyPathKey),
+		StakingTLSCertPath:            getExpandedArg(v, StakingCertPathKey),
 	}
+
 	if !config.SybilProtectionEnabled && config.SybilProtectionDisabledWeight == 0 {
 		return node.StakingConfig{}, errSybilProtectionDisabledStakerWeights
 	}
@@ -719,7 +659,8 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 	if err != nil {
 		return node.StakingConfig{}, err
 	}
-	config.StakingSigningKey, err = getStakingSigner(v)
+
+	config.StakingSignerConfig, err = getStakingSignerConfig(v)
 	if err != nil {
 		return node.StakingConfig{}, err
 	}
@@ -757,6 +698,33 @@ func getStakingConfig(v *viper.Viper, networkID uint32) (node.StakingConfig, err
 		config.StakingConfig = genesis.GetStakingConfig(networkID)
 	}
 	return config, nil
+}
+
+func getStakingSignerConfig(v *viper.Viper) (node.StakingSignerConfig, error) {
+	// A maximum of one signer option can be set
+	bools := bag.Of(
+		v.GetBool(StakingEphemeralSignerEnabledKey),
+		v.IsSet(StakingSignerKeyContentKey),
+		v.IsSet(StakingSignerKeyPathKey),
+		v.IsSet(StakingRPCSignerEndpointKey),
+	)
+	if bools.Count(true) > 1 {
+		return node.StakingSignerConfig{}, errInvalidSignerConfig
+	}
+
+	var signerKeyPath string
+	// Set signerKeyPath only none of the other signer options are set
+	if !v.GetBool(StakingEphemeralSignerEnabledKey) && !v.IsSet(StakingSignerKeyContentKey) && !v.IsSet(StakingRPCSignerEndpointKey) {
+		signerKeyPath = getExpandedArg(v, StakingSignerKeyPathKey)
+	}
+
+	return node.StakingSignerConfig{
+		EphemeralSignerEnabled: v.GetBool(StakingEphemeralSignerEnabledKey),
+		KeyContent:             getExpandedArg(v, StakingSignerKeyContentKey),
+		KeyPath:                signerKeyPath,
+		RPCEndpoint:            getExpandedArg(v, StakingRPCSignerEndpointKey),
+		KeyPathIsSet:           v.IsSet(StakingSignerKeyPathKey),
+	}, nil
 }
 
 func getTxFeeConfig(v *viper.Viper, networkID uint32) genesis.TxFeeConfig {
@@ -806,7 +774,7 @@ func getUpgradeConfig(v *viper.Viper, networkID uint32) (upgrade.Config, error) 
 	)
 	switch {
 	case v.IsSet(UpgradeFileKey):
-		upgradeFileName := GetExpandedArg(v, UpgradeFileKey)
+		upgradeFileName := getExpandedArg(v, UpgradeFileKey)
 		upgradeBytes, err = os.ReadFile(upgradeFileName)
 		if err != nil {
 			return upgrade.Config{}, fmt.Errorf("unable to read upgrade file: %w", err)
@@ -835,7 +803,7 @@ func getGenesisData(v *viper.Viper, networkID uint32, stakingCfg *genesis.Stakin
 
 	// if content is not specified go for the file
 	if v.IsSet(GenesisFileKey) {
-		genesisFileName := GetExpandedArg(v, GenesisFileKey)
+		genesisFileName := getExpandedArg(v, GenesisFileKey)
 		return genesis.FromFile(networkID, genesisFileName, stakingCfg)
 	}
 
@@ -876,7 +844,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 			return node.DatabaseConfig{}, fmt.Errorf("unable to decode base64 content: %w", err)
 		}
 	} else if v.IsSet(DBConfigFileKey) {
-		path := GetExpandedArg(v, DBConfigFileKey)
+		path := getExpandedArg(v, DBConfigFileKey)
 		configBytes, err = os.ReadFile(path)
 		if err != nil {
 			return node.DatabaseConfig{}, err
@@ -887,7 +855,7 @@ func getDatabaseConfig(v *viper.Viper, networkID uint32) (node.DatabaseConfig, e
 		Name:     v.GetString(DBTypeKey),
 		ReadOnly: v.GetBool(DBReadOnlyKey),
 		Path: filepath.Join(
-			GetExpandedArg(v, DBPathKey),
+			getExpandedArg(v, DBPathKey),
 			constants.NetworkName(networkID),
 		),
 		Config: configBytes,
@@ -904,7 +872,7 @@ func getAliases(v *viper.Viper, name string, contentKey string, fileKey string) 
 			return nil, fmt.Errorf("unable to decode base64 content for %s: %w", name, err)
 		}
 	} else {
-		aliasFilePath := filepath.Clean(GetExpandedArg(v, fileKey))
+		aliasFilePath := filepath.Clean(getExpandedArg(v, fileKey))
 		exists, err := storage.FileExists(aliasFilePath)
 		if err != nil {
 			return nil, err
@@ -940,7 +908,7 @@ func getChainAliases(v *viper.Viper) (map[ids.ID][]string, error) {
 
 // getPathFromDirKey reads flag value from viper instance and then checks the folder existence
 func getPathFromDirKey(v *viper.Viper, configKey string) (string, error) {
-	configDir := GetExpandedArg(v, configKey)
+	configDir := getExpandedArg(v, configKey)
 	cleanPath := filepath.Clean(configDir)
 	ok, err := storage.FolderExists(cleanPath)
 	if err != nil {
@@ -1053,8 +1021,9 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 
 	res := make(map[ids.ID]subnets.Config)
 	for _, subnetID := range subnetIDs {
+		config := getDefaultSubnetConfig(v)
+
 		if rawSubnetConfigBytes, ok := subnetConfigs[subnetID]; ok {
-			config := getDefaultSubnetConfig(v)
 			if err := json.Unmarshal(rawSubnetConfigBytes, &config); err != nil {
 				return nil, err
 			}
@@ -1067,14 +1036,14 @@ func getSubnetConfigsFromFlags(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]s
 			if err := config.Valid(); err != nil {
 				return nil, err
 			}
-
-			res[subnetID] = config
 		}
+
+		res[subnetID] = config
 	}
 	return res, nil
 }
 
-// getSubnetConfigs reads SubnetConfigs to node config map
+// getSubnetConfigsFromDir reads SubnetConfigs to node config map
 func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]subnets.Config, error) {
 	subnetConfigPath, err := getPathFromDirKey(v, SubnetConfigDirKey)
 	if err != nil {
@@ -1082,18 +1051,23 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 	}
 
 	subnetConfigs := make(map[ids.ID]subnets.Config)
-	if len(subnetConfigPath) == 0 {
-		// subnet config path does not exist but not explicitly specified, so ignore it
-		return subnetConfigs, nil
-	}
 
 	// reads subnet config files from a path and given subnetIDs and returns a map.
 	for _, subnetID := range subnetIDs {
+		// Ensure default configuration
+		config := getDefaultSubnetConfig(v)
+		subnetConfigs[subnetID] = config
+
+		if len(subnetConfigPath) == 0 {
+			// subnet config path does not exist but not explicitly specified, so ignore it
+			continue
+		}
+
 		filePath := filepath.Join(subnetConfigPath, subnetID.String()+subnetConfigFileExt)
 		fileInfo, err := os.Stat(filePath)
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			// this subnet config does not exist, move to the next one
+			// this subnet config does not exist, the default configuration will be used
 			continue
 		case err != nil:
 			return nil, err
@@ -1107,7 +1081,7 @@ func getSubnetConfigsFromDir(v *viper.Viper, subnetIDs []ids.ID) (map[ids.ID]sub
 			return nil, err
 		}
 
-		config := getDefaultSubnetConfig(v)
+		// Update the default config with the values from the file
 		if err := json.Unmarshal(file, &config); err != nil {
 			return nil, fmt.Errorf("%w: %w", errUnmarshalling, err)
 		}
@@ -1131,7 +1105,7 @@ func getDefaultSubnetConfig(v *viper.Viper) subnets.Config {
 	return subnets.Config{
 		ConsensusParameters:         getConsensusConfig(v),
 		ValidatorOnly:               false,
-		ProposerMinBlockDelay:       proposervm.DefaultMinBlockDelay,
+		ProposerMinBlockDelay:       v.GetDuration(ProposerVMMinBlockDelayKey),
 		ProposerNumHistoricalBlocks: proposervm.DefaultNumHistoricalBlocks,
 	}
 }
@@ -1188,32 +1162,19 @@ func getDiskTargeterConfig(v *viper.Viper) (tracker.TargeterConfig, error) {
 }
 
 func getTraceConfig(v *viper.Viper) (trace.Config, error) {
-	enabled := v.GetBool(TracingEnabledKey)
-	if !enabled {
-		return trace.Config{
-			Enabled: false,
-		}, nil
-	}
-
 	exporterTypeStr := v.GetString(TracingExporterTypeKey)
 	exporterType, err := trace.ExporterTypeFromString(exporterTypeStr)
 	if err != nil {
 		return trace.Config{}, err
 	}
 
-	endpoint := v.GetString(TracingEndpointKey)
-	if endpoint == "" {
-		return trace.Config{}, errTracingEndpointEmpty
-	}
-
 	return trace.Config{
 		ExporterConfig: trace.ExporterConfig{
 			Type:     exporterType,
-			Endpoint: endpoint,
+			Endpoint: v.GetString(TracingEndpointKey),
 			Insecure: v.GetBool(TracingInsecureKey),
 			Headers:  v.GetStringMapString(TracingHeadersKey),
 		},
-		Enabled:         true,
 		TraceSampleRate: v.GetFloat64(TracingSampleRateKey),
 		AppName:         constants.AppName,
 		Version:         version.Current.String(),
@@ -1222,7 +1183,7 @@ func getTraceConfig(v *viper.Viper) (trace.Config, error) {
 
 // Returns the path to the directory that contains VM binaries.
 func getPluginDir(v *viper.Viper) (string, error) {
-	pluginDir := GetExpandedString(v, v.GetString(PluginDirKey))
+	pluginDir := getExpandedArg(v, PluginDirKey)
 
 	if v.IsSet(PluginDirKey) {
 		// If the flag was given, assert it exists and is a directory
@@ -1451,9 +1412,9 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	nodeConfig.ChainDataDir = GetExpandedArg(v, ChainDataDirKey)
+	nodeConfig.ChainDataDir = getExpandedArg(v, ChainDataDirKey)
 
-	nodeConfig.ProcessContextFilePath = GetExpandedArg(v, ProcessContextFileKey)
+	nodeConfig.ProcessContextFilePath = getExpandedArg(v, ProcessContextFileKey)
 
 	nodeConfig.ProvidedFlags = providedFlags(v)
 	return nodeConfig, nil

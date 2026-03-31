@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -38,7 +38,7 @@ func main() {
 	log.Printf("fetched state of %s in %s\n", addrStr, time.Since(fetchStartTime))
 
 	pUTXOs := common.NewChainUTXOs(constants.PlatformChainID, state.UTXOs)
-	pBackend := wallet.NewBackend(state.PCTX, pUTXOs, nil)
+	pBackend := wallet.NewBackend(pUTXOs, nil)
 	pBuilder := builder.New(addresses, state.PCTX, pBackend)
 
 	currentBalances, err := pBuilder.GetBalance()

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -16,7 +16,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var (
@@ -62,7 +61,7 @@ func BenchmarkMarshalHandshake(b *testing.B) {
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
 
-	codec, err := newMsgBuilder(logging.NoLog{}, prometheus.NewRegistry(), 10*time.Second)
+	codec, err := newMsgBuilder(prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.Logf("proto length %d-byte (use builder %v)", msgLen, useBuilder)
@@ -119,7 +118,7 @@ func BenchmarkUnmarshalHandshake(b *testing.B) {
 	require.NoError(err)
 
 	useBuilder := os.Getenv("USE_BUILDER") != ""
-	codec, err := newMsgBuilder(logging.NoLog{}, prometheus.NewRegistry(), 10*time.Second)
+	codec, err := newMsgBuilder(prometheus.NewRegistry(), 10*time.Second)
 	require.NoError(err)
 
 	b.StartTimer()

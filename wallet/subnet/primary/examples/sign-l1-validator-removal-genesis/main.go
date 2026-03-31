@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -21,7 +21,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/router"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/payload"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary"
@@ -95,7 +94,6 @@ func main() {
 	}
 
 	messageBuilder, err := p2pmessage.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		compression.TypeZstd,
 		time.Hour,

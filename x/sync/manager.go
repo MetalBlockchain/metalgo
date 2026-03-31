@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -541,8 +541,8 @@ func (m *Manager) handleRangeProofResponse(
 		return nil
 	}
 
-	if len(rangeProof.KeyValues) > 0 {
-		largestHandledKey = maybe.Some(rangeProof.KeyValues[len(rangeProof.KeyValues)-1].Key)
+	if len(rangeProof.KeyChanges) > 0 {
+		largestHandledKey = maybe.Some(rangeProof.KeyChanges[len(rangeProof.KeyChanges)-1].Key)
 	}
 
 	m.completeWorkItem(ctx, work, largestHandledKey, targetRootID, rangeProof.EndProof)
@@ -634,13 +634,13 @@ func (m *Manager) handleChangeProofResponse(
 		}
 
 		largestHandledKey := work.end
-		if len(rangeProof.KeyValues) > 0 {
+		if len(rangeProof.KeyChanges) > 0 {
 			// Add all the key-value pairs we got to the database.
 			if err := m.config.DB.CommitRangeProof(ctx, work.start, work.end, &rangeProof); err != nil {
 				m.setError(err)
 				return nil
 			}
-			largestHandledKey = maybe.Some(rangeProof.KeyValues[len(rangeProof.KeyValues)-1].Key)
+			largestHandledKey = maybe.Some(rangeProof.KeyChanges[len(rangeProof.KeyChanges)-1].Key)
 		}
 
 		m.completeWorkItem(ctx, work, largestHandledKey, targetRootID, rangeProof.EndProof)
@@ -1030,10 +1030,7 @@ func (m *Manager) enqueueWork(work *workItem) {
 func midPoint(startMaybe, endMaybe maybe.Maybe[[]byte]) maybe.Maybe[[]byte] {
 	start := startMaybe.Value()
 	end := endMaybe.Value()
-	length := len(start)
-	if len(end) > length {
-		length = len(end)
-	}
+	length := max(len(end), len(start))
 
 	if length == 0 {
 		if endMaybe.IsNothing() {
@@ -1155,10 +1152,10 @@ func verifyRangeProof(
 	}
 
 	// Ensure the response does not contain more than the maximum requested number of leaves.
-	if len(rangeProof.KeyValues) > keyLimit {
+	if len(rangeProof.KeyChanges) > keyLimit {
 		return fmt.Errorf(
 			"%w: (%d) > %d)",
-			errTooManyKeys, len(rangeProof.KeyValues), keyLimit,
+			errTooManyKeys, len(rangeProof.KeyChanges), keyLimit,
 		)
 	}
 
@@ -1180,10 +1177,8 @@ func calculateBackoff(attempt int) time.Duration {
 		return 0
 	}
 
-	retryWait := initialRetryWait * time.Duration(math.Pow(retryWaitFactor, float64(attempt)))
-	if retryWait > maxRetryWait {
-		retryWait = maxRetryWait
-	}
-
-	return retryWait
+	return min(
+		initialRetryWait*time.Duration(math.Pow(retryWaitFactor, float64(attempt))),
+		maxRetryWait,
+	)
 }

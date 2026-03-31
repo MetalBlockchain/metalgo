@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -132,8 +133,8 @@ func TestGetL1Validator(t *testing.T) {
 		l1Validator             = newL1Validator()
 		dbWithL1Validator       = memdb.New()
 		dbWithoutL1Validator    = memdb.New()
-		cacheWithL1Validator    = &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10}
-		cacheWithoutL1Validator = &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10}
+		cacheWithL1Validator    = lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10)
+		cacheWithoutL1Validator = lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10)
 	)
 
 	require.NoError(t, putL1Validator(dbWithL1Validator, cacheWithL1Validator, l1Validator))
@@ -156,7 +157,7 @@ func TestGetL1Validator(t *testing.T) {
 		},
 		{
 			name:                "from disk with validator",
-			cache:               &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10},
+			cache:               lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10),
 			db:                  dbWithL1Validator,
 			expectedL1Validator: l1Validator,
 			expectedEntry:       maybe.Some(l1Validator),
@@ -169,7 +170,7 @@ func TestGetL1Validator(t *testing.T) {
 		},
 		{
 			name:        "from disk without validator",
-			cache:       &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10},
+			cache:       lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10),
 			db:          dbWithoutL1Validator,
 			expectedErr: database.ErrNotFound,
 		},
@@ -194,7 +195,7 @@ func TestPutL1Validator(t *testing.T) {
 		require     = require.New(t)
 		l1Validator = newL1Validator()
 		db          = memdb.New()
-		cache       = &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10}
+		cache       = lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10)
 	)
 	expectedL1ValidatorBytes, err := block.GenesisCodec.Marshal(block.CodecVersion, l1Validator)
 	require.NoError(err)
@@ -215,7 +216,7 @@ func TestDeleteL1Validator(t *testing.T) {
 		require      = require.New(t)
 		validationID = ids.GenerateTestID()
 		db           = memdb.New()
-		cache        = &cache.LRU[ids.ID, maybe.Maybe[L1Validator]]{Size: 10}
+		cache        = lru.NewCache[ids.ID, maybe.Maybe[L1Validator]](10)
 	)
 	require.NoError(db.Put(validationID[:], nil))
 

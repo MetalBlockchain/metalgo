@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -85,6 +85,7 @@ const (
 	StakingEphemeralSignerEnabledKey                   = "staking-ephemeral-signer-enabled"
 	StakingSignerKeyPathKey                            = "staking-signer-key-file"
 	StakingSignerKeyContentKey                         = "staking-signer-key-file-content"
+	StakingRPCSignerEndpointKey                        = "staking-rpc-signer-endpoint"
 	SybilProtectionEnabledKey                          = "sybil-protection-enabled"
 	SybilProtectionDisabledWeightKey                   = "sybil-protection-disabled-weight"
 	NetworkInitialTimeoutKey                           = "network-initial-timeout"
@@ -120,6 +121,7 @@ const (
 	NetworkInboundThrottlerMaxConnsPerSecKey           = "network-inbound-connection-throttling-max-conns-per-sec"
 	NetworkOutboundConnectionThrottlingRpsKey          = "network-outbound-connection-throttling-rps"
 	NetworkOutboundConnectionTimeoutKey                = "network-outbound-connection-timeout"
+	NetworkNoIngressValidatorConnectionsGracePeriodKey = "network-no-ingress-connections-grace-period"
 	BenchlistFailThresholdKey                          = "benchlist-fail-threshold"
 	BenchlistDurationKey                               = "benchlist-duration"
 	BenchlistMinFailingDurationKey                     = "benchlist-min-failing-duration"
@@ -152,6 +154,7 @@ const (
 	ConsensusShutdownTimeoutKey                        = "consensus-shutdown-timeout"
 	ConsensusFrontierPollFrequencyKey                  = "consensus-frontier-poll-frequency"
 	ProposerVMUseCurrentHeightKey                      = "proposervm-use-current-height"
+	ProposerVMMinBlockDelayKey                         = "proposervm-min-block-delay"
 	FdLimitKey                                         = "fd-limit"
 	IndexEnabledKey                                    = "index-enabled"
 	IndexAllowIncompleteKey                            = "index-allow-incomplete"
@@ -201,7 +204,6 @@ const (
 	VMAliasesContentKey                                = "vm-aliases-file-content"
 	ChainAliasesFileKey                                = "chain-aliases-file"
 	ChainAliasesContentKey                             = "chain-aliases-file-content"
-	TracingEnabledKey                                  = "tracing-enabled"
 	TracingEndpointKey                                 = "tracing-endpoint"
 	TracingInsecureKey                                 = "tracing-insecure"
 	TracingSampleRateKey                               = "tracing-sample-rate"

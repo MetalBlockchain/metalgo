@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package avm
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil/bech32"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -34,7 +33,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/avm/state/statemock"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/index"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
 	"github.com/MetalBlockchain/metalgo/vms/nftfx"
 	"github.com/MetalBlockchain/metalgo/vms/propertyfx"
@@ -90,7 +88,7 @@ func TestServiceGetTxStatus(t *testing.T) {
 	require.NoError(service.GetTxStatus(nil, statusArgs, statusReply))
 	require.Equal(choices.Unknown, statusReply.Status)
 
-	issueAndAccept(require, env.vm, env.issuer, newTx)
+	issueAndAccept(require, env.vm, newTx)
 
 	statusReply = &GetTxStatusReply{}
 	require.NoError(service.GetTxStatus(nil, statusArgs, statusReply))
@@ -251,46 +249,6 @@ func TestServiceGetBalanceStrict(t *testing.T) {
 	// The balance should not include the UTXO since it is only partly owned by [addr]
 	require.Zero(balanceReply.Balance)
 	require.Empty(balanceReply.UTXOIDs)
-}
-
-func TestServiceGetTxs(t *testing.T) {
-	require := require.New(t)
-	env := setup(t, &envConfig{
-		fork: upgradetest.Latest,
-	})
-	service := &Service{vm: env.vm}
-
-	var err error
-	env.vm.addressTxsIndexer, err = index.NewIndexer(env.vm.db, env.vm.ctx.Log, "", prometheus.NewRegistry(), false)
-	require.NoError(err)
-
-	assetID := ids.GenerateTestID()
-	addr := ids.GenerateTestShortID()
-	addrStr, err := env.vm.FormatLocalAddress(addr)
-	require.NoError(err)
-
-	testTxCount := 25
-	testTxs := initTestTxIndex(t, env.vm.db, addr, assetID, testTxCount)
-
-	env.vm.ctx.Lock.Unlock()
-
-	// get the first page
-	getTxsArgs := &GetAddressTxsArgs{
-		PageSize:    10,
-		JSONAddress: api.JSONAddress{Address: addrStr},
-		AssetID:     assetID.String(),
-	}
-	getTxsReply := &GetAddressTxsReply{}
-	require.NoError(service.GetAddressTxs(nil, getTxsArgs, getTxsReply))
-	require.Len(getTxsReply.TxIDs, 10)
-	require.Equal(getTxsReply.TxIDs, testTxs[:10])
-
-	// get the second page
-	getTxsArgs.Cursor = getTxsReply.Cursor
-	getTxsReply = &GetAddressTxsReply{}
-	require.NoError(service.GetAddressTxs(nil, getTxsArgs, getTxsReply))
-	require.Len(getTxsReply.TxIDs, 10)
-	require.Equal(getTxsReply.TxIDs, testTxs[10:20])
 }
 
 func TestServiceGetAllBalances(t *testing.T) {
@@ -540,7 +498,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 	env.vm.ctx.Lock.Unlock()
 
 	newTx := newAvaxBaseTxWithOutputs(t, env)
-	issueAndAccept(require, env.vm, env.issuer, newTx)
+	issueAndAccept(require, env.vm, newTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -562,7 +520,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -574,7 +532,7 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 				}
 			},
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -588,9 +546,9 @@ func TestServiceGetTxJSON_BaseTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"outputIndex": 2,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -628,7 +586,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 	env.vm.ctx.Lock.Unlock()
 
 	newTx := buildTestExportTx(t, env, env.vm.ctx.CChainID)
-	issueAndAccept(require, env.vm, env.issuer, newTx)
+	issueAndAccept(require, env.vm, newTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -649,7 +607,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -663,9 +621,9 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"outputIndex": 2,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -679,7 +637,7 @@ func TestServiceGetTxJSON_ExportTx(t *testing.T) {
 		"destinationChain": "2mcwQKiD8VEspmMJpL1dc7okQQ5dDVAWeCBZ7FWBFAbxpv3t7w",
 		"exportedOutputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -767,7 +725,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -789,7 +747,7 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		"blockchainID": %q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -803,9 +761,9 @@ func TestServiceGetTxJSON_CreateAssetTx(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"txID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"outputIndex": 2,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 50000,
@@ -934,11 +892,11 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	op := buildNFTxMintOp(createAssetTx, key, 1, 1)
 	mintNFTTx := buildOperationTxWithOps(t, env, op)
-	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
+	issueAndAccept(require, env.vm, mintNFTTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -961,7 +919,7 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -975,9 +933,9 @@ func TestServiceGetTxJSON_OperationTxWithNftxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "Zo68eLmXeFCA2cmqhg7UY5bF1x16ASBa4Tm3yW7VesFFs8Qm3",
+				"txID": "rSiY2aqcahSU5vyJeMiNBnwtPwfJFxsxskAGbU3HxHvAkrdpy",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1078,12 +1036,12 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	mintOp1 := buildNFTxMintOp(createAssetTx, key, 1, 0)
 	mintOp2 := buildNFTxMintOp(createAssetTx, key, 2, 1)
 	mintNFTTx := buildOperationTxWithOps(t, env, mintOp1, mintOp2)
-	issueAndAccept(require, env.vm, env.issuer, mintNFTTx)
+	issueAndAccept(require, env.vm, mintNFTTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -1106,7 +1064,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1120,9 +1078,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleNftxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "RUHFNtJcKhYo4gue8xbNn3EuX9RWPvKAFYho7vgMHhkKqGmpm",
+				"txID": "BBhSA95iv6ueXc7xrMSka1bByBqcwJxyvMiyjy5H8ccAgxy4P",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1254,11 +1212,11 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	op := buildSecpMintOp(createAssetTx, key, 1)
 	mintSecpOpTx := buildOperationTxWithOps(t, env, op)
-	issueAndAccept(require, env.vm, env.issuer, mintSecpOpTx)
+	issueAndAccept(require, env.vm, mintSecpOpTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -1281,7 +1239,7 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1295,9 +1253,9 @@ func TestServiceGetTxJSON_OperationTxWithSecpMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "24zV3eVRh4o8zsswNh6eBFT5NRPArxdfUFAXRRf1weh2DSFgQt",
+				"txID": "2YhAg3XUdub5syHHePZG7q3yFjKAy7ahsvQDxq5SMrYbN1s5Gn",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1400,12 +1358,12 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	op1 := buildSecpMintOp(createAssetTx, key, 1)
 	op2 := buildSecpMintOp(createAssetTx, key, 2)
 	mintSecpOpTx := buildOperationTxWithOps(t, env, op1, op2)
-	issueAndAccept(require, env.vm, env.issuer, mintSecpOpTx)
+	issueAndAccept(require, env.vm, mintSecpOpTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -1428,7 +1386,7 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1442,9 +1400,9 @@ func TestServiceGetTxJSON_OperationTxWithMultipleSecpMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2qbUm2Jb8vmdEumH7qicyNpgXoezfe4tN48Je6X7myZb8sP6QA",
+				"txID": "2vxorPLUw5sneb7Mdhhjuws3H5AqaDp1V8ETz6fEuzvn835rVX",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1579,11 +1537,11 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	op := buildPropertyFxMintOp(createAssetTx, key, 1)
 	mintPropertyFxOpTx := buildOperationTxWithOps(t, env, op)
-	issueAndAccept(require, env.vm, env.issuer, mintPropertyFxOpTx)
+	issueAndAccept(require, env.vm, mintPropertyFxOpTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -1606,7 +1564,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1620,9 +1578,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOp(t *testing.T) {
 		],
 		"inputs": [
 			{
-				"txID": "2q6W5XHsrNsbkMFnY42SZv4Tu7TeToJHPz7FN7YCMeuYkwb2ys",
+				"txID": "nNUGBjszswU3ZmhCb8hBNWmg335UZqGWmNrYTAGyMF4bFpMXm",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,
@@ -1720,12 +1678,12 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		},
 	}
 	createAssetTx := newAvaxCreateAssetTxWithOutputs(t, env, initialStates)
-	issueAndAccept(require, env.vm, env.issuer, createAssetTx)
+	issueAndAccept(require, env.vm, createAssetTx)
 
 	op1 := buildPropertyFxMintOp(createAssetTx, key, 1)
 	op2 := buildPropertyFxMintOp(createAssetTx, key, 2)
 	mintPropertyFxOpTx := buildOperationTxWithOps(t, env, op1, op2)
-	issueAndAccept(require, env.vm, env.issuer, mintPropertyFxOpTx)
+	issueAndAccept(require, env.vm, mintPropertyFxOpTx)
 
 	reply := api.GetTxReply{}
 	require.NoError(service.GetTx(nil, &api.GetTxArgs{
@@ -1748,7 +1706,7 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		"blockchainID": %[1]q,
 		"outputs": [
 			{
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"output": {
 					"addresses": [
@@ -1762,9 +1720,9 @@ func TestServiceGetTxJSON_OperationTxWithPropertyFxMintOpMultiple(t *testing.T) 
 		],
 		"inputs": [
 			{
-				"txID": "MUGyfNF2gNLL7dbPmHMmebbQFyXDmJKvdbA4Fszm1zVcrtxwb",
+				"txID": "2NV5AGoQQHVRY6VkT8sht8bhZDHR7uwta7fk7JwAZpacqMRWCa",
 				"outputIndex": 0,
-				"assetID": "vH1o1uJ2mdo382oEcjaTngKiEU92YVhAWex737ecnnaeSykXD",
+				"assetID": "2XGxUr7VF7j1iwUp2aiGe4b6Ue2yyNghNS1SuNTNmZ77dPpXFZ",
 				"fxID": "spdxUxVJQbX85MGxMHbKw1sHxMnSqJ3QBzDyDYEP3h6TLuxqQ",
 				"input": {
 					"amount": 49000,

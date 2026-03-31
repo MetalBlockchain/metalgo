@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
@@ -25,7 +26,7 @@ func TestVerifyWarpMessages(t *testing.T) {
 		subnetID     = ids.GenerateTestID()
 		chainID      = ids.GenerateTestID()
 		newValidator = func() (bls.Signer, *validators.GetValidatorOutput) {
-			sk, err := bls.NewSigner()
+			sk, err := localsigner.New()
 			require.NoError(t, err)
 
 			return sk, &validators.GetValidatorOutput{
@@ -58,10 +59,11 @@ func TestVerifyWarpMessages(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	var (
-		sig0 = sk0.Sign(validUnsignedWarpMessage.Bytes())
-		sig1 = sk1.Sign(validUnsignedWarpMessage.Bytes())
-	)
+	sig0, err := sk0.Sign(validUnsignedWarpMessage.Bytes())
+	require.NoError(t, err)
+	sig1, err := sk1.Sign(validUnsignedWarpMessage.Bytes())
+	require.NoError(t, err)
+
 	sig, err := bls.AggregateSignatures([]*bls.Signature{sig0, sig1})
 	require.NoError(t, err)
 

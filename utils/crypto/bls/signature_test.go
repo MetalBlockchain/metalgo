@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bls
@@ -16,9 +16,8 @@ func TestSignatureBytes(t *testing.T) {
 
 	msg := utils.RandomBytes(1234)
 
-	sk, err := NewSigner()
-	require.NoError(err)
-	sig := sk.Sign(msg)
+	sk := newKey(require)
+	sig := sign(sk, msg)
 	sigBytes := SignatureToBytes(sig)
 
 	sig2, err := SignatureFromBytes(sigBytes)
@@ -34,10 +33,8 @@ func TestAggregateSignaturesNoop(t *testing.T) {
 
 	msg := utils.RandomBytes(1234)
 
-	sk, err := NewSigner()
-	require.NoError(err)
-
-	sig := sk.Sign(msg)
+	sk := newKey(require)
+	sig := sign(sk, msg)
 	sigBytes := SignatureToBytes(sig)
 
 	aggSig, err := AggregateSignatures([]*Signature{sig})

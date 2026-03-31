@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package consistent
@@ -213,8 +213,8 @@ func (h *hashRing) get(key Hashable) (Hashable, error) {
 	// If found nothing ascending the tree, we need to wrap around the ring to
 	// the left-most (min) node.
 	if result == nil {
-		min, _ := h.ring.Min()
-		result = min.value
+		minNode, _ := h.ring.Min()
+		result = minNode.value
 	}
 	return result, nil
 }

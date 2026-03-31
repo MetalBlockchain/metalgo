@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gwarp
@@ -11,6 +11,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/signertest"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
@@ -29,7 +30,7 @@ type testSigner struct {
 func setupSigner(t testing.TB) *testSigner {
 	require := require.New(t)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	chainID := ids.GenerateTestID()

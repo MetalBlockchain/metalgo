@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/ids"
-	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
@@ -58,12 +57,8 @@ func TestGossipMempoolAdd(t *testing.T) {
 	require := require.New(t)
 
 	metrics := prometheus.NewRegistry()
-	toEngine := make(chan common.Message, 1)
 
-	baseMempool, err := mempool.New("", metrics, toEngine)
-	require.NoError(err)
-
-	parser, err := txs.NewParser(nil)
+	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
 
 	mempool, err := newGossipMempool(
@@ -71,7 +66,6 @@ func TestGossipMempoolAdd(t *testing.T) {
 		metrics,
 		logging.NoLog{},
 		testVerifier{},
-		parser,
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
 		DefaultConfig.MaxBloomFilterFalsePositiveProbability,
@@ -95,12 +89,8 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 	require := require.New(t)
 
 	metrics := prometheus.NewRegistry()
-	toEngine := make(chan common.Message, 1)
 
-	baseMempool, err := mempool.New("", metrics, toEngine)
-	require.NoError(err)
-
-	parser, err := txs.NewParser(nil)
+	baseMempool, err := mempool.New("", metrics)
 	require.NoError(err)
 
 	mempool, err := newGossipMempool(
@@ -110,7 +100,6 @@ func TestGossipMempoolAddVerified(t *testing.T) {
 		testVerifier{
 			err: errTest, // We shouldn't be attempting to verify the tx in this flow
 		},
-		parser,
 		DefaultConfig.ExpectedBloomFilterElements,
 		DefaultConfig.ExpectedBloomFilterFalsePositiveProbability,
 		DefaultConfig.MaxBloomFilterFalsePositiveProbability,

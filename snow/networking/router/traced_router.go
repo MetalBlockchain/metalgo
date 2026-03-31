@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -99,6 +99,24 @@ func (r *tracedRouter) HandleInbound(ctx context.Context, msg message.InboundMes
 	defer span.End()
 
 	r.router.HandleInbound(ctx, msg)
+}
+
+func (r *tracedRouter) HandleInternal(ctx context.Context, msg message.InboundMessage) {
+	m := msg.Message()
+	chainID, err := message.GetChainID(m)
+	if err != nil {
+		r.router.HandleInternal(ctx, msg)
+		return
+	}
+
+	ctx, span := r.tracer.Start(ctx, "tracedRouter.HandleInternal", oteltrace.WithAttributes(
+		attribute.Stringer("nodeID", msg.NodeID()),
+		attribute.Stringer("messageOp", msg.Op()),
+		attribute.Stringer("chainID", chainID),
+	))
+	defer span.End()
+
+	r.router.HandleInternal(ctx, msg)
 }
 
 func (r *tracedRouter) Shutdown(ctx context.Context) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -6,11 +6,13 @@ package snowman
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/cache/metercacher"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
@@ -98,10 +100,7 @@ func New(config Config) (*Engine, error) {
 	nonVerifiedCache, err := metercacher.New[ids.ID, snowman.Block](
 		"non_verified_cache",
 		config.Ctx.Registerer,
-		cache.NewSizedLRU[ids.ID, snowman.Block](
-			nonVerifiedCacheSize,
-			cachedBlockSize,
-		),
+		lru.NewSizedCache(nonVerifiedCacheSize, cachedBlockSize),
 	)
 	if err != nil {
 		return nil, err
@@ -110,10 +109,11 @@ func New(config Config) (*Engine, error) {
 	acceptedFrontiers := tracker.NewAccepted()
 	config.Validators.RegisterSetCallbackListener(config.Ctx.SubnetID, acceptedFrontiers)
 
-	factory, err := poll.NewEarlyTermNoTraversalFactory(
+	factory, err := poll.NewEarlyTermFactory(
 		config.Params.AlphaPreference,
 		config.Params.AlphaConfidence,
 		config.Ctx.Registerer,
+		config.Consensus,
 	)
 	if err != nil {
 		return nil, err
@@ -515,7 +515,7 @@ func (e *Engine) Start(ctx context.Context, startReqID uint32) error {
 	e.metrics.bootstrapFinished.Set(1)
 
 	e.Ctx.State.Set(snow.EngineState{
-		Type:  p2p.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2p.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.NormalOp,
 	})
 	if err := e.VM.SetState(ctx, snow.NormalOp); err != nil {
@@ -657,6 +657,9 @@ func (e *Engine) buildBlocks(ctx context.Context) error {
 			return nil
 		}
 		e.numBuilt.Inc()
+
+		blockTimeSkew := time.Since(blk.Timestamp())
+		e.blockTimeSkew.Add(float64(blockTimeSkew))
 
 		// The newly created block should be built on top of the preferred block.
 		// Otherwise, the new block doesn't have the best chance of being confirmed.

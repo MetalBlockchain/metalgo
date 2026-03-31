@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package logging
@@ -112,6 +112,20 @@ func (l *log) Debug(msg string, fields ...zap.Field) {
 
 func (l *log) Verbo(msg string, fields ...zap.Field) {
 	l.log(Verbo, msg, fields...)
+}
+
+func (l *log) With(fields ...zap.Field) Logger {
+	return &log{
+		internalLogger: l.internalLogger.With(fields...),
+		wrappedCores:   l.wrappedCores,
+	}
+}
+
+func (l *log) WithOptions(opts ...zap.Option) Logger {
+	return &log{
+		internalLogger: l.internalLogger.WithOptions(opts...),
+		wrappedCores:   l.wrappedCores,
+	}
 }
 
 func (l *log) SetLevel(level Level) {

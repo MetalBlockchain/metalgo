@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package linkeddb
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/database"
 )
 
@@ -62,7 +63,7 @@ type node struct {
 
 func New(db database.Database, cacheSize int) LinkedDB {
 	return &linkedDB{
-		nodeCache:    &cache.LRU[string, *node]{Size: cacheSize},
+		nodeCache:    lru.NewCache[string, *node](cacheSize),
 		updatedNodes: make(map[string]*node),
 		db:           db,
 		batch:        db.NewBatch(),

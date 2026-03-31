@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrap
@@ -93,7 +93,7 @@ func newConfig(t *testing.T) (Config, ids.NodeID, *enginetest.Sender, *blocktest
 	var halter common.Halter
 
 	return Config{
-		ShouldHalt:                     halter.Halted,
+		Haltable:                       &common.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
@@ -143,9 +143,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	require.NoError(err)
 
 	cfg := Config{
-		ShouldHalt: func() bool {
-			return false
-		},
+		Haltable:                       &common.Halter{},
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,
@@ -171,7 +169,7 @@ func TestBootstrapperStartsOnlyIfEnoughStakeIsConnected(t *testing.T) {
 	// create bootstrapper
 	dummyCallback := func(context.Context, uint32) error {
 		cfg.Ctx.State.Set(snow.EngineState{
-			Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			State: snow.NormalOp,
 		})
 		return nil
@@ -228,7 +226,7 @@ func TestBootstrapperSingleFrontier(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -257,7 +255,7 @@ func TestBootstrapperUnknownByzantineResponse(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -303,7 +301,7 @@ func TestBootstrapperPartialFetch(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -354,7 +352,7 @@ func TestBootstrapperEmptyResponse(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -403,7 +401,7 @@ func TestBootstrapperAncestors(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -449,7 +447,7 @@ func TestBootstrapperFinalized(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -492,7 +490,7 @@ func TestRestartBootstrapping(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -557,7 +555,7 @@ func TestBootstrapOldBlockAfterStateSync(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -598,7 +596,7 @@ func TestBootstrapContinueAfterHalt(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -687,9 +685,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 	peerTracker.Connected(peer, version.CurrentApp)
 
 	config := Config{
-		ShouldHalt: func() bool {
-			return false
-		},
+		Haltable:                       &common.Halter{},
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            ctx,
 		Beacons:                        peers,
@@ -707,7 +703,7 @@ func TestBootstrapNoParseOnNew(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -728,7 +724,7 @@ func TestBootstrapperReceiveStaleAncestorsMessage(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil
@@ -774,7 +770,7 @@ func TestBootstrapperRollbackOnSetState(t *testing.T) {
 		config,
 		func(context.Context, uint32) error {
 			config.Ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp,
 			})
 			return nil

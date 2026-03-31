@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
+	"os"
 	"syscall"
 	"time"
 
@@ -42,37 +44,16 @@ func CheckNodeHealth(ctx context.Context, uri string) (*health.APIReply, error) 
 			return nil, err
 		}
 	}
+
+	// Assume `503 Service Unavailable` is the result of the ingress
+	// for the node not being ready.
+	// TODO(marun) Update Client.Health() to return a typed error
+	if err != nil && err.Error() == "received status code: 503" {
+		return nil, err
+	}
+
 	// Assume all other errors are not recoverable
 	return nil, fmt.Errorf("%w: %w", ErrUnrecoverableNodeHealthCheck, err)
-}
-
-// WaitForHealthy blocks until Node.IsHealthy returns true or an error (including context timeout) is observed.
-func WaitForHealthy(ctx context.Context, node *Node) error {
-	if _, ok := ctx.Deadline(); !ok {
-		return fmt.Errorf("unable to wait for health for node %q with a context without a deadline", node.NodeID)
-	}
-	ticker := time.NewTicker(DefaultNodeTickerInterval)
-	defer ticker.Stop()
-
-	for {
-		healthy, err := node.IsHealthy(ctx)
-		switch {
-		case errors.Is(err, ErrUnrecoverableNodeHealthCheck):
-			return fmt.Errorf("%w for node %q", err, node.NodeID)
-		case err != nil:
-			// Error is recoverable
-			// TODO(marun) Log the error to aid in troubleshooting once a logger is available
-			continue
-		case healthy:
-			return nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("failed to wait for health of node %q before timeout: %w", node.NodeID, ctx.Err())
-		case <-ticker.C:
-		}
-	}
 }
 
 // NodeURI associates a node ID with its API URI.
@@ -81,23 +62,55 @@ type NodeURI struct {
 	URI    string
 }
 
+// GetNodeURIs returns the accessible URIs of the provided nodes that are running and not ephemeral.
 func GetNodeURIs(nodes []*Node) []NodeURI {
-	uris := make([]NodeURI, 0, len(nodes))
+	availableNodes := FilterAvailableNodes(nodes)
+	uris := []NodeURI{}
+	for _, node := range availableNodes {
+		uris = append(uris, NodeURI{
+			NodeID: node.NodeID,
+			URI:    node.GetAccessibleURI(),
+		})
+	}
+
+	return uris
+}
+
+// FilterAvailableNodes filters the provided nodes by whether they are running and not ephemeral.
+func FilterAvailableNodes(nodes []*Node) []*Node {
+	filteredNodes := []*Node{}
 	for _, node := range nodes {
 		if node.IsEphemeral {
 			// Avoid returning URIs for nodes whose lifespan is indeterminate
 			continue
 		}
-		// Only append URIs that are not empty. A node may have an
-		// empty URI if it is not currently running.
-		if len(node.URI) > 0 {
-			uris = append(uris, NodeURI{
-				NodeID: node.NodeID,
-				URI:    node.URI,
-			})
+		if !node.IsRunning() {
+			// Only running nodes have URIs
+			continue
 		}
+		filteredNodes = append(filteredNodes, node)
 	}
-	return uris
+	return filteredNodes
+}
+
+// GetNodeWebsocketURIs returns a list of websocket URIs for the given nodes and
+// blockchain ID, in the form "ws://<node-uri>/ext/bc/<blockchain-id>/ws".
+// Ephemeral and stopped nodes are ignored.
+func GetNodeWebsocketURIs(
+	nodes []*Node,
+	blockchainID string,
+) ([]string, error) {
+	nodeURIs := GetNodeURIs(nodes)
+	wsURIs := make([]string, len(nodeURIs))
+	for i := range nodeURIs {
+		uri, err := url.Parse(nodeURIs[i].URI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse node URI: %w", err)
+		}
+		uri.Scheme = "ws" // use websocket to be able to stream events
+		wsURIs[i] = fmt.Sprintf("%s/ext/bc/%s/ws", uri, blockchainID)
+	}
+	return wsURIs, nil
 }
 
 // Marshal to json with default prefix and indent.
@@ -124,4 +137,12 @@ func NodesToIDs(nodes ...*Node) []ids.NodeID {
 		nodeIDs[i] = node.NodeID
 	}
 	return nodeIDs
+}
+
+func GetEnvWithDefault(envVar, defaultVal string) string {
+	val := os.Getenv(envVar)
+	if len(val) == 0 {
+		return defaultVal
+	}
+	return val
 }

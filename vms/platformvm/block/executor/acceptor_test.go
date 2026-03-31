@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -15,7 +15,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/databasemock"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/components/verify"
@@ -261,9 +260,8 @@ func TestAcceptorVisitCommitBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics:      metrics.Noop,
-		validators:   validatorstest.Manager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotCommitBlock(parentID, 1 /*height*/)
@@ -371,9 +369,8 @@ func TestAcceptorVisitAbortBlock(t *testing.T) {
 				SharedMemory: sharedMemory,
 			},
 		},
-		metrics:      metrics.Noop,
-		validators:   validatorstest.Manager,
-		bootstrapped: &utils.Atomic[bool]{},
+		metrics:    metrics.Noop,
+		validators: validatorstest.Manager,
 	}
 
 	blk, err := block.NewApricotAbortBlock(parentID, 1 /*height*/)

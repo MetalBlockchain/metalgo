@@ -1,7 +1,9 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package block
+
+//go:generate go run github.com/StephenButtolph/canoto/canoto $GOFILE
 
 import (
 	"context"
@@ -12,7 +14,7 @@ import (
 // Context defines the block context that will be optionally provided by the
 // proposervm to an underlying vm.
 type Context struct {
-	// PChainHeight is the height that this block will use to verify it's state.
+	// PChainHeight is the height that this block will use to verify its state.
 	// In the proposervm, blocks verify the proposer based on the P-chain height
 	// recorded in the parent block. However, the P-chain height provided here
 	// is the P-chain height encoded into this block.
@@ -21,7 +23,9 @@ type Context struct {
 	//
 	// Because PreForkBlocks and PostForkOptions do not verify their execution
 	// against the P-chain's state, this context is undefined for those blocks.
-	PChainHeight uint64
+	PChainHeight uint64 `canoto:"uint,1" json:"pChainHeight"`
+
+	canotoData canotoData_Context
 }
 
 // BuildBlockWithContextChainVM defines the interface a ChainVM can optionally

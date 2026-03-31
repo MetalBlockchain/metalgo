@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package merkledb
@@ -20,14 +20,15 @@ func getBasicDB() (*merkleDB, error) {
 	return newDatabase(
 		context.Background(),
 		memdb.New(),
-		newDefaultConfig(),
+		NewConfig(),
 		&mockMetrics{},
 	)
 }
 
 func getBasicDBWithBranchFactor(bf BranchFactor) (*merkleDB, error) {
-	config := newDefaultConfig()
+	config := NewConfig()
 	config.BranchFactor = bf
+
 	return newDatabase(
 		context.Background(),
 		memdb.New(),

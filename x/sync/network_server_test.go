@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
@@ -118,7 +117,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			handler := NewGetRangeProofHandler(logging.NoLog{}, smallTrieDB)
+			handler := NewGetRangeProofHandler(smallTrieDB)
 			requestBytes, err := proto.Marshal(test.request)
 			require.NoError(err)
 			responseBytes, err := handler.AppRequest(context.Background(), test.nodeID, time.Time{}, requestBytes)
@@ -138,7 +137,7 @@ func Test_Server_GetRangeProof(t *testing.T) {
 			require.NoError(proof.UnmarshalProto(&proofProto))
 
 			if test.expectedResponseLen > 0 {
-				require.LessOrEqual(len(proof.KeyValues), test.expectedResponseLen)
+				require.LessOrEqual(len(proof.KeyChanges), test.expectedResponseLen)
 			}
 
 			bytes, err := proto.Marshal(proof.ToProto())
@@ -339,7 +338,7 @@ func Test_Server_GetChangeProof(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			handler := NewGetChangeProofHandler(logging.NoLog{}, serverDB)
+			handler := NewGetChangeProofHandler(serverDB)
 
 			requestBytes, err := proto.Marshal(test.request)
 			require.NoError(err)

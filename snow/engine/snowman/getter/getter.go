@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package getter
@@ -42,7 +42,7 @@ func New(
 
 	var err error
 	gh.getAncestorsBlks, err = metric.NewAverager(
-		"bs_get_ancestors_blks",
+		"get_ancestors_blks",
 		"blocks fetched in a call to GetAncestors",
 		reg,
 	)

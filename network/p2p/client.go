@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p2p
@@ -32,12 +32,12 @@ type AppResponseCallback func(
 )
 
 type Client struct {
-	handlerID     uint64
 	handlerIDStr  string
 	handlerPrefix []byte
 	router        *router
 	sender        common.AppSender
-	options       *clientOptions
+	// nodeSampler is used to select nodes to route Client.AppRequestAny to
+	nodeSampler NodeSampler
 }
 
 // AppRequestAny issues an AppRequest to an arbitrary node decided by Client.
@@ -48,7 +48,7 @@ func (c *Client) AppRequestAny(
 	appRequestBytes []byte,
 	onResponse AppResponseCallback,
 ) error {
-	sampled := c.options.nodeSampler.Sample(ctx, 1)
+	sampled := c.nodeSampler.Sample(ctx, 1)
 	if len(sampled) != 1 {
 		return ErrNoPeers
 	}

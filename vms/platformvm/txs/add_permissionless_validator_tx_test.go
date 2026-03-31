@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package txs
@@ -15,7 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax/avaxmock"
@@ -41,7 +41,9 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 	skBytes, err := hex.DecodeString("6668fecd4595b81e4d568398c820bbf3f073cb222902279fa55ebb84764ed2e3")
 	require.NoError(err)
 
-	sk, err := bls.SecretKeyFromBytes(skBytes)
+	sk, err := localsigner.FromBytes(skBytes)
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	avaxAssetID, err := ids.FromString("FvwEAhmxKfeiG8SnEvq42hc6whRyY3EFYAvebMqDNDGCgxN5Z")
@@ -99,7 +101,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   2 * units.KiloAvax,
 		},
 		Subnet: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: pop,
 		StakeOuts: []*avax.TransferableOutput{
 			{
 				Asset: avax.Asset{
@@ -387,7 +389,7 @@ func TestAddPermissionlessPrimaryValidator(t *testing.T) {
 			Wght:   5 * units.KiloAvax,
 		},
 		Subnet: constants.PrimaryNetworkID,
-		Signer: signer.NewProofOfPossession(sk),
+		Signer: pop,
 		StakeOuts: []*avax.TransferableOutput{
 			{
 				Asset: avax.Asset{
@@ -1397,10 +1399,11 @@ func TestAddPermissionlessValidatorTxSyntacticVerify(t *testing.T) {
 		},
 	}
 
-	blsSK, err := bls.NewSigner()
+	blsSK, err := localsigner.New()
 	require.NoError(t, err)
 
-	blsPOP := signer.NewProofOfPossession(blsSK)
+	blsPOP, err := signer.NewProofOfPossession(blsSK)
+	require.NoError(t, err)
 
 	// A BaseTx that fails syntactic verification.
 	invalidBaseTx := BaseTx{}

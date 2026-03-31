@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool/mempoolmock"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
@@ -119,7 +120,8 @@ func TestRejectBlock(t *testing.T) {
 			blk, err := tt.newBlockFunc()
 			require.NoError(err)
 
-			mempool := mempoolmock.NewMempool(ctrl)
+			mempool, err := mempool.New("", prometheus.NewRegistry())
+			require.NoError(err)
 			state := state.NewMockState(ctrl)
 			blkIDToState := map[ids.ID]*blockState{
 				blk.Parent(): nil,
@@ -136,13 +138,6 @@ func TestRejectBlock(t *testing.T) {
 				},
 				addTxsToMempool: true,
 			}
-
-			// Set expected calls on dependencies.
-			for _, tx := range blk.Txs() {
-				mempool.EXPECT().Add(tx).Return(nil).Times(1)
-			}
-
-			mempool.EXPECT().RequestBuildBlock(false).Times(1)
 
 			require.NoError(tt.rejectFunc(rejector, blk))
 			// Make sure block and its parent are removed from the state map.

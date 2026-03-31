@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 // Implements X-chain transfer tests.
@@ -47,9 +47,13 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx AVAX]", func() {
 
 	ginkgo.It("can issue a virtuous transfer tx for AVAX asset",
 		func() {
-			env := e2e.GetEnv(tc)
-			rpcEps := make([]string, len(env.URIs))
-			for i, nodeURI := range env.URIs {
+			var (
+				env     = e2e.GetEnv(tc)
+				network = env.GetNetwork()
+				uris    = network.GetNodeURIs()
+				rpcEps  = make([]string, len(uris))
+			)
+			for i, nodeURI := range uris {
 				rpcEps[i] = nodeURI.URI
 			}
 
@@ -286,12 +290,12 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx AVAX]", func() {
 					// by now
 					currentXBlksProcessing, _ := tests.GetMetricValue(mm, blksProcessingMetric, xChainMetricLabels)
 					previousXBlksProcessing, _ := tests.GetMetricValue(prev, blksProcessingMetric, xChainMetricLabels)
-					require.Equal(currentXBlksProcessing, previousXBlksProcessing)
+					require.InDelta(currentXBlksProcessing, previousXBlksProcessing, 0)
 
 					// +1 since X-chain tx must have been accepted by now
 					currentXBlksAccepted, _ := tests.GetMetricValue(mm, blksAcceptedMetric, xChainMetricLabels)
 					previousXBlksAccepted, _ := tests.GetMetricValue(prev, blksAcceptedMetric, xChainMetricLabels)
-					require.Equal(currentXBlksAccepted, previousXBlksAccepted+1)
+					require.InDelta(currentXBlksAccepted, previousXBlksAccepted+1, 0)
 
 					metricsBeforeTx[u] = mm
 				}
@@ -299,9 +303,8 @@ var _ = e2e.DescribeXChainSerial("[Virtuous Transfer Tx AVAX]", func() {
 
 			for i := 0; i < totalRounds; i++ {
 				runFunc(i)
-				time.Sleep(time.Second)
 			}
 
-			_ = e2e.CheckBootstrapIsPossible(tc, env.GetNetwork())
+			_ = e2e.CheckBootstrapIsPossible(tc, network)
 		})
 })

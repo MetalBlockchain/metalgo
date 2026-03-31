@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -16,7 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/avm/state"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs/executor"
-	"github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 )
 
 var (
@@ -49,12 +49,12 @@ type Manager interface {
 }
 
 func NewManager(
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	metrics metrics.Metrics,
 	state state.State,
 	backend *executor.Backend,
 	clk *mockable.Clock,
-	onAccept func(*txs.Tx) error,
+	onAccept func(*txs.Tx),
 ) Manager {
 	lastAccepted := state.GetLastAccepted()
 	return &manager{
@@ -74,12 +74,11 @@ type manager struct {
 	backend *executor.Backend
 	state   state.State
 	metrics metrics.Metrics
-	mempool mempool.Mempool
+	mempool mempool.Mempool[*txs.Tx]
 	clk     *mockable.Clock
 	// Invariant: onAccept is called when [tx] is being marked as accepted, but
 	// before its state changes are applied.
-	// Invariant: any error returned by onAccept should be considered fatal.
-	onAccept func(*txs.Tx) error
+	onAccept func(*txs.Tx)
 
 	// blkIDToState is a map from a block's ID to the state of the block.
 	// Blocks are put into this map when they are verified.

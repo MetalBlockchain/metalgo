@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -38,9 +38,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/subnets"
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -65,6 +64,7 @@ import (
 	p2ppb "github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	smcon "github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	smeng "github.com/MetalBlockchain/metalgo/snow/engine/snowman"
+	smblock "github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	snowgetter "github.com/MetalBlockchain/metalgo/snow/engine/snowman/getter"
 	timetracker "github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	blockbuilder "github.com/MetalBlockchain/metalgo/vms/platformvm/block/builder"
@@ -107,9 +107,12 @@ var (
 		ExcessConversionConstant: 5_000,
 	}
 	defaultValidatorFeeConfig = fee.Config{
-		Capacity:                 100,
-		Target:                   50,
-		MinPrice:                 1,
+		Capacity: 100,
+		Target:   50,
+		// The minimum price is set to 2 so that tests can include cases where
+		// L1 validator balances do not evenly divide into a timestamp granular
+		// to a second.
+		MinPrice:                 2,
 		ExcessConversionConstant: 100,
 	}
 
@@ -148,7 +151,6 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 	atomicDB := prefixdb.New([]byte{1}, db)
 
 	vm.clock.Set(latestForkTime)
-	msgChan := make(chan common.Message, 1)
 	ctx := snowtest.Context(t, snowtest.PChainID)
 
 	m := atomic.NewMemory(atomicDB)
@@ -176,7 +178,6 @@ func defaultVM(t *testing.T, f upgradetest.Fork) (*VM, database.Database, *mutab
 		genesistest.NewBytes(t, genesistest.Config{}),
 		nil,
 		dynamicConfigBytes,
-		msgChan,
 		nil,
 		appSender,
 	))
@@ -317,7 +318,9 @@ func TestAddValidatorCommit(t *testing.T) {
 		}
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	// create valid tx
@@ -330,7 +333,7 @@ func TestAddValidatorCommit(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -473,7 +476,9 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 	startTime := latestForkTime.Add(txexecutor.SyncBound).Add(1 * time.Second)
 	endTime := startTime.Add(defaultMinStakingDuration)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -492,7 +497,7 @@ func TestAddValidatorInvalidNotReissued(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -1045,7 +1050,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	firstVM.clock.Set(initialClkTime)
 	firstCtx.Lock.Lock()
 
-	firstMsgChan := make(chan common.Message, 1)
 	require.NoError(firstVM.Initialize(
 		context.Background(),
 		firstCtx,
@@ -1053,7 +1057,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		firstMsgChan,
 		nil,
 		nil,
 	))
@@ -1127,7 +1130,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 	}()
 
 	secondDB := prefixdb.New([]byte{}, db)
-	secondMsgChan := make(chan common.Message, 1)
 	require.NoError(secondVM.Initialize(
 		context.Background(),
 		secondCtx,
@@ -1135,7 +1137,6 @@ func TestRestartFullyAccepted(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		secondMsgChan,
 		nil,
 		nil,
 	))
@@ -1145,10 +1146,12 @@ func TestRestartFullyAccepted(t *testing.T) {
 	require.Equal(genesisID, lastAccepted)
 }
 
-// test bootstrapping the node
+// Test that after bootstrapping a node to an oracle block, the preference of
+// the child block is correctly initialized by the engine.
 func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require := require.New(t)
 
+	// Initialize the VM so that we can pass it into the bootstrapping engine.
 	baseDB := memdb.New()
 	vmDB := prefixdb.New(chains.VMDBPrefix, baseDB)
 	bootstrappingDB := prefixdb.New(chains.ChainBootstrappingDBPrefix, baseDB)
@@ -1160,21 +1163,15 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		MinStakeDuration:       defaultMinStakingDuration,
 		MaxStakeDuration:       defaultMaxStakingDuration,
 		RewardConfig:           defaultRewardConfig,
-		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Durango, latestForkTime),
+		UpgradeConfig:          upgradetest.GetConfig(upgradetest.Latest),
 	}}
 
-	initialClkTime := latestForkTime.Add(time.Second)
-	vm.clock.Set(initialClkTime)
+	// Advance the time so that the VM will want to remove the first validator.
+	vm.clock.Set(genesistest.DefaultValidatorEndTime)
+
 	ctx := snowtest.Context(t, snowtest.PChainID)
-
-	atomicDB := prefixdb.New([]byte{1}, baseDB)
-	m := atomic.NewMemory(atomicDB)
-	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
-
-	consensusCtx := snowtest.ConsensusContext(ctx)
 	ctx.Lock.Lock()
 
-	msgChan := make(chan common.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -1182,57 +1179,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		genesistest.NewBytes(t, genesistest.Config{}),
 		nil,
 		nil,
-		msgChan,
 		nil,
 		nil,
 	))
 
-	// include a tx to make the block be accepted
-	tx := &txs.Tx{Unsigned: &txs.ImportTx{
-		BaseTx: txs.BaseTx{BaseTx: avax.BaseTx{
-			NetworkID:    vm.ctx.NetworkID,
-			BlockchainID: vm.ctx.ChainID,
-		}},
-		SourceChain: vm.ctx.XChainID,
-		ImportedInputs: []*avax.TransferableInput{{
-			UTXOID: avax.UTXOID{
-				TxID:        ids.Empty.Prefix(1),
-				OutputIndex: 1,
-			},
-			Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
-			In: &secp256k1fx.TransferInput{
-				Amt: 50000,
-			},
-		}},
-	}}
-	require.NoError(tx.Initialize(txs.Codec))
-
-	nextChainTime := initialClkTime.Add(time.Second)
-
-	preferredID := vm.manager.Preferred()
-	preferred, err := vm.manager.GetBlock(preferredID)
-	require.NoError(err)
-	preferredHeight := preferred.Height()
-
-	statelessBlk, err := block.NewBanffStandardBlock(
-		nextChainTime,
-		preferredID,
-		preferredHeight+1,
-		[]*txs.Tx{tx},
-	)
-	require.NoError(err)
-
-	advanceTimeBlk := vm.manager.NewBlock(statelessBlk)
-	require.NoError(err)
-
-	advanceTimeBlkID := advanceTimeBlk.ID()
-	advanceTimeBlkBytes := advanceTimeBlk.Bytes()
-
-	peerID := ids.BuildTestNodeID([]byte{1, 2, 3, 4, 5, 4, 3, 2, 1})
-	beacons := validators.NewManager()
-	require.NoError(beacons.AddStaker(ctx.SubnetID, peerID, nil, ids.Empty, 1))
-
-	benchlist := benchlist.NewNoBenchlist()
 	timeoutManager, err := timeout.NewManager(
 		&timer.AdaptiveTimeoutConfig{
 			InitialTimeout:     time.Millisecond,
@@ -1241,7 +1191,7 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 			TimeoutHalflife:    5 * time.Minute,
 			TimeoutCoefficient: 1.25,
 		},
-		benchlist,
+		benchlist.NewNoBenchlist(),
 		prometheus.NewRegistry(),
 		prometheus.NewRegistry(),
 	)
@@ -1251,27 +1201,30 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	defer timeoutManager.Stop()
 
 	chainRouter := &router.ChainRouter{}
-
-	metrics := prometheus.NewRegistry()
-	mc, err := message.NewCreator(logging.NoLog{}, metrics, constants.DefaultNetworkCompressionType, 10*time.Second)
-	require.NoError(err)
-
 	require.NoError(chainRouter.Initialize(
-		ids.EmptyNodeID,
-		logging.NoLog{},
+		ctx.NodeID,
+		ctx.Log,
 		timeoutManager,
 		time.Second,
-		set.Set[ids.ID]{},
+		nil,
 		true,
-		set.Set[ids.ID]{},
+		nil,
 		nil,
 		router.HealthConfig{},
 		prometheus.NewRegistry(),
 	))
 
+	mc, err := message.NewCreator(
+		prometheus.NewRegistry(),
+		constants.DefaultNetworkCompressionType,
+		10*time.Second,
+	)
+	require.NoError(err)
+
+	consensusCtx := snowtest.ConsensusContext(ctx)
 	externalSender := &sendertest.External{TB: t}
 	externalSender.Default(true)
-
+	subnet := subnets.New(ctx.NodeID, subnets.Config{})
 	// Passes messages from the consensus engine to the network
 	sender, err := sender.New(
 		consensusCtx,
@@ -1279,8 +1232,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		externalSender,
 		chainRouter,
 		timeoutManager,
-		p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		subnets.New(consensusCtx.NodeID, subnets.Config{}),
+		p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		subnet,
 		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
@@ -1296,41 +1249,42 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		},
 	}
 
+	// Create a validator manager for the bootstrapping engine.
+	vdrID := ids.GenerateTestNodeID()
+	beacons := validators.NewManager()
+	require.NoError(beacons.AddStaker(ctx.SubnetID, vdrID, nil, ids.Empty, 1))
+
 	peers := tracker.NewPeers()
-	totalWeight, err := beacons.TotalWeight(ctx.SubnetID)
-	require.NoError(err)
-	startup := tracker.NewStartup(peers, (totalWeight+1)/2)
+	startup := tracker.NewStartup(peers, 1)
 	beacons.RegisterSetCallbackListener(ctx.SubnetID, startup)
 
 	// The engine handles consensus
 	snowGetHandler, err := snowgetter.New(
 		vm,
 		sender,
-		consensusCtx.Log,
+		ctx.Log,
 		time.Second,
 		2000,
-		consensusCtx.Registerer,
+		prometheus.NewRegistry(),
 	)
 	require.NoError(err)
 
 	peerTracker, err := p2p.NewPeerTracker(
 		ctx.Log,
 		"peer_tracker",
-		consensusCtx.Registerer,
+		prometheus.NewRegistry(),
 		set.Of(ctx.NodeID),
 		nil,
 	)
 	require.NoError(err)
 
 	bootstrapConfig := bootstrap.Config{
-		ShouldHalt: func() bool {
-			return false
-		},
+		Haltable:                       &common.Halter{},
 		NonVerifyingParse:              vm.ParseBlock,
 		AllGetsServer:                  snowGetHandler,
 		Ctx:                            consensusCtx,
 		Beacons:                        beacons,
-		SampleK:                        beacons.NumValidators(ctx.SubnetID),
+		SampleK:                        1,
 		StartupTracker:                 startup,
 		PeerTracker:                    peerTracker,
 		Sender:                         sender,
@@ -1349,15 +1303,21 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	)
 	require.NoError(err)
 
+	noopSubscription := func(ctx context.Context) (common.Message, error) {
+		<-ctx.Done()
+		return common.Message(0), ctx.Err()
+	}
+
 	h, err := handler.New(
 		bootstrapConfig.Ctx,
+		&smblock.ChangeNotifier{},
+		noopSubscription,
 		beacons,
-		msgChan,
 		time.Hour,
 		2,
 		cpuTracker,
-		subnets.New(ctx.NodeID, subnets.Config{}),
-		tracker.NewPeers(),
+		subnet,
+		peers,
 		peerTracker,
 		prometheus.NewRegistry(),
 		func() {},
@@ -1365,11 +1325,12 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	require.NoError(err)
 
 	engineConfig := smeng.Config{
-		Ctx:           bootstrapConfig.Ctx,
-		AllGetsServer: snowGetHandler,
-		VM:            bootstrapConfig.VM,
-		Sender:        bootstrapConfig.Sender,
-		Validators:    beacons,
+		Ctx:                 bootstrapConfig.Ctx,
+		AllGetsServer:       snowGetHandler,
+		VM:                  bootstrapConfig.VM,
+		Sender:              bootstrapConfig.Sender,
+		Validators:          beacons,
+		ConnectedValidators: peers,
 		Params: snowball.Parameters{
 			K:                     1,
 			AlphaPreference:       1,
@@ -1393,12 +1354,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	bootstrapper.TimeoutRegistrar = &enginetest.Timer{}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
-			StateSyncer:  nil,
-			Bootstrapper: bootstrapper,
-			Consensus:    engine,
-		},
-		Snowman: &handler.Engine{
+		DAG: nil,
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1406,8 +1363,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	})
 
 	consensusCtx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
-		State: snow.NormalOp,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
+		State: snow.Bootstrapping,
 	})
 
 	// Allow incoming messages to be routed to the new chain
@@ -1417,6 +1374,8 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 	h.Start(context.Background(), false)
 
 	ctx.Lock.Lock()
+
+	// Mark the validator as connected. We should request the accepted frontier.
 	var reqID uint32
 	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
@@ -1430,9 +1389,35 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		return config.NodeIDs
 	}
 
-	peerTracker.Connected(peerID, version.CurrentApp)
-	require.NoError(bootstrapper.Connected(context.Background(), peerID, version.CurrentApp))
+	peerTracker.Connected(vdrID, version.CurrentApp)
+	require.NoError(bootstrapper.Connected(context.Background(), vdrID, version.CurrentApp))
 
+	// Create a valid block to remove the first genesis validator that is not
+	// related to the VM.
+	lastAcceptedID := vm.state.GetLastAccepted()
+	lastAccepted, err := vm.state.GetStatelessBlock(lastAcceptedID)
+	require.NoError(err)
+
+	currentStakerIterator, err := vm.state.GetCurrentStakerIterator()
+	require.NoError(err)
+	require.True(currentStakerIterator.Next())
+
+	stakerToRemove := currentStakerIterator.Value()
+	rewardValidatorTx, err := blockbuilder.NewRewardValidatorTx(ctx, stakerToRemove.TxID)
+	require.NoError(err)
+	currentStakerIterator.Release()
+
+	rewardValidatorBlk, err := block.NewBanffProposalBlock(
+		stakerToRemove.EndTime,
+		lastAcceptedID,
+		lastAccepted.Height()+1,
+		rewardValidatorTx,
+		nil,
+	)
+	require.NoError(err)
+
+	// Report the validator removal as the last accepted block with the accepted
+	// frontier. We should request a confirmation that this block is accepted.
 	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -1443,8 +1428,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		return config.NodeIDs
 	}
 
-	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
+	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), vdrID, reqID, rewardValidatorBlk.ID()))
 
+	// Report the validator removal as accepted. We should request the validator
+	// removal block and any ancestors of it.
 	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -1455,13 +1442,15 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 
 		containerID, err := ids.ToID(inMsg.ContainerId)
 		require.NoError(err)
-		require.Equal(advanceTimeBlkID, containerID)
+		require.Equal(rewardValidatorBlk.ID(), containerID)
 		return config.NodeIDs
 	}
 
-	frontier := set.Of(advanceTimeBlkID)
-	require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
+	frontier := set.Of(rewardValidatorBlk.ID())
+	require.NoError(bootstrapper.Accepted(context.Background(), vdrID, reqID, frontier))
 
+	// Provide the validator removal block. We should process this block and
+	// then do another round of bootstrapping.
 	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsg, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -1474,8 +1463,10 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		return config.NodeIDs
 	}
 
-	require.NoError(bootstrapper.Ancestors(context.Background(), peerID, reqID, [][]byte{advanceTimeBlkBytes}))
+	require.NoError(bootstrapper.Ancestors(context.Background(), vdrID, reqID, [][]byte{rewardValidatorBlk.Bytes()}))
 
+	// We should again report the validator removal block as the last accepted
+	// block.
 	externalSender.SendF = func(msg message.OutboundMessage, config common.SendConfig, _ ids.ID, _ subnets.Allower) set.Set[ids.NodeID] {
 		inMsgIntf, err := mc.Parse(msg.Bytes(), ctx.NodeID, func() {})
 		require.NoError(err)
@@ -1486,13 +1477,28 @@ func TestBootstrapPartiallyAccepted(t *testing.T) {
 		return config.NodeIDs
 	}
 
-	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), peerID, reqID, advanceTimeBlkID))
+	require.NoError(bootstrapper.AcceptedFrontier(context.Background(), vdrID, reqID, rewardValidatorBlk.ID()))
 
+	// Again confirming the validator removal block as accepted should
+	// transition us out of bootstrapping. At this point we should check for
+	// option blocks and register them in the correct order.
 	externalSender.SendF = nil
 	externalSender.CantSend = false
 
-	require.NoError(bootstrapper.Accepted(context.Background(), peerID, reqID, frontier))
-	require.Equal(advanceTimeBlk.ID(), vm.manager.Preferred())
+	require.NoError(bootstrapper.Accepted(context.Background(), vdrID, reqID, frontier))
+
+	// Verify the locally preferred option on the validator removal aligns with
+	// our consensus preference.
+	//
+	// We should prefer commit because our VM thinks we have been offline for
+	// the staking duration.
+	commitBlock, err := block.NewBanffCommitBlock(
+		rewardValidatorBlk.Timestamp(),
+		rewardValidatorBlk.ID(),
+		rewardValidatorBlk.Height()+1,
+	)
+	require.NoError(err)
+	require.Equal(commitBlock.ID(), vm.manager.Preferred())
 
 	ctx.Lock.Unlock()
 	chainRouter.Shutdown(context.Background())
@@ -1520,7 +1526,6 @@ func TestUnverifiedParent(t *testing.T) {
 		ctx.Lock.Unlock()
 	}()
 
-	msgChan := make(chan common.Message, 1)
 	require.NoError(vm.Initialize(
 		context.Background(),
 		ctx,
@@ -1528,7 +1533,6 @@ func TestUnverifiedParent(t *testing.T) {
 		genesistest.NewBytes(t, genesistest.Config{}),
 		nil,
 		nil,
-		msgChan,
 		nil,
 		nil,
 	))
@@ -1672,7 +1676,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 
 	genesisBytes := genesistest.NewBytes(t, genesistest.Config{})
 
-	firstMsgChan := make(chan common.Message, 1)
 	require.NoError(firstVM.Initialize(
 		context.Background(),
 		firstCtx,
@@ -1680,7 +1683,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		firstMsgChan,
 		nil,
 		nil,
 	))
@@ -1724,7 +1726,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	secondCtx.SharedMemory = m.NewSharedMemory(secondCtx.ChainID)
 
-	secondMsgChan := make(chan common.Message, 1)
 	require.NoError(secondVM.Initialize(
 		context.Background(),
 		secondCtx,
@@ -1732,7 +1733,6 @@ func TestUptimeDisallowedWithRestart(t *testing.T) {
 		genesisBytes,
 		nil,
 		nil,
-		secondMsgChan,
 		nil,
 		nil,
 	))
@@ -1817,7 +1817,6 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 	m := atomic.NewMemory(atomicDB)
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
 
-	msgChan := make(chan common.Message, 1)
 	appSender := &enginetest.Sender{T: t}
 	require.NoError(vm.Initialize(
 		context.Background(),
@@ -1826,7 +1825,6 @@ func TestUptimeDisallowedAfterNeverConnecting(t *testing.T) {
 		genesistest.NewBytes(t, genesistest.Config{}),
 		nil,
 		nil,
-		msgChan,
 		nil,
 		appSender,
 	))
@@ -1908,8 +1906,11 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 	wallet := newWallet(t, vm, walletConfig{})
 
 	nodeID := ids.GenerateTestNodeID()
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(err)
+
 	rewardsOwner := &secp256k1fx.OutputOwners{
 		Threshold: 1,
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
@@ -1925,7 +1926,7 @@ func TestRemovePermissionedValidatorDuringAddPending(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -2124,7 +2125,9 @@ func TestPruneMempool(t *testing.T) {
 		endTime   = startTime.Add(vm.MinStakeDuration)
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -2141,7 +2144,7 @@ func TestPruneMempool(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -2176,4 +2179,81 @@ func TestPruneMempool(t *testing.T) {
 	require.False(ok)
 	_, ok = vm.Builder.Get(baseTxID)
 	require.True(ok)
+}
+
+func TestThrottleBlockBuildingUntilNormalOperationsStart(t *testing.T) {
+	require := require.New(t)
+
+	latestForkTime = genesistest.DefaultValidatorStartTime.Add(time.Second)
+	vm := &VM{Internal: config.Internal{
+		Chains:                 chains.TestManager,
+		UptimeLockedCalculator: uptime.NewLockedCalculator(),
+		SybilProtectionEnabled: true,
+		Validators:             validators.NewManager(),
+		DynamicFeeConfig:       defaultDynamicFeeConfig,
+		ValidatorFeeConfig:     defaultValidatorFeeConfig,
+		MinValidatorStake:      defaultMinValidatorStake,
+		MaxValidatorStake:      defaultMaxValidatorStake,
+		MinDelegatorStake:      defaultMinDelegatorStake,
+		MinStakeDuration:       defaultMinStakingDuration,
+		MaxStakeDuration:       defaultMaxStakingDuration,
+		RewardConfig:           defaultRewardConfig,
+		UpgradeConfig:          upgradetest.GetConfigWithUpgradeTime(upgradetest.Latest, latestForkTime),
+	}}
+
+	vm.clock.Set(latestForkTime)
+	ctx := snowtest.Context(t, snowtest.PChainID)
+
+	ctx.Lock.Lock()
+
+	require.NoError(vm.Initialize(
+		context.Background(),
+		ctx,
+		memdb.New(),
+		genesistest.NewBytes(t, genesistest.Config{}),
+		nil,
+		nil,
+		nil,
+		&enginetest.Sender{
+			SendAppGossipF: func(context.Context, common.SendConfig, []byte) error {
+				return nil
+			},
+			SendAppErrorF: func(context.Context, ids.NodeID, uint32, int32, string) error {
+				return nil
+			},
+		},
+	))
+	defer func() {
+		vm.ctx.Lock.Lock()
+		defer vm.ctx.Lock.Unlock()
+
+		require.NoError(vm.Shutdown(context.Background()))
+	}()
+
+	require.NoError(vm.SetState(context.Background(), snow.Bootstrapping))
+
+	// Advance the time so that the block builder would be willing to remove the
+	// genesis validators.
+	newTime := latestForkTime.Add(genesistest.DefaultValidatorDuration)
+	vm.clock.Set(newTime)
+
+	ctx.Lock.Unlock()
+
+	impatientContext, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+	defer cancel()
+
+	msg, err := vm.WaitForEvent(impatientContext)
+	require.ErrorIs(err, context.DeadlineExceeded)
+	require.Zero(msg)
+
+	ctx.Lock.Lock()
+	require.NoError(vm.SetState(context.Background(), snow.NormalOp))
+	ctx.Lock.Unlock()
+
+	impatientContext, cancel = context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	msg, err = vm.WaitForEvent(impatientContext)
+	require.NoError(err)
+	require.Equal(common.PendingTxs, msg)
 }

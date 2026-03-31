@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -16,7 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -59,7 +59,6 @@ func BenchmarkGetValidatorSet(b *testing.B) {
 	})
 
 	m := NewManager(
-		logging.NoLog{},
 		config.Internal{
 			Validators: vdrs,
 		},
@@ -109,7 +108,7 @@ func addPrimaryValidator(
 	endTime time.Time,
 	height uint64,
 ) (ids.NodeID, error) {
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	if err != nil {
 		return ids.EmptyNodeID, err
 	}

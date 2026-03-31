@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcchainvm
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/MetalBlockchain/metalgo/api/metrics"
@@ -36,12 +37,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp/gwarp"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/ghttp"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
-	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/messenger"
 
 	aliasreaderpb "github.com/MetalBlockchain/metalgo/proto/pb/aliasreader"
 	appsenderpb "github.com/MetalBlockchain/metalgo/proto/pb/appsender"
 	httppb "github.com/MetalBlockchain/metalgo/proto/pb/http"
-	messengerpb "github.com/MetalBlockchain/metalgo/proto/pb/messenger"
 	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
 	sharedmemorypb "github.com/MetalBlockchain/metalgo/proto/pb/sharedmemory"
 	validatorstatepb "github.com/MetalBlockchain/metalgo/proto/pb/validatorstate"
@@ -181,9 +180,6 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		return nil, err
 	}
 	vm.connCloser.Add(dbClientConn)
-	vm.db = corruptabledb.New(
-		rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn)),
-	)
 
 	// TODO: Allow the logger to be configured by the client
 	vm.log = logging.NewLogger(
@@ -193,6 +189,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 			originalStderr,
 			logging.Colors.ConsoleEncoder(),
 		),
+	)
+
+	vm.db = corruptabledb.New(
+		rpcdb.NewClient(rpcdbpb.NewDatabaseClient(dbClientConn)),
+		vm.log,
 	)
 
 	clientConn, err := grpcutils.Dial(
@@ -208,29 +209,13 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 
 	vm.connCloser.Add(clientConn)
 
-	msgClient := messenger.NewClient(messengerpb.NewMessengerClient(clientConn))
 	sharedMemoryClient := gsharedmemory.NewClient(sharedmemorypb.NewSharedMemoryClient(clientConn))
 	bcLookupClient := galiasreader.NewClient(aliasreaderpb.NewAliasReaderClient(clientConn))
 	appSenderClient := appsender.NewClient(appsenderpb.NewAppSenderClient(clientConn))
 	validatorStateClient := gvalidators.NewClient(validatorstatepb.NewValidatorStateClient(clientConn))
 	warpSignerClient := gwarp.NewClient(warppb.NewSignerClient(clientConn))
 
-	toEngine := make(chan common.Message, 1)
 	vm.closed = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case msg, ok := <-toEngine:
-				if !ok {
-					return
-				}
-				// Nothing to do with the error within the goroutine
-				_ = msgClient.Notify(msg)
-			case <-vm.closed:
-				return
-			}
-		}
-	}()
 
 	vm.ctx = &snow.Context{
 		NetworkID:       req.NetworkId,
@@ -258,10 +243,11 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		ChainDataDir: req.ChainDataDir,
 	}
 
-	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, toEngine, nil, appSenderClient); err != nil {
+	if err := vm.vm.Initialize(ctx, vm.ctx, vm.db, req.GenesisBytes, req.UpgradeBytes, req.ConfigBytes, nil, appSenderClient); err != nil {
 		// Ignore errors closing resources to return the original error
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to initialize vm", zap.Error(err))
 		return nil, err
 	}
 
@@ -271,6 +257,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		_ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to get last accepted block ID", zap.Error(err))
 		return nil, err
 	}
 
@@ -280,6 +267,7 @@ func (vm *VMServer) Initialize(ctx context.Context, req *vmpb.InitializeRequest)
 		_ = vm.vm.Shutdown(ctx)
 		_ = vm.connCloser.Close()
 		close(vm.closed)
+		vm.log.Error("failed to get last accepted block", zap.Error(err))
 		return nil, err
 	}
 	parentID := blk.Parent()
@@ -355,6 +343,42 @@ func (vm *VMServer) CreateHandlers(ctx context.Context, _ *emptypb.Empty) (*vmpb
 		})
 	}
 	return resp, nil
+}
+
+func (vm *VMServer) NewHTTPHandler(ctx context.Context, _ *emptypb.Empty) (*vmpb.NewHTTPHandlerResponse, error) {
+	handler, err := vm.vm.NewHTTPHandler(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if handler == nil {
+		return &vmpb.NewHTTPHandlerResponse{}, nil
+	}
+
+	serverListener, err := grpcutils.NewListener()
+	if err != nil {
+		return nil, err
+	}
+	server := grpcutils.NewServer()
+	vm.serverCloser.Add(server)
+	httppb.RegisterHTTPServer(server, ghttp.NewServer(handler))
+
+	// Start HTTP service
+	go grpcutils.Serve(serverListener, server)
+
+	return &vmpb.NewHTTPHandlerResponse{
+		ServerAddr: serverListener.Addr().String(),
+	}, nil
+}
+
+func (vm *VMServer) WaitForEvent(ctx context.Context, _ *emptypb.Empty) (*vmpb.WaitForEventResponse, error) {
+	message, err := vm.vm.WaitForEvent(ctx)
+	if err != nil {
+		vm.log.Debug("Received error while waiting for event", zap.Error(err))
+	}
+	return &vmpb.WaitForEventResponse{
+		Message: vmpb.Message(message),
+	}, err
 }
 
 func (vm *VMServer) Connected(ctx context.Context, req *vmpb.ConnectedRequest) (*emptypb.Empty, error) {
@@ -867,7 +891,11 @@ func convertNetworkUpgrades(pbUpgrades *vmpb.NetworkUpgrades) (upgrade.Config, e
 	if err != nil {
 		return upgrade.Config{}, err
 	}
-	fupgrade, err := grpcutils.TimestampAsTime(pbUpgrades.FUpgradeTime)
+	fortuna, err := grpcutils.TimestampAsTime(pbUpgrades.FortunaTime)
+	if err != nil {
+		return upgrade.Config{}, err
+	}
+	granite, err := grpcutils.TimestampAsTime(pbUpgrades.GraniteTime)
 	if err != nil {
 		return upgrade.Config{}, err
 	}
@@ -892,6 +920,7 @@ func convertNetworkUpgrades(pbUpgrades *vmpb.NetworkUpgrades) (upgrade.Config, e
 		CortinaXChainStopVertexID:    cortinaXChainStopVertexID,
 		DurangoTime:                  durango,
 		EtnaTime:                     etna,
-		FUpgradeTime:                 fupgrade,
+		FortunaTime:                  fortuna,
+		GraniteTime:                  granite,
 	}, nil
 }

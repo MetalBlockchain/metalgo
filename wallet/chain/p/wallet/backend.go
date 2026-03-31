@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package wallet
@@ -32,16 +32,13 @@ type Backend interface {
 type backend struct {
 	common.ChainUTXOs
 
-	context *builder.Context
-
 	ownersLock sync.RWMutex
 	owners     map[ids.ID]fx.Owner // subnetID or validationID -> owner
 }
 
-func NewBackend(context *builder.Context, utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
+func NewBackend(utxos common.ChainUTXOs, owners map[ids.ID]fx.Owner) Backend {
 	return &backend{
 		ChainUTXOs: utxos,
-		context:    context,
 		owners:     owners,
 	}
 }

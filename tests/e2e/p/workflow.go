@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -14,7 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
@@ -115,9 +115,10 @@ var _ = e2e.DescribePChain("[Workflow]", func() {
 		}
 
 		tc.By("issuing an AddPermissionlessValidatorTx", func() {
-			sk, err := bls.NewSigner()
+			sk, err := localsigner.New()
 			require.NoError(err)
-			pop := signer.NewProofOfPossession(sk)
+			pop, err := signer.NewProofOfPossession(sk)
+			require.NoError(err)
 
 			_, err = pWallet.IssueAddPermissionlessValidatorTx(
 				vdr,

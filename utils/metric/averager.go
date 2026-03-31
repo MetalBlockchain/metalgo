@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package metric
@@ -54,11 +54,3 @@ func (a *averager) Observe(v float64) {
 	a.count.Inc()
 	a.sum.Add(v)
 }
-
-type noAverager struct{}
-
-func NewNoAverager() Averager {
-	return noAverager{}
-}
-
-func (noAverager) Observe(float64) {}

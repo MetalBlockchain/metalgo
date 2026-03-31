@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package main
@@ -15,7 +15,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/app"
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/version"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/block/executor"
 )
 
 func main() {
@@ -60,8 +59,6 @@ func main() {
 
 	if term.IsTerminal(int(os.Stdout.Fd())) {
 		fmt.Println(app.Header)
-	} else {
-		executor.EtnaActivationWasLogged.Set(true)
 	}
 
 	nodeApp, err := app.New(nodeConfig)

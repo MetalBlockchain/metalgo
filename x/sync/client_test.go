@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package sync
@@ -17,7 +17,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/trace"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/x/merkledb"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/sync"
@@ -43,7 +42,7 @@ func newFlakyRangeProofHandler(
 	db merkledb.MerkleDB,
 	modifyResponse func(response *merkledb.RangeProof),
 ) p2p.Handler {
-	handler := NewGetRangeProofHandler(logging.NoLog{}, db)
+	handler := NewGetRangeProofHandler(db)
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{
@@ -79,7 +78,7 @@ func newFlakyChangeProofHandler(
 	db merkledb.MerkleDB,
 	modifyResponse func(response *merkledb.ChangeProof),
 ) p2p.Handler {
-	handler := NewGetChangeProofHandler(logging.NoLog{}, db)
+	handler := NewGetChangeProofHandler(db)
 
 	c := counter{m: 2}
 	return &p2p.TestHandler{

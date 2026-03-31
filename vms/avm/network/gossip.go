@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -18,8 +18,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/avm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
-
-	xmempool "github.com/MetalBlockchain/metalgo/vms/avm/txs/mempool"
 )
 
 var (
@@ -69,11 +67,10 @@ func (g *txParser) UnmarshalGossip(bytes []byte) (*txs.Tx, error) {
 }
 
 func newGossipMempool(
-	mempool xmempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	registerer prometheus.Registerer,
 	log logging.Logger,
 	txVerifier TxVerifier,
-	parser txs.Parser,
 	minTargetElements int,
 	targetFalsePositiveProbability,
 	resetFalsePositiveProbability float64,
@@ -83,16 +80,14 @@ func newGossipMempool(
 		Mempool:    mempool,
 		log:        log,
 		txVerifier: txVerifier,
-		parser:     parser,
 		bloom:      bloom,
 	}, err
 }
 
 type gossipMempool struct {
-	xmempool.Mempool
+	mempool.Mempool[*txs.Tx]
 	log        logging.Logger
 	txVerifier TxVerifier
-	parser     txs.Parser
 
 	lock  sync.RWMutex
 	bloom *gossip.BloomFilter
@@ -152,8 +147,6 @@ func (g *gossipMempool) AddWithoutVerification(tx *txs.Tx) error {
 			return true
 		})
 	}
-
-	g.Mempool.RequestBuildBlock()
 	return nil
 }
 

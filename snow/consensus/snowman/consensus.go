@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -61,4 +61,8 @@ type Consensus interface {
 	// RecordPoll collects the results of a network poll. Assumes all decisions
 	// have been previously added. Returns if a critical error has occurred.
 	RecordPoll(context.Context, bag.Bag[ids.ID]) error
+
+	// GetParent returns the ID of the parent block with the given ID, if it is known.
+	// Returns (Empty, false) if no such parent block is known.
+	GetParent(id ids.ID) (ids.ID, bool)
 }
