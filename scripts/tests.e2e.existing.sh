@@ -7,7 +7,7 @@ set -euo pipefail
 # e.g.,
 # ./scripts/build.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                        # All arguments are supplied to ginkgo
-# AVALANCHEGO_PATH=./build/avalanchego ./scripts/tests.e2e.existing.sh  # Customization of avalanchego path
+# METALGO_PATH=./build/metalgo ./scripts/tests.e2e.existing.sh  # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.e2e.existing.sh ]]; then
   echo "must be run from repository root"
   exit 255

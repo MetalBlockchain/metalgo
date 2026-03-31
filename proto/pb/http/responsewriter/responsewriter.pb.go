@@ -339,7 +339,7 @@ const file_http_responsewriter_responsewriter_proto_rawDesc = "" +
 	"\x05Write\x12!.http.responsewriter.WriteRequest\x1a\".http.responsewriter.WriteResponse\x12N\n" +
 	"\vWriteHeader\x12'.http.responsewriter.WriteHeaderRequest\x1a\x16.google.protobuf.Empty\x127\n" +
 	"\x05Flush\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12E\n" +
-	"\x06Hijack\x12\x16.google.protobuf.Empty\x1a#.http.responsewriter.HijackResponseB>Z<github.com/ava-labs/avalanchego/proto/pb/http/responsewriterb\x06proto3"
+	"\x06Hijack\x12\x16.google.protobuf.Empty\x1a#.http.responsewriter.HijackResponseBAZ?github.com/MetalBlockchain/metalgo/proto/pb/http/responsewriterb\x06proto3"
 
 var (
 	file_http_responsewriter_responsewriter_proto_rawDescOnce sync.Once

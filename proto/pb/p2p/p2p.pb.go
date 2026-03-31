@@ -3617,7 +3617,7 @@ const file_p2p_p2p_proto_rawDesc = "" +
 	"EngineType\x12\x1b\n" +
 	"\x17ENGINE_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fENGINE_TYPE_DAG\x10\x01\x12\x15\n" +
-	"\x11ENGINE_TYPE_CHAIN\x10\x02B.Z,github.com/ava-labs/avalanchego/proto/pb/p2pb\x06proto3"
+	"\x11ENGINE_TYPE_CHAIN\x10\x02B1Z/github.com/MetalBlockchain/metalgo/proto/pb/p2pb\x06proto3"
 
 var (
 	file_p2p_p2p_proto_rawDescOnce sync.Once

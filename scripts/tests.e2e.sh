@@ -7,7 +7,7 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
 # E2E_RANDOM_SEED=1234882 ./scripts/tests.e2e.sh                                       # Specify a specific seed to order test execution by
-# AVALANCHEGO_PATH=./build/avalanchego ./scripts/tests.e2e.sh                          # Customization of avalanchego path
+# METALGO_PATH=./build/metalgo ./scripts/tests.e2e.sh                          # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255

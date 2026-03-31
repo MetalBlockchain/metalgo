@@ -177,7 +177,7 @@ const file_platformvm_platformvm_proto_rawDesc = "" +
 	"\bpreimage\"B\n" +
 	"\rSubnetIDIndex\x12\x1b\n" +
 	"\tsubnet_id\x18\x01 \x01(\fR\bsubnetId\x12\x14\n" +
-	"\x05index\x18\x02 \x01(\rR\x05indexB5Z3github.com/ava-labs/avalanchego/proto/pb/platformvmb\x06proto3"
+	"\x05index\x18\x02 \x01(\rR\x05indexB8Z6github.com/MetalBlockchain/metalgo/proto/pb/platformvmb\x06proto3"
 
 var (
 	file_platformvm_platformvm_proto_rawDescOnce sync.Once

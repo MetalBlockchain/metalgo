@@ -167,7 +167,7 @@ const file_aliasreader_aliasreader_proto_rawDesc = "" +
 	"\vAliasReader\x12-\n" +
 	"\x06Lookup\x12\x12.aliasreader.Alias\x1a\x0f.aliasreader.ID\x123\n" +
 	"\fPrimaryAlias\x12\x0f.aliasreader.ID\x1a\x12.aliasreader.Alias\x122\n" +
-	"\aAliases\x12\x0f.aliasreader.ID\x1a\x16.aliasreader.AliasListB6Z4github.com/ava-labs/avalanchego/proto/pb/aliasreaderb\x06proto3"
+	"\aAliases\x12\x0f.aliasreader.ID\x1a\x16.aliasreader.AliasListB9Z7github.com/MetalBlockchain/metalgo/proto/pb/aliasreaderb\x06proto3"
 
 var (
 	file_aliasreader_aliasreader_proto_rawDescOnce sync.Once

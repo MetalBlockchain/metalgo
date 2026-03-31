@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package http;
 
-option go_package = "github.com/ava-labs/avalanchego/proto/pb/http";
+option go_package = "github.com/MetalBlockchain/metalgo/proto/pb/http";
 
 service HTTP {
   // Handle wraps http1 over http2 and provides support for websockets by implementing

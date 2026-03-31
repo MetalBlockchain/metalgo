@@ -533,7 +533,7 @@ const file_validatorstate_validator_state_proto_rawDesc = "" +
 	"\x10GetCurrentHeight\x12\x16.google.protobuf.Empty\x1a(.validatorstate.GetCurrentHeightResponse\x12V\n" +
 	"\vGetSubnetID\x12\".validatorstate.GetSubnetIDRequest\x1a#.validatorstate.GetSubnetIDResponse\x12b\n" +
 	"\x0fGetValidatorSet\x12&.validatorstate.GetValidatorSetRequest\x1a'.validatorstate.GetValidatorSetResponse\x12w\n" +
-	"\x16GetCurrentValidatorSet\x12-.validatorstate.GetCurrentValidatorSetRequest\x1a..validatorstate.GetCurrentValidatorSetResponseB9Z7github.com/ava-labs/avalanchego/proto/pb/validatorstateb\x06proto3"
+	"\x16GetCurrentValidatorSet\x12-.validatorstate.GetCurrentValidatorSetRequest\x1a..validatorstate.GetCurrentValidatorSetResponseB<Z:github.com/MetalBlockchain/metalgo/proto/pb/validatorstateb\x06proto3"
 
 var (
 	file_validatorstate_validator_state_proto_rawDescOnce sync.Once

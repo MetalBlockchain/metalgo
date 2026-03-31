@@ -88,7 +88,7 @@ const file_vm_runtime_runtime_proto_rawDesc = "" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr2N\n" +
 	"\aRuntime\x12C\n" +
 	"\n" +
-	"Initialize\x12\x1d.vm.runtime.InitializeRequest\x1a\x16.google.protobuf.EmptyB5Z3github.com/ava-labs/avalanchego/proto/pb/vm/managerb\x06proto3"
+	"Initialize\x12\x1d.vm.runtime.InitializeRequest\x1a\x16.google.protobuf.EmptyB8Z6github.com/MetalBlockchain/metalgo/proto/pb/vm/managerb\x06proto3"
 
 var (
 	file_vm_runtime_runtime_proto_rawDescOnce sync.Once

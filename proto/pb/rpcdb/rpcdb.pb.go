@@ -1237,7 +1237,7 @@ const file_rpcdb_rpcdb_proto_rawDesc = "" +
 	"\x1dNewIteratorWithStartAndPrefix\x12+.rpcdb.NewIteratorWithStartAndPrefixRequest\x1a,.rpcdb.NewIteratorWithStartAndPrefixResponse\x12G\n" +
 	"\fIteratorNext\x12\x1a.rpcdb.IteratorNextRequest\x1a\x1b.rpcdb.IteratorNextResponse\x12J\n" +
 	"\rIteratorError\x12\x1b.rpcdb.IteratorErrorRequest\x1a\x1c.rpcdb.IteratorErrorResponse\x12P\n" +
-	"\x0fIteratorRelease\x12\x1d.rpcdb.IteratorReleaseRequest\x1a\x1e.rpcdb.IteratorReleaseResponseB0Z.github.com/ava-labs/avalanchego/proto/pb/rpcdbb\x06proto3"
+	"\x0fIteratorRelease\x12\x1d.rpcdb.IteratorReleaseRequest\x1a\x1e.rpcdb.IteratorReleaseResponseB3Z1github.com/MetalBlockchain/metalgo/proto/pb/rpcdbb\x06proto3"
 
 var (
 	file_rpcdb_rpcdb_proto_rawDescOnce sync.Once

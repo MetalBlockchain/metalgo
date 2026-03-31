@@ -332,7 +332,7 @@ const file_appsender_appsender_proto_rawDesc = "" +
 	"\x0eSendAppRequest\x12\x1c.appsender.SendAppRequestMsg\x1a\x16.google.protobuf.Empty\x12H\n" +
 	"\x0fSendAppResponse\x12\x1d.appsender.SendAppResponseMsg\x1a\x16.google.protobuf.Empty\x12B\n" +
 	"\fSendAppError\x12\x1a.appsender.SendAppErrorMsg\x1a\x16.google.protobuf.Empty\x12D\n" +
-	"\rSendAppGossip\x12\x1b.appsender.SendAppGossipMsg\x1a\x16.google.protobuf.EmptyB4Z2github.com/ava-labs/avalanchego/proto/pb/appsenderb\x06proto3"
+	"\rSendAppGossip\x12\x1b.appsender.SendAppGossipMsg\x1a\x16.google.protobuf.EmptyB7Z5github.com/MetalBlockchain/metalgo/proto/pb/appsenderb\x06proto3"
 
 var (
 	file_appsender_appsender_proto_rawDescOnce sync.Once

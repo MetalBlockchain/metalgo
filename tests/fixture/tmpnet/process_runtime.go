@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	AvalancheGoPathEnvName = "AVALANCHEGO_PATH"
+	AvalancheGoPathEnvName = "METALGO_PATH"
 
 	defaultNodeInitTimeout = 10 * time.Second
 )

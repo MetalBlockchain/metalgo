@@ -1448,7 +1448,7 @@ const file_sync_sync_proto_rawDesc = "" +
 	"\x11VerifyChangeProof\x12\x1e.sync.VerifyChangeProofRequest\x1a\x1f.sync.VerifyChangeProofResponse\x12K\n" +
 	"\x11CommitChangeProof\x12\x1e.sync.CommitChangeProofRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
 	"\rGetRangeProof\x12\x1a.sync.GetRangeProofRequest\x1a\x1b.sync.GetRangeProofResponse\x12I\n" +
-	"\x10CommitRangeProof\x12\x1d.sync.CommitRangeProofRequest\x1a\x16.google.protobuf.EmptyB/Z-github.com/ava-labs/avalanchego/proto/pb/syncb\x06proto3"
+	"\x10CommitRangeProof\x12\x1d.sync.CommitRangeProofRequest\x1a\x16.google.protobuf.EmptyB2Z0github.com/MetalBlockchain/metalgo/proto/pb/syncb\x06proto3"
 
 var (
 	file_sync_sync_proto_rawDescOnce sync.Once

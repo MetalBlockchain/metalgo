@@ -18,7 +18,7 @@ const (
 	processRuntime   = "process"
 	processDocPrefix = "[process runtime] "
 
-	avalanchegoPathFlag = "avalanchego-path"
+	avalanchegoPathFlag = "metalgo-path"
 )
 
 var errAvalancheGoRequired = fmt.Errorf("--%s or %s are required", avalanchegoPathFlag, tmpnet.AvalancheGoPathEnvName)

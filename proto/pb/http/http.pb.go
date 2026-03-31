@@ -994,7 +994,7 @@ const file_http_http_proto_rawDesc = "" +
 	"\x04body\x18\x03 \x01(\fR\x04body2\x86\x01\n" +
 	"\x04HTTP\x12/\n" +
 	"\x06Handle\x12\x11.http.HTTPRequest\x1a\x12.http.HTTPResponse\x12M\n" +
-	"\fHandleSimple\x12\x1d.http.HandleSimpleHTTPRequest\x1a\x1e.http.HandleSimpleHTTPResponseB/Z-github.com/ava-labs/avalanchego/proto/pb/httpb\x06proto3"
+	"\fHandleSimple\x12\x1d.http.HandleSimpleHTTPRequest\x1a\x1e.http.HandleSimpleHTTPResponseB2Z0github.com/MetalBlockchain/metalgo/proto/pb/httpb\x06proto3"
 
 var (
 	file_http_http_proto_rawDescOnce sync.Once
