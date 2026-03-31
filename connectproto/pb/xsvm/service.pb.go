@@ -213,7 +213,7 @@ const file_xsvm_service_proto_rawDesc = "" +
 	"\x04Ping\x12*\n" +
 	"\x04Ping\x12\x11.xsvm.PingRequest\x1a\x0f.xsvm.PingReply\x12@\n" +
 	"\n" +
-	"StreamPing\x12\x17.xsvm.StreamPingRequest\x1a\x15.xsvm.StreamPingReply(\x010\x01B6Z4github.com/MetalBlockchain/metalgo/connectproto/pb/xsvmb\x06proto3"
+	"StreamPing\x12\x17.xsvm.StreamPingRequest\x1a\x15.xsvm.StreamPingReply(\x010\x01B6Z4github.com/ava-labs/avalanchego/connectproto/pb/xsvmb\x06proto3"
 
 var (
 	file_xsvm_service_proto_rawDescOnce sync.Once

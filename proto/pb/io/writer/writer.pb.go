@@ -132,7 +132,7 @@ const file_io_writer_writer_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tH\x00R\x05error\x88\x01\x01B\b\n" +
 	"\x06_error2D\n" +
 	"\x06Writer\x12:\n" +
-	"\x05Write\x12\x17.io.writer.WriteRequest\x1a\x18.io.writer.WriteResponseB4Z2github.com/MetalBlockchain/metalgo/proto/pb/io/writerb\x06proto3"
+	"\x05Write\x12\x17.io.writer.WriteRequest\x1a\x18.io.writer.WriteResponseB4Z2github.com/ava-labs/avalanchego/proto/pb/io/writerb\x06proto3"
 
 var (
 	file_io_writer_writer_proto_rawDescOnce sync.Once

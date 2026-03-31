@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	xsvm "github.com/MetalBlockchain/metalgo/connectproto/pb/xsvm"
+	xsvm "github.com/ava-labs/avalanchego/connectproto/pb/xsvm"
 	http "net/http"
 	strings "strings"
 )

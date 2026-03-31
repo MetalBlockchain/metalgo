@@ -3096,7 +3096,7 @@ const file_vm_vm_proto_rawDesc = "" +
 	"\vBlockVerify\x12\x16.vm.BlockVerifyRequest\x1a\x17.vm.BlockVerifyResponse\x12=\n" +
 	"\vBlockAccept\x12\x16.vm.BlockAcceptRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\vBlockReject\x12\x16.vm.BlockRejectRequest\x1a\x16.google.protobuf.Empty\x12S\n" +
-	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB-Z+github.com/MetalBlockchain/metalgo/proto/pb/vmb\x06proto3"
+	"\x12StateSummaryAccept\x12\x1d.vm.StateSummaryAcceptRequest\x1a\x1e.vm.StateSummaryAcceptResponseB-Z+github.com/ava-labs/avalanchego/proto/pb/vmb\x06proto3"
 
 var (
 	file_vm_vm_proto_rawDescOnce sync.Once

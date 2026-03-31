@@ -237,7 +237,7 @@ const file_io_reader_reader_proto_rawDesc = "" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eERROR_CODE_EOF\x10\x012A\n" +
 	"\x06Reader\x127\n" +
-	"\x04Read\x12\x16.io.reader.ReadRequest\x1a\x17.io.reader.ReadResponseB4Z2github.com/MetalBlockchain/metalgo/proto/pb/io/readerb\x06proto3"
+	"\x04Read\x12\x16.io.reader.ReadRequest\x1a\x17.io.reader.ReadResponseB4Z2github.com/ava-labs/avalanchego/proto/pb/io/readerb\x06proto3"
 
 var (
 	file_io_reader_reader_proto_rawDescOnce sync.Once

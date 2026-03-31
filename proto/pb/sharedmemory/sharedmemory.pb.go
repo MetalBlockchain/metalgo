@@ -655,7 +655,7 @@ const file_sharedmemory_sharedmemory_proto_rawDesc = "" +
 	"\fSharedMemory\x12:\n" +
 	"\x03Get\x12\x18.sharedmemory.GetRequest\x1a\x19.sharedmemory.GetResponse\x12F\n" +
 	"\aIndexed\x12\x1c.sharedmemory.IndexedRequest\x1a\x1d.sharedmemory.IndexedResponse\x12@\n" +
-	"\x05Apply\x12\x1a.sharedmemory.ApplyRequest\x1a\x1b.sharedmemory.ApplyResponseB7Z5github.com/MetalBlockchain/metalgo/proto/pb/sharedmemoryb\x06proto3"
+	"\x05Apply\x12\x1a.sharedmemory.ApplyRequest\x1a\x1b.sharedmemory.ApplyResponseB7Z5github.com/ava-labs/avalanchego/proto/pb/sharedmemoryb\x06proto3"
 
 var (
 	file_sharedmemory_sharedmemory_proto_rawDescOnce sync.Once

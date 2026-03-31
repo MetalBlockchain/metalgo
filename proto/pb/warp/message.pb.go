@@ -138,7 +138,7 @@ const file_warp_message_proto_rawDesc = "" +
 	"\fSignResponse\x12\x1c\n" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature27\n" +
 	"\x06Signer\x12-\n" +
-	"\x04Sign\x12\x11.warp.SignRequest\x1a\x12.warp.SignResponseB/Z-github.com/MetalBlockchain/metalgo/proto/pb/warpb\x06proto3"
+	"\x04Sign\x12\x11.warp.SignRequest\x1a\x12.warp.SignResponseB/Z-github.com/ava-labs/avalanchego/proto/pb/warpb\x06proto3"
 
 var (
 	file_warp_message_proto_rawDescOnce sync.Once

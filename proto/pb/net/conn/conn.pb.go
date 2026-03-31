@@ -399,7 +399,7 @@ const file_net_conn_conn_proto_rawDesc = "" +
 	"\x05Close\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x12C\n" +
 	"\vSetDeadline\x12\x1c.net.conn.SetDeadlineRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\x0fSetReadDeadline\x12\x1c.net.conn.SetDeadlineRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
-	"\x10SetWriteDeadline\x12\x1c.net.conn.SetDeadlineRequest\x1a\x16.google.protobuf.EmptyB3Z1github.com/MetalBlockchain/metalgo/proto/pb/net/connb\x06proto3"
+	"\x10SetWriteDeadline\x12\x1c.net.conn.SetDeadlineRequest\x1a\x16.google.protobuf.EmptyB3Z1github.com/ava-labs/avalanchego/proto/pb/net/connb\x06proto3"
 
 var (
 	file_net_conn_conn_proto_rawDescOnce sync.Once

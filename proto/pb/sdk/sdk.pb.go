@@ -283,7 +283,7 @@ const file_sdk_sdk_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\fR\amessage\x12$\n" +
 	"\rjustification\x18\x02 \x01(\fR\rjustification\"1\n" +
 	"\x11SignatureResponse\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignatureB.Z,github.com/MetalBlockchain/metalgo/proto/pb/sdkb\x06proto3"
+	"\tsignature\x18\x01 \x01(\fR\tsignatureB.Z,github.com/ava-labs/avalanchego/proto/pb/sdkb\x06proto3"
 
 var (
 	file_sdk_sdk_proto_rawDescOnce sync.Once
