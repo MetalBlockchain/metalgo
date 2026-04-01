@@ -18,6 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
 	"github.com/MetalBlockchain/metalgo/utils/ulimit"
+
+	nodeconfig "github.com/MetalBlockchain/metalgo/config/node"
 )
 
 const Header = `        ███    ███ ███████ ████████  █████  ██      
@@ -43,7 +45,7 @@ type App interface {
 	ExitCode() (int, error)
 }
 
-func New(config node.Config) (App, error) {
+func New(config nodeconfig.Config) (App, error) {
 	// Set the data directory permissions to be read write.
 	if err := perms.ChmodR(config.DatabaseConfig.Path, true, perms.ReadWriteExecute); err != nil {
 		return nil, fmt.Errorf("failed to restrict the permissions of the database directory with: %w", err)

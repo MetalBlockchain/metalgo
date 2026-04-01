@@ -11,9 +11,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
-
-	txfee "github.com/MetalBlockchain/metalgo/vms/platformvm/txs/fee"
-	validatorfee "github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/fee"
 )
 
 var (
@@ -24,16 +22,7 @@ var (
 	MainnetParams = Params{
 		TxFeeConfig: TxFeeConfig{
 			CreateAssetTxFee: 10 * units.MilliAvax,
-			StaticFeeConfig: txfee.StaticConfig{
-				TxFee:                         units.MilliAvax,
-				CreateSubnetTxFee:             1 * units.Avax,
-				TransformSubnetTxFee:          10 * units.Avax,
-				CreateBlockchainTxFee:         1 * units.Avax,
-				AddPrimaryNetworkValidatorFee: 0,
-				AddPrimaryNetworkDelegatorFee: 0,
-				AddSubnetValidatorFee:         units.MilliAvax,
-				AddSubnetDelegatorFee:         units.MilliAvax,
-			},
+			TxFee:            units.MilliAvax,
 			DynamicFeeConfig: gas.Config{
 				Weights: gas.Dimensions{
 					gas.Bandwidth: 1,     // Max block size ~1MB
@@ -51,7 +40,7 @@ var (
 				// hardcode the result.
 				ExcessConversionConstant: 2_164_043, // Double every 30s
 			},
-			ValidatorFeeConfig: validatorfee.Config{
+			ValidatorFeeConfig: fee.Config{
 				Capacity: 20_000,
 				Target:   10_000,
 				MinPrice: gas.Price(512 * units.NanoAvax),

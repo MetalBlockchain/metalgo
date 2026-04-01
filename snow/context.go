@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/MetalBlockchain/metalgo/api/keystore"
 	"github.com/MetalBlockchain/metalgo/api/metrics"
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -45,7 +44,6 @@ type Context struct {
 
 	Log          logging.Logger
 	Lock         sync.RWMutex
-	Keystore     keystore.BlockchainKeystore
 	SharedMemory atomic.SharedMemory
 	BCLookup     ids.AliaserReader
 	Metrics      metrics.MultiGatherer
