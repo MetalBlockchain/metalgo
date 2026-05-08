@@ -35,7 +35,7 @@ var (
 		CortinaXChainStopVertexID: ids.FromStringOrPanic("ewiCzJQVJLYCzeFMcZSe9huX9h7QJPVeMdgDGcTVGTzeNJ3kY"),
 		DurangoTime:               time.Date(2024, time.May, 6, 8, 0, 0, 0, time.UTC),
 		EtnaTime:                  time.Date(2025, time.February, 25, 10, 0, 0, 0, time.UTC),
-		FortunaTime:               time.Date(2026, time.May, 11, 15, 0, 0, 0, time.UTC),
+		FortunaTime:               time.Date(2026, time.May, 25, 15, 0, 0, 0, time.UTC),
 		GraniteTime:               UnscheduledActivationTime,
 	}
 	Tahoe = Config{
