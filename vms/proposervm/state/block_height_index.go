@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
@@ -60,7 +61,7 @@ func NewHeightIndex(db database.Database, commitable versiondb.Commitable) Heigh
 	return &heightIndex{
 		Commitable: commitable,
 
-		heightsCache: &cache.LRU[uint64, ids.ID]{Size: cacheSize},
+		heightsCache: lru.NewCache[uint64, ids.ID](cacheSize),
 		heightDB:     prefixdb.New(heightPrefix, db),
 		metadataDB:   prefixdb.New(metadataPrefix, db),
 	}

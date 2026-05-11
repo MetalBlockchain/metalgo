@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
 
 import (
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/engine/avalanche/vertex"
@@ -22,15 +23,15 @@ type prefixedState struct {
 	state *state
 
 	vtx, status cache.Cacher[ids.ID, ids.ID]
-	uniqueVtx   cache.Deduplicator[ids.ID, *uniqueVertex]
+	uniqueVtx   *lru.Deduplicator[ids.ID, *uniqueVertex]
 }
 
 func newPrefixedState(state *state, idCacheSizes int) *prefixedState {
 	return &prefixedState{
 		state:     state,
-		vtx:       &cache.LRU[ids.ID, ids.ID]{Size: idCacheSizes},
-		status:    &cache.LRU[ids.ID, ids.ID]{Size: idCacheSizes},
-		uniqueVtx: &cache.EvictableLRU[ids.ID, *uniqueVertex]{Size: idCacheSizes},
+		vtx:       lru.NewCache[ids.ID, ids.ID](idCacheSizes),
+		status:    lru.NewCache[ids.ID, ids.ID](idCacheSizes),
+		uniqueVtx: lru.NewDeduplicator[ids.ID, *uniqueVertex](idCacheSizes),
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapper
@@ -16,7 +16,7 @@ import (
 var _ Poll = (*Minority)(nil)
 
 // Minority implements the bootstrapping poll to determine the initial set of
-// potentially accaptable blocks.
+// potentially acceptable blocks.
 //
 // This poll fetches the last accepted block from an initial set of peers. In
 // order for the protocol to find a recently accepted block, there must be at

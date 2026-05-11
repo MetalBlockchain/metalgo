@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -28,10 +28,14 @@ type ProofOfPossession struct {
 	publicKey *bls.PublicKey
 }
 
-func NewProofOfPossession(sk bls.Signer) *ProofOfPossession {
+func NewProofOfPossession(sk bls.Signer) (*ProofOfPossession, error) {
 	pk := sk.PublicKey()
 	pkBytes := bls.PublicKeyToCompressedBytes(pk)
-	sig := sk.SignProofOfPossession(pkBytes)
+	sig, err := sk.SignProofOfPossession(pkBytes)
+	if err != nil {
+		return nil, err
+	}
+
 	sigBytes := bls.SignatureToBytes(sig)
 
 	pop := &ProofOfPossession{
@@ -39,7 +43,7 @@ func NewProofOfPossession(sk bls.Signer) *ProofOfPossession {
 	}
 	copy(pop.PublicKey[:], pkBytes)
 	copy(pop.ProofOfPossession[:], sigBytes)
-	return pop
+	return pop, nil
 }
 
 func (p *ProofOfPossession) Verify() error {

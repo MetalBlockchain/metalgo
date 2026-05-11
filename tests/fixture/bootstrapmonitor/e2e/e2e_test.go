@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -25,6 +24,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/tests/fixture/bootstrapmonitor"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet/flags"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,6 +61,7 @@ const (
 )
 
 var (
+	kubeconfigVars            *flags.KubeconfigVars
 	skipAvalanchegoImageBuild bool
 	skipMonitorImageBuild     bool
 
@@ -68,6 +69,7 @@ var (
 )
 
 func init() {
+	kubeconfigVars = flags.NewKubeconfigFlagVars()
 	flag.BoolVar(
 		&skipAvalanchegoImageBuild,
 		"skip-avalanchego-image-build",
@@ -104,8 +106,7 @@ var _ = ginkgo.Describe("[Bootstrap Tester]", func() {
 		}
 
 		ginkgo.By("Configuring a kubernetes client")
-		kubeconfigPath := os.Getenv("KUBECONFIG")
-		kubeconfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		kubeconfig, err := tmpnet.GetClientConfig(tc.Log(), kubeconfigVars.Path, kubeconfigVars.Context)
 		require.NoError(err)
 		clientset, err := kubernetes.NewForConfig(kubeconfig)
 		require.NoError(err)
@@ -262,15 +263,17 @@ func buildImage(tc tests.TestContext, imageName string, forceNewHash bool, scrip
 	require.NoError(err, "Image build failed: %s", output)
 }
 
-func newNodeStatefulSet(name string, flags map[string]string) *appsv1.StatefulSet {
+func newNodeStatefulSet(name string, flags tmpnet.FlagsMap) *appsv1.StatefulSet {
 	statefulSet := tmpnet.NewNodeStatefulSet(
 		name,
+		true, // generateName
 		latestAvalanchegoImage,
 		nodeContainerName,
 		volumeName,
 		volumeSize,
 		nodeDataDir,
 		flags,
+		nil, /* labels */
 	)
 
 	// The version annotations key needs to be present to ensure compatibility with json patch replace

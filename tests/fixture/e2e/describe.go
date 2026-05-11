@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package e2e
@@ -9,7 +9,7 @@ const (
 	// For label usage in ginkgo invocation, see: https://onsi.github.io/ginkgo/#spec-labels
 
 	// Label for filtering a test that is not primarily a C-Chain test
-	// but nonentheless uses the C-Chain. Intended to support
+	// but nonetheless uses the C-Chain. Intended to support
 	// execution of all C-Chain tests by the coreth repo in an e2e job.
 	UsesCChainLabel = "uses-c"
 )

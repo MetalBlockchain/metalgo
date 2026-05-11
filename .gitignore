@@ -28,8 +28,6 @@ tmp/
 
 *.pb*
 
-db*
-
 *cpu[0-9]*
 *mem[0-9]*
 *lock[0-9]*
@@ -51,8 +49,6 @@ keys/staker.*
 !*.go
 !*.proto
 
-plugins/
-
 scripts/ansible/*inventory.yml
 scripts/.build_image_gopath/
 
@@ -62,3 +58,7 @@ tests/upgrade/upgrade.test
 vendor
 
 **/testdata
+
+.direnv
+# Personal extension to .envrc
+.envrc.local

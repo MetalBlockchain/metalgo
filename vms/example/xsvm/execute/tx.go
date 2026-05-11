@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package execute
@@ -164,12 +164,20 @@ func (t *Tx) Import(i *tx.Import) error {
 		return errs.Err
 	}
 
-	return message.Signature.Verify(
+	validators, err := warp.GetCanonicalValidatorSetFromChainID(
 		t.Context,
-		&message.UnsignedMessage,
-		t.ChainContext.NetworkID,
 		t.ChainContext.ValidatorState,
 		t.BlockContext.PChainHeight,
+		message.SourceChainID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return message.Signature.Verify(
+		&message.UnsignedMessage,
+		t.ChainContext.NetworkID,
+		validators,
 		QuorumNumerator,
 		QuorumDenominator,
 	)

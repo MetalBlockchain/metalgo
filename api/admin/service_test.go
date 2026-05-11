@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package admin
@@ -22,7 +22,6 @@ import (
 
 type loadVMsTest struct {
 	admin          *Admin
-	ctrl           *gomock.Controller
 	mockVMManager  *vmsmock.Manager
 	mockVMRegistry *registrymock.VMRegistry
 }
@@ -39,7 +38,6 @@ func initLoadVMsTest(t *testing.T) *loadVMsTest {
 			VMRegistry: mockVMRegistry,
 			VMManager:  mockVMManager,
 		}},
-		ctrl:           ctrl,
 		mockVMManager:  mockVMManager,
 		mockVMRegistry: mockVMRegistry,
 	}

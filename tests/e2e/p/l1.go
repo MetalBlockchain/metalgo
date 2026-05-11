@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/config"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/peer"
@@ -30,7 +29,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/example/xsvm/genesis"
@@ -70,17 +68,6 @@ var _ = e2e.DescribePChain("[L1]", func() {
 	ginkgo.It("creates and updates L1 validators", func() {
 		env := e2e.GetEnv(tc)
 		nodeURI := env.GetRandomNodeURI()
-
-		tc.By("verifying Etna is activated", func() {
-			infoClient := info.NewClient(nodeURI.URI)
-			upgrades, err := infoClient.Upgrades(tc.DefaultContext())
-			require.NoError(err)
-
-			now := time.Now()
-			if !upgrades.IsEtnaActivated(now) {
-				ginkgo.Skip("Etna is not activated. L1s are enabled post-Etna, skipping test.")
-			}
-		})
 
 		tc.By("loading the wallet")
 		var (
@@ -184,9 +171,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		})
 
 		tc.By("creating the genesis validator")
-		subnetGenesisNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.FlagsMap{
+		subnetGenesisNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.NewEphemeralNode(tmpnet.FlagsMap{
 			config.TrackSubnetsKey: subnetID.String(),
-		})
+		}))
 
 		genesisNodePoP, err := subnetGenesisNode.GetProofOfPossession()
 		require.NoError(err)
@@ -199,9 +186,12 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			networkID           = env.GetNetwork().GetNetworkID()
 			genesisPeerMessages = buffer.NewUnboundedBlockingDeque[p2pmessage.InboundMessage](1)
 		)
+		stakingAddress, cancel, err := subnetGenesisNode.GetAccessibleStakingAddress(tc.DefaultContext())
+		require.NoError(err)
+		tc.DeferCleanup(cancel)
 		genesisPeer, err := peer.StartTestPeer(
 			tc.DefaultContext(),
-			subnetGenesisNode.StakingAddress,
+			stakingAddress,
 			networkID,
 			router.InboundHandlerFunc(func(_ context.Context, m p2pmessage.InboundMessage) {
 				tc.Log().Info("received a message",
@@ -213,6 +203,8 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			}),
 		)
 		require.NoError(err)
+
+		subnetGenesisNodeURI := subnetGenesisNode.GetAccessibleURI()
 
 		address := []byte{}
 		tc.By("issuing a ConvertSubnetToL1Tx", func() {
@@ -232,9 +224,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 			)
 			require.NoError(err)
 
-			tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNode.URI, func() {
+			tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNodeURI, func() {
 				var (
-					client = platformvm.NewClient(subnetGenesisNode.URI)
+					client = platformvm.NewClient(subnetGenesisNodeURI)
 					txID   = tx.ID()
 				)
 				tc.Eventually(
@@ -357,9 +349,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 		tc.By("advancing the proposervm P-chain height", advanceProposerVMPChainHeight)
 
 		tc.By("creating the validator to register")
-		subnetRegisterNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.FlagsMap{
+		subnetRegisterNode := e2e.AddEphemeralNode(tc, env.GetNetwork(), tmpnet.NewEphemeralNode(tmpnet.FlagsMap{
 			config.TrackSubnetsKey: subnetID.String(),
-		})
+		}))
 
 		registerNodePoP, err := subnetRegisterNode.GetProofOfPossession()
 		require.NoError(err)
@@ -432,9 +424,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				)
 				require.NoError(err)
 
-				tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNode.URI, func() {
+				tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNodeURI, func() {
 					var (
-						client = platformvm.NewClient(subnetGenesisNode.URI)
+						client = platformvm.NewClient(subnetGenesisNodeURI)
 						txID   = tx.ID()
 					)
 					tc.Eventually(
@@ -570,9 +562,9 @@ var _ = e2e.DescribePChain("[L1]", func() {
 				)
 				require.NoError(err)
 
-				tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNode.URI, func() {
+				tc.By("ensuring the genesis peer has accepted the tx at "+subnetGenesisNodeURI, func() {
 					var (
-						client = platformvm.NewClient(subnetGenesisNode.URI)
+						client = platformvm.NewClient(subnetGenesisNodeURI)
 						txID   = tx.ID()
 					)
 					tc.Eventually(
@@ -780,7 +772,6 @@ func wrapWarpSignatureRequest(
 	justification []byte,
 ) (p2pmessage.OutboundMessage, error) {
 	p2pMessageFactory, err := p2pmessage.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		p2pTimeout,

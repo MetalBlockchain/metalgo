@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package platformvm;
 
-option go_package = "github.com/ava-labs/avalanchego/proto/pb/platformvm";
+option go_package = "github.com/MetalBlockchain/metalgo/proto/pb/platformvm";
 
 message L1ValidatorRegistrationJustification {
   oneof preimage {

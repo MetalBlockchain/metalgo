@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package constants
@@ -32,8 +32,12 @@ var (
 	// release, marked as implementable and not activated.
 	//
 	// See: https://github.com/orgs/avalanche-foundation/projects/1
-	CurrentACPs = set.Of[uint32]()
+	CurrentACPs = set.Of[uint32](
+		176, // https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
+	)
 
 	// ScheduledACPs are the ACPs included into the next upgrade.
-	ScheduledACPs = set.Of[uint32]()
+	ScheduledACPs = set.Of[uint32](
+		176, // https://github.com/avalanche-foundation/ACPs/blob/main/ACPs/176-dynamic-evm-gas-limit-and-price-discovery-updates/README.md
+	)
 )

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package handler
@@ -16,6 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
@@ -82,10 +83,13 @@ func TestHealthCheckSubnet(t *testing.T) {
 			)
 			require.NoError(err)
 
+			subscription, _ := createSubscriber()
+
 			handlerIntf, err := New(
 				ctx,
+				&block.ChangeNotifier{},
+				subscription,
 				vdrs,
-				nil,
 				time.Second,
 				testThreadPoolSize,
 				resourceTracker,
@@ -111,14 +115,14 @@ func TestHealthCheckSubnet(t *testing.T) {
 			}
 
 			handlerIntf.SetEngineManager(&EngineManager{
-				Snowman: &Engine{
+				Chain: &Engine{
 					Bootstrapper: bootstrapper,
 					Consensus:    engine,
 				},
 			})
 
 			ctx.State.Set(snow.EngineState{
-				Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 				State: snow.NormalOp, // assumed bootstrap is done
 			})
 

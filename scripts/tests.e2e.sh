@@ -7,7 +7,7 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
 # E2E_RANDOM_SEED=1234882 ./scripts/tests.e2e.sh                                       # Specify a specific seed to order test execution by
-# AVALANCHEGO_PATH=./build/avalanchego ./scripts/tests.e2e.sh                          # Customization of avalanchego path
+# METALGO_PATH=./build/metalgo ./scripts/tests.e2e.sh                          # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -20,21 +20,14 @@ fi
 # the instructions to build non-portable BLST.
 source ./scripts/constants.sh
 
-#################################
-echo "building e2e.test"
-# to install the ginkgo binary (required for test build and run)
-go install -v github.com/onsi/ginkgo/v2/ginkgo@v2.13.1
-ACK_GINKGO_RC=true ginkgo build ./tests/e2e
-./tests/e2e/e2e.test --help
+E2E_ARGS=("${@}")
 
-# Enable subnet testing by building xsvm
-./scripts/build_xsvm.sh
-echo ""
-
-# Ensure an absolute path to avoid dependency on the working directory
-# of script execution.
-METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
-E2E_ARGS="--metalgo-path=${METALGO_PATH}"
+# If not running in kubernetes, default to using a local metalgo binary
+if ! [[ "${E2E_ARGS[*]}" =~ "--runtime=kube" && ! "${E2E_ARGS[*]}" =~ "--metalgo-path" ]]; then
+  # Ensure an absolute path to avoid dependency on the working directory of script execution.
+  METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
+  E2E_ARGS+=("--metalgo-path=${METALGO_PATH}")
+fi
 
 #################################
 # Determine ginkgo args
@@ -66,4 +59,4 @@ fi
 
 #################################
 # shellcheck disable=SC2086
-ginkgo ${GINKGO_ARGS} -v ./tests/e2e/e2e.test -- "${E2E_ARGS[@]}" "${@}"
+./bin/ginkgo ${GINKGO_ARGS} -v ./tests/e2e -- "${E2E_ARGS[@]}"

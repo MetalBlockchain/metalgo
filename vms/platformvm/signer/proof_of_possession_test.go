@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package signer
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 )
 
 func TestProofOfPossession(t *testing.T) {
@@ -41,11 +42,13 @@ func TestProofOfPossession(t *testing.T) {
 func TestNewProofOfPossessionDeterministic(t *testing.T) {
 	require := require.New(t)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
-	blsPOP0 := NewProofOfPossession(sk)
-	blsPOP1 := NewProofOfPossession(sk)
+	blsPOP0, err := NewProofOfPossession(sk)
+	require.NoError(err)
+	blsPOP1, err := NewProofOfPossession(sk)
+	require.NoError(err)
 	require.Equal(blsPOP0, blsPOP1)
 }
 
@@ -60,9 +63,9 @@ func BenchmarkProofOfPossessionVerify(b *testing.B) {
 }
 
 func newProofOfPossession() (*ProofOfPossession, error) {
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
-	return NewProofOfPossession(sk), nil
+	return NewProofOfPossession(sk)
 }

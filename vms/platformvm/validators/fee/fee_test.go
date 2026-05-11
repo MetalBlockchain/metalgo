@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package fee
@@ -530,7 +530,7 @@ func FuzzStateSecondsRemaining(f *testing.F) {
 	)
 }
 
-// unoptimizedCalculateCost is a naive implementation of CostOf that is used for
+// unoptimizedCostOf is a naive implementation of CostOf that is used for
 // differential fuzzing.
 func (s State) unoptimizedCostOf(c Config, seconds uint64) uint64 {
 	var (

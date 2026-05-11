@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package config
@@ -17,12 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MetalBlockchain/metalgo/chains"
+	"github.com/MetalBlockchain/metalgo/config/node"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowball"
 	"github.com/MetalBlockchain/metalgo/subnets"
 )
 
-const chainConfigFilenameExtention = ".ex"
+const chainConfigFilenameExtension = ".ex"
 
 func TestGetChainConfigsFromFiles(t *testing.T) {
 	tests := map[string]struct {
@@ -74,11 +75,11 @@ func TestGetChainConfigsFromFiles(t *testing.T) {
 			// Create custom configs
 			for key, value := range test.configs {
 				chainDir := filepath.Join(chainsDir, key)
-				setupFile(t, chainDir, chainConfigFileName+chainConfigFilenameExtention, value)
+				setupFile(t, chainDir, chainConfigFileName+chainConfigFilenameExtension, value)
 			}
 			for key, value := range test.upgrades {
 				chainDir := filepath.Join(chainsDir, key)
-				setupFile(t, chainDir, chainUpgradeFileName+chainConfigFilenameExtention, value)
+				setupFile(t, chainDir, chainUpgradeFileName+chainConfigFilenameExtension, value)
 			}
 
 			v := setupViper(configFile)
@@ -163,7 +164,7 @@ func TestSetChainConfigDefaultDir(t *testing.T) {
 	require.Equal(defaultChainConfigDir, v.GetString(ChainConfigDirKey))
 
 	chainsDir := filepath.Join(defaultChainConfigDir, "C")
-	setupFile(t, chainsDir, chainConfigFileName+chainConfigFilenameExtention, "helloworld")
+	setupFile(t, chainsDir, chainConfigFileName+chainConfigFilenameExtension, "helloworld")
 	chainConfigs, err := getChainConfigs(v)
 	require.NoError(err)
 	expected := map[string]chains.ChainConfig{"C": {Config: []byte("helloworld"), Upgrade: []byte(nil)}}
@@ -368,6 +369,10 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 	subnetID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
+	defaultConfigs := map[ids.ID]subnets.Config{
+		subnetID: getDefaultSubnetConfig(setupViperFlags()),
+	}
+
 	tests := map[string]struct {
 		fileName    string
 		givenJSON   string
@@ -386,15 +391,15 @@ func TestGetSubnetConfigsFromFile(t *testing.T) {
 			fileName:  "Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU.json",
 			givenJSON: `{"validatorOnly": true}`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
-				require.Empty(given)
+				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
 		},
-		"wrong extension": {
+		"default config when incorrect extension used": {
 			fileName:  "2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i.yaml",
 			givenJSON: `{"validatorOnly": true}`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
-				require.Empty(given)
+				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
 		},
@@ -450,15 +455,19 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 	subnetID, err := ids.FromString("2Ctt6eGAeo4MLqTmGa7AdRecuVMPGWEX9wSsCLBYrLhX4a394i")
 	require.NoError(t, err)
 
+	defaultConfigs := map[ids.ID]subnets.Config{
+		subnetID: getDefaultSubnetConfig(setupViperFlags()),
+	}
+
 	tests := map[string]struct {
 		givenJSON   string
 		testF       func(*require.Assertions, map[ids.ID]subnets.Config)
 		expectedErr error
 	}{
-		"no configs": {
+		"default config used when no config provided": {
 			givenJSON: `{}`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
-				require.Empty(given)
+				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
 		},
@@ -474,10 +483,10 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
-		"subnet is not tracked": {
+		"default config used when subnet is not tracked": {
 			givenJSON: `{"Gmt4fuNsGJAd2PX86LBvycGaBpgCYKbuULdCLZs3SEs1Jx1LU":{"validatorOnly":true}}`,
 			testF: func(require *require.Assertions, given map[ids.ID]subnets.Config) {
-				require.Empty(given)
+				require.Equal(defaultConfigs, given)
 			},
 			expectedErr: nil,
 		},
@@ -537,6 +546,92 @@ func TestGetSubnetConfigsFromFlags(t *testing.T) {
 				return
 			}
 			test.testF(require, subnetConfigs)
+		})
+	}
+}
+
+func TestGetStakingSigner(t *testing.T) {
+	testKey := "HLimS3vRibTMk9lZD4b+Z+GLuSBShvgbsu0WTLt2Kd4="
+	dataDir := t.TempDir()
+
+	fileKeyPath := filepath.Join(t.TempDir(), "foobar", "signer.key")
+	defaultSignerKeyPath := filepath.Join(
+		dataDir,
+		"staking",
+		"signer.key",
+	)
+
+	tests := []struct {
+		name                 string
+		viperKeys            string
+		config               map[string]any
+		expectedSignerConfig any
+		expectedErr          error
+	}{
+		{
+			name:   "default signer",
+			config: map[string]any{DataDirKey: dataDir},
+			expectedSignerConfig: node.StakingSignerConfig{
+				KeyPath:      defaultSignerKeyPath,
+				KeyPathIsSet: false,
+			},
+		},
+		{
+			name:   "ephemeral signer",
+			config: map[string]any{StakingEphemeralSignerEnabledKey: true},
+			expectedSignerConfig: node.StakingSignerConfig{
+				EphemeralSignerEnabled: true,
+			},
+		},
+		{
+			name:   "content key",
+			config: map[string]any{StakingSignerKeyContentKey: testKey},
+			expectedSignerConfig: node.StakingSignerConfig{
+				KeyContent: testKey,
+			},
+		},
+		{
+			name: "file key",
+			config: map[string]any{
+				StakingSignerKeyPathKey: fileKeyPath,
+			},
+			expectedSignerConfig: node.StakingSignerConfig{
+				KeyPath:      fileKeyPath,
+				KeyPathIsSet: true,
+			},
+		},
+		{
+			name:   "rpc signer",
+			config: map[string]any{StakingRPCSignerEndpointKey: "localhost"},
+			expectedSignerConfig: node.StakingSignerConfig{
+				RPCEndpoint: "localhost",
+			},
+		},
+		{
+			name: "multiple configurations set",
+			config: map[string]any{
+				StakingEphemeralSignerEnabledKey: true,
+				StakingSignerKeyContentKey:       testKey,
+			},
+			expectedErr: errInvalidSignerConfig,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+			v := setupViperFlags()
+
+			for key, value := range tt.config {
+				v.Set(key, value)
+			}
+
+			config, err := GetNodeConfig(v)
+
+			require.ErrorIs(err, tt.expectedErr)
+			if tt.expectedErr == nil {
+				require.Equal(tt.expectedSignerConfig, config.StakingSignerConfig)
+			}
 		})
 	}
 }

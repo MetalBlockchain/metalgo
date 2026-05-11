@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package platformvm
@@ -19,7 +19,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/MetalBlockchain/metalgo/api"
-	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/chains/atomic"
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/database/prefixdb"
@@ -30,6 +30,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/formatting"
 	"github.com/MetalBlockchain/metalgo/utils/formatting/address"
@@ -65,11 +66,9 @@ var encodings = []formatting.Encoding{
 func defaultService(t *testing.T) (*Service, *mutableSharedMemory) {
 	vm, _, mutableSharedMemory := defaultVM(t, upgradetest.Latest)
 	return &Service{
-		vm:          vm,
-		addrManager: avax.NewAddressManager(vm.ctx),
-		stakerAttributesCache: &cache.LRU[ids.ID, *stakerAttributes]{
-			Size: stakerAttributesCacheSize,
-		},
+		vm:                    vm,
+		addrManager:           avax.NewAddressManager(vm.ctx),
+		stakerAttributesCache: lru.NewCache[ids.ID, *stakerAttributes](stakerAttributesCacheSize),
 	}, mutableSharedMemory
 }
 
@@ -208,7 +207,7 @@ func TestGetTxStatus(t *testing.T) {
 	)
 	require.NoError(service.GetTxStatus(nil, arg, &resp))
 	require.Equal(status.Unknown, resp.Status)
-	require.Zero(resp.Reason)
+	require.Empty(resp.Reason)
 
 	// put the chain in existing chain list
 	require.NoError(service.vm.Network.IssueTxFromRPC(tx))
@@ -227,7 +226,7 @@ func TestGetTxStatus(t *testing.T) {
 	resp = GetTxStatusResponse{} // reset
 	require.NoError(service.GetTxStatus(nil, arg, &resp))
 	require.Equal(status.Committed, resp.Status)
-	require.Zero(resp.Reason)
+	require.Empty(resp.Reason)
 }
 
 // Test issuing and then retrieving a transaction
@@ -263,7 +262,9 @@ func TestGetTx(t *testing.T) {
 			func(t testing.TB, s *Service) *txs.Tx {
 				wallet := newWallet(t, s.vm, walletConfig{})
 
-				sk, err := bls.NewSigner()
+				sk, err := localsigner.New()
+				require.NoError(t, err)
+				pop, err := signer.NewProofOfPossession(sk)
 				require.NoError(t, err)
 
 				rewardsOwner := &secp256k1fx.OutputOwners{
@@ -280,7 +281,7 @@ func TestGetTx(t *testing.T) {
 						},
 						Subnet: constants.PrimaryNetworkID,
 					},
-					signer.NewProofOfPossession(sk),
+					pop,
 					s.vm.ctx.AVAXAssetID,
 					rewardsOwner,
 					rewardsOwner,
@@ -659,7 +660,7 @@ func TestGetCurrentValidators(t *testing.T) {
 			require.Equal(validator.EndTime().Unix(), int64(gotVdr.EndTime))
 			require.Equal(validator.StartTime().Unix(), int64(gotVdr.StartTime))
 			require.Equal(connectedIDs.Contains(validator.NodeID()), *gotVdr.Connected)
-			require.Equal(avajson.Float32(100), *gotVdr.Uptime)
+			require.InDelta(float32(avajson.Float32(100)), float32(*gotVdr.Uptime), 0)
 			found = true
 			break
 		}
@@ -799,7 +800,9 @@ func TestGetValidatorsAt(t *testing.T) {
 		Addrs:     []ids.ShortID{ids.GenerateTestShortID()},
 	}
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	tx, err := wallet.IssueAddPermissionlessValidatorTx(
@@ -812,7 +815,7 @@ func TestGetValidatorsAt(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		service.vm.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -987,8 +990,8 @@ func TestGetBlock(t *testing.T) {
 			response := api.GetBlockResponse{}
 			require.NoError(service.GetBlock(nil, &args, &response))
 
-			switch {
-			case test.encoding == formatting.JSON:
+			switch test.encoding {
+			case formatting.JSON:
 				statelessBlock.InitCtx(service.vm.ctx)
 				expectedBlockJSON, err := json.Marshal(statelessBlock)
 				require.NoError(err)
@@ -1022,7 +1025,7 @@ func TestGetValidatorsAtReplyMarshalling(t *testing.T) {
 	}
 	{
 		nodeID := ids.GenerateTestNodeID()
-		sk, err := bls.NewSigner()
+		sk, err := localsigner.New()
 		require.NoError(err)
 		reply.Validators[nodeID] = &validators.GetValidatorOutput{
 			NodeID:    nodeID,
@@ -1330,12 +1333,12 @@ func FuzzGetFeeState(f *testing.F) {
 func TestGetCurrentValidatorsForL1(t *testing.T) {
 	subnetID := ids.GenerateTestID()
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(t, err)
 	pk := sk.PublicKey()
 	pkBytes := bls.PublicKeyToUncompressedBytes(pk)
 
-	otherSK, err := bls.NewSigner()
+	otherSK, err := localsigner.New()
 	require.NoError(t, err)
 	otherPK := otherSK.PublicKey()
 	otherPKBytes := bls.PublicKeyToUncompressedBytes(otherPK)
@@ -1521,18 +1524,18 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 					require.Equal(avajson.Uint64(staker.Weight), v.Weight)
 					require.Equal(staker.StartTime.Unix(), int64(v.StartTime))
 					return v.NodeID
-				case APIL1Validator:
-					validator, exists := l1ValidatorsByVID[v.ValidationID]
+				case pchainapi.APIL1Validator:
+					validator, exists := l1ValidatorsByVID[*v.ValidationID]
 					require.True(exists, "unexpected validator: %s", vdr)
 					require.Equal(validator.NodeID, v.NodeID)
 					require.Equal(avajson.Uint64(validator.Weight), v.Weight)
 					require.Equal(validator.StartTime, uint64(v.StartTime))
 					accruedFees := service.vm.state.GetAccruedFees()
-					require.Equal(avajson.Uint64(validator.EndAccumulatedFee-accruedFees), v.Balance)
-					require.Equal(avajson.Uint64(validator.MinNonce), v.MinNonce)
+					require.Equal(avajson.Uint64(validator.EndAccumulatedFee-accruedFees), *v.Balance)
+					require.Equal(avajson.Uint64(validator.MinNonce), *v.MinNonce)
 					require.Equal(
 						types.JSONByteSlice(bls.PublicKeyToCompressedBytes(bls.PublicKeyFromValidUncompressedBytes(validator.PublicKey))),
-						v.PublicKey)
+						*v.PublicKey)
 					var expectedRemainingBalanceOwner message.PChainOwner
 					_, err := txs.Codec.Unmarshal(validator.RemainingBalanceOwner, &expectedRemainingBalanceOwner)
 					require.NoError(err)
@@ -1549,7 +1552,7 @@ func TestGetCurrentValidatorsForL1(t *testing.T) {
 					require.Equal(avajson.Uint32(expectedDeactivationOwner.Threshold), v.DeactivationOwner.Threshold)
 					return v.NodeID
 				default:
-					require.Fail("unexpected validator type: %T", vdr)
+					require.Failf("unexpected validator type", "got: %T", vdr)
 					return ids.NodeID{}
 				}
 			}

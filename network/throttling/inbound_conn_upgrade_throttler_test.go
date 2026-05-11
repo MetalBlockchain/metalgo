@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package throttling
@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 var (
@@ -26,7 +24,6 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			logging.NoLog{},
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        0,
 				MaxRecentConnsUpgraded: 5,
@@ -39,7 +36,6 @@ func TestNoInboundConnUpgradeThrottler(t *testing.T) {
 	}
 	{
 		throttler := NewInboundConnUpgradeThrottler(
-			logging.NoLog{},
 			InboundConnUpgradeThrottlerConfig{
 				UpgradeCooldown:        time.Second,
 				MaxRecentConnsUpgraded: 0,
@@ -57,7 +53,6 @@ func TestInboundConnUpgradeThrottler(t *testing.T) {
 
 	cooldown := 5 * time.Second
 	throttlerIntf := NewInboundConnUpgradeThrottler(
-		logging.NoLog{},
 		InboundConnUpgradeThrottlerConfig{
 			UpgradeCooldown:        cooldown,
 			MaxRecentConnsUpgraded: 3,

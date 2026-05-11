@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -11,6 +11,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
@@ -214,7 +215,7 @@ func TestGet(t *testing.T) {
 	_, ok := m.GetValidator(subnetID, nodeID)
 	require.False(ok)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	pk := sk.PublicKey()
@@ -304,7 +305,7 @@ func TestGetMap(t *testing.T) {
 	mp := m.GetMap(subnetID)
 	require.Empty(mp)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	pk := sk.PublicKey()
@@ -404,7 +405,7 @@ func TestSample(t *testing.T) {
 	require.NoError(err)
 	require.Empty(sampled)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	nodeID0 := ids.GenerateTestNodeID()
@@ -464,7 +465,7 @@ func TestString(t *testing.T) {
 func TestAddCallback(t *testing.T) {
 	require := require.New(t)
 
-	expectedSK, err := bls.NewSigner()
+	expectedSK, err := localsigner.New()
 	require.NoError(err)
 
 	var (
@@ -512,7 +513,7 @@ func TestAddCallback(t *testing.T) {
 func TestAddWeightCallback(t *testing.T) {
 	require := require.New(t)
 
-	expectedSK, err := bls.NewSigner()
+	expectedSK, err := localsigner.New()
 	require.NoError(err)
 
 	var (
@@ -595,7 +596,7 @@ func TestAddWeightCallback(t *testing.T) {
 func TestRemoveWeightCallback(t *testing.T) {
 	require := require.New(t)
 
-	expectedSK, err := bls.NewSigner()
+	expectedSK, err := localsigner.New()
 	require.NoError(err)
 
 	var (
@@ -678,7 +679,7 @@ func TestRemoveWeightCallback(t *testing.T) {
 func TestRemoveCallback(t *testing.T) {
 	require := require.New(t)
 
-	expectedSK, err := bls.NewSigner()
+	expectedSK, err := localsigner.New()
 	require.NoError(err)
 
 	var (

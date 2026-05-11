@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -13,7 +13,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/staking"
 	"github.com/MetalBlockchain/metalgo/utils"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 )
 
 func TestIPSigner(t *testing.T) {
@@ -28,7 +28,7 @@ func TestIPSigner(t *testing.T) {
 	require.NoError(err)
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSigner()
+	blsKey, err := localsigner.New()
 	require.NoError(err)
 
 	s := NewIPSigner(dynIP, tlsKey, blsKey)

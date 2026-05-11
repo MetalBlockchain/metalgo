@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package trace
@@ -25,9 +25,6 @@ const (
 
 type Config struct {
 	ExporterConfig `json:"exporterConfig"`
-
-	// Used to flag if tracing should be performed
-	Enabled bool `json:"enabled"`
 
 	// The fraction of traces to sample.
 	// If >= 1 always samples.
@@ -56,7 +53,7 @@ func (t *tracer) Close() error {
 }
 
 func New(config Config) (Tracer, error) {
-	if !config.Enabled {
+	if config.ExporterConfig.Type == Disabled {
 		return Noop, nil
 	}
 

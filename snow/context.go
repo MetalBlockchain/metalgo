@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snow
@@ -42,7 +42,12 @@ type Context struct {
 	CChainID    ids.ID
 	AVAXAssetID ids.ID
 
-	Log          logging.Logger
+	Log logging.Logger
+	// Deprecated: This lock should not be used unless absolutely necessary.
+	// This lock will be removed in a future release once it is replaced with
+	// more granular locks.
+	//
+	// Warning: This lock is not correctly implemented over the rpcchainvm.
 	Lock         sync.RWMutex
 	SharedMemory atomic.SharedMemory
 	BCLookup     ids.AliaserReader

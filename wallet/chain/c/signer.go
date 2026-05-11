@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/MetalBlockchain/coreth/plugin/evm/atomic"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/MetalBlockchain/libevm/common"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"

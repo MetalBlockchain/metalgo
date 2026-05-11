@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package rpcdb
@@ -13,6 +13,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/corruptabledb"
 	"github.com/MetalBlockchain/metalgo/database/dbtest"
 	"github.com/MetalBlockchain/metalgo/database/memdb"
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
 	rpcdbpb "github.com/MetalBlockchain/metalgo/proto/pb/rpcdb"
@@ -120,7 +121,7 @@ func TestHealthCheck(t *testing.T) {
 			require := require.New(t)
 
 			baseDB := setupDB(t)
-			db := corruptabledb.New(baseDB.server)
+			db := corruptabledb.New(baseDB.server, logging.NoLog{})
 			defer db.Close()
 			require.NoError(scenario.testFn(db))
 

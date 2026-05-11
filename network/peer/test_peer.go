@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -23,7 +23,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -76,7 +76,6 @@ func StartTestPeer(
 	}
 
 	mc, err := message.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -101,7 +100,7 @@ func StartTestPeer(
 	}
 
 	tlsKey := tlsCert.PrivateKey.(crypto.Signer)
-	blsKey, err := bls.NewSigner()
+	blsKey, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +140,7 @@ func StartTestPeer(
 			logging.NoLog{},
 			maxMessageToSend,
 		),
+		false,
 	)
 	return peer, peer.AwaitReady(ctx)
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -9,7 +9,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/metrics"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
@@ -27,9 +26,8 @@ var (
 // being shutdown.
 type acceptor struct {
 	*backend
-	metrics      metrics.Metrics
-	validators   validators.Manager
-	bootstrapped *utils.Atomic[bool]
+	metrics    metrics.Metrics
+	validators validators.Manager
 }
 
 func (a *acceptor) BanffAbortBlock(b *block.BanffAbortBlock) error {
@@ -110,7 +108,7 @@ func (a *acceptor) ApricotAtomicBlock(b *block.ApricotAtomicBlock) error {
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
 		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		zap.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil
@@ -180,7 +178,7 @@ func (a *acceptor) optionBlock(b block.Block, blockType string) error {
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
 		zap.Stringer("parentID", parentID),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		zap.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil
@@ -212,7 +210,7 @@ func (a *acceptor) proposalBlock(b block.Block, blockType string) {
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
 		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		zap.Stringer("checksum", a.state.Checksum()),
 	)
 }
 
@@ -259,7 +257,7 @@ func (a *acceptor) standardBlock(b block.Block, blockType string) error {
 		zap.Stringer("blkID", blkID),
 		zap.Uint64("height", b.Height()),
 		zap.Stringer("parentID", b.Parent()),
-		zap.Stringer("utxoChecksum", a.state.Checksum()),
+		zap.Stringer("checksum", a.state.Checksum()),
 	)
 
 	return nil

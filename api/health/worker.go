@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package health
@@ -24,7 +24,7 @@ var (
 	allTags = []string{AllTag}
 
 	errRestrictedTag  = errors.New("restricted tag")
-	errDuplicateCheck = errors.New("duplicated check")
+	errDuplicateCheck = errors.New("duplicate check")
 )
 
 type worker struct {

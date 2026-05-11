@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package bootstrapmonitor
@@ -17,15 +17,14 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
+	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet/flags"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/version"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
 )
 
 // Path to write the details to on the data volume
@@ -223,25 +222,6 @@ func getLatestImageDetails(
 
 func getClientset(log logging.Logger) (*kubernetes.Clientset, error) {
 	log.Info("Initializing clientset")
-	kubeconfigPath := os.Getenv("KUBECONFIG")
-	var (
-		kubeconfig *restclient.Config
-		err        error
-	)
-	if len(kubeconfigPath) > 0 {
-		// Only use BuildConfigFromFlags if a path is provided to avoid the warning logs that
-		// will be omitted in a format that differs from the avalanchego format.
-		if kubeconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath); err != nil {
-			return nil, fmt.Errorf("failed to build kubeconfig: %w", err)
-		}
-	} else {
-		if kubeconfig, err = restclient.InClusterConfig(); err != nil {
-			return nil, fmt.Errorf("failed to build kubeconfig: %w", err)
-		}
-	}
-	clientset, err := kubernetes.NewForConfig(kubeconfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create clientset: %w", err)
-	}
-	return clientset, nil
+	kubeconfigPath := os.Getenv(flags.KubeconfigPathEnvVar)
+	return tmpnet.GetClientset(log, kubeconfigPath, "")
 }

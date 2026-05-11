@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package reward
@@ -63,11 +63,7 @@ func (c *calculator) Calculate(stakedDuration time.Duration, stakedAmount, curre
 	}
 
 	finalReward := reward.Uint64()
-	if finalReward > remainingSupply {
-		return remainingSupply
-	}
-
-	return finalReward
+	return min(remainingSupply, finalReward)
 }
 
 // Split [totalAmount] into [totalAmount * shares percentage] and the remainder.

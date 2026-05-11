@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowman
@@ -550,7 +550,7 @@ func (ts *Topological) vote(ctx context.Context, voteStack []votes) (ids.ID, err
 			// Therefore, we need to make sure the child is still in the tree.
 			childBlock, notRejected := ts.blocks[childID]
 			if notRejected {
-				ts.ctx.Log.Verbo("defering confidence reset of child block",
+				ts.ctx.Log.Verbo("deferring confidence reset of child block",
 					zap.Stringer("childID", childID),
 				)
 
@@ -680,4 +680,12 @@ func (ts *Topological) rejectTransitively(ctx context.Context, rejected []ids.ID
 		}
 	}
 	return nil
+}
+
+func (ts *Topological) GetParent(id ids.ID) (ids.ID, bool) {
+	block, ok := ts.blocks[id]
+	if !ok || block == nil || block.blk == nil {
+		return ids.Empty, false
+	}
+	return block.blk.Parent(), true
 }

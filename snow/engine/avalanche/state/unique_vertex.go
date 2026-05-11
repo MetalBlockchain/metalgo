@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package state
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/choices"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/avalanche"
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	_ cache.Evictable[ids.ID] = (*uniqueVertex)(nil)
-	_ avalanche.Vertex        = (*uniqueVertex)(nil)
+	_ lru.Evictable[ids.ID] = (*uniqueVertex)(nil)
+	_ avalanche.Vertex      = (*uniqueVertex)(nil)
 
 	errGetParents = errors.New("failed to get parents for vertex")
 	errGetHeight  = errors.New("failed to get height for vertex")

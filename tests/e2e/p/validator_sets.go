@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -81,8 +81,9 @@ var _ = e2e.DescribePChain("[Validator Sets]", func() {
 		require.NoError(err)
 
 		tc.By("checking that validator sets are equal across all heights for all nodes", func() {
-			pvmClients := make([]platformvm.Client, len(env.URIs))
-			for i, nodeURI := range env.URIs {
+			nodeURIs := network.GetNodeURIs()
+			pvmClients := make([]*platformvm.Client, len(nodeURIs))
+			for i, nodeURI := range nodeURIs {
 				pvmClients[i] = platformvm.NewClient(nodeURI.URI)
 				// Ensure that the height of the target node is at least the expected height
 				tc.Eventually(

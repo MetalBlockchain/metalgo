@@ -7,7 +7,7 @@ set -euo pipefail
 # e.g.,
 # ./scripts/build.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                        # All arguments are supplied to ginkgo
-# AVALANCHEGO_PATH=./build/avalanchego ./scripts/tests.e2e.existing.sh  # Customization of avalanchego path
+# METALGO_PATH=./build/metalgo ./scripts/tests.e2e.existing.sh  # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.e2e.existing.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -22,9 +22,12 @@ function print_separator {
 function cleanup {
   print_separator
   echo "cleaning up reusable network"
-  ginkgo -v ./tests/e2e/e2e.test -- --stop-network
+  ./bin/ginkgo -v ./tests/e2e -- --stop-network
 }
 trap cleanup EXIT
+
+# TMPNET_NETWORK_DIR needs to be unset to ensure --reuse-network won't target an existing network
+unset TMPNET_NETWORK_DIR
 
 print_separator
 echo "starting initial test run that should create the reusable network"
@@ -37,7 +40,8 @@ INITIAL_NETWORK_DIR="$(realpath "${SYMLINK_PATH}")"
 
 print_separator
 echo "starting second test run that should reuse the network created by the first run"
-./scripts/tests.e2e.sh --reuse-network --ginkgo.focus-file=xsvm.go "${@}"
+echo "the network is first restarted to verify that the network state was correctly serialized"
+./scripts/tests.e2e.sh --restart-network --ginkgo.focus-file=xsvm.go "${@}"
 
 SUBSEQUENT_NETWORK_DIR="$(realpath "${SYMLINK_PATH}")"
 echo "checking that the symlink path remains the same, indicating that the network was reused"

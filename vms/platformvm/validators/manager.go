@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
-	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/window"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
@@ -103,14 +103,12 @@ type State interface {
 }
 
 func NewManager(
-	log logging.Logger,
 	cfg config.Internal,
 	state State,
 	metrics metrics.Metrics,
 	clk *mockable.Clock,
 ) Manager {
 	return &manager{
-		log:     log,
 		cfg:     cfg,
 		state:   state,
 		metrics: metrics,
@@ -130,7 +128,6 @@ func NewManager(
 // TODO: Remove requirement for the P-chain's context lock to be held when
 // calling exported functions.
 type manager struct {
-	log     logging.Logger
 	cfg     config.Internal
 	state   State
 	metrics metrics.Metrics
@@ -240,9 +237,7 @@ func (m *manager) getValidatorSetCache(subnetID ids.ID) cache.Cacher[uint64, map
 		return validatorSetsCache
 	}
 
-	validatorSetsCache = &cache.LRU[uint64, map[ids.NodeID]*validators.GetValidatorOutput]{
-		Size: validatorSetsCacheSize,
-	}
+	validatorSetsCache = lru.NewCache[uint64, map[ids.NodeID]*validators.GetValidatorOutput](validatorSetsCacheSize)
 	m.caches[subnetID] = validatorSetsCache
 	return validatorSetsCache
 }

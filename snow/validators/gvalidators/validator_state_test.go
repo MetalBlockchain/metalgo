@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gvalidators
@@ -16,6 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/snow/validators/validatorsmock"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/grpcutils"
 
 	pb "github.com/MetalBlockchain/metalgo/proto/pb/validatorstate"
@@ -135,7 +136,7 @@ func TestGetValidatorSet(t *testing.T) {
 	state := setupState(t, ctrl)
 
 	// Happy path
-	sk0, err := bls.NewSigner()
+	sk0, err := localsigner.New()
 	require.NoError(err)
 	vdr0 := &validators.GetValidatorOutput{
 		NodeID:    ids.GenerateTestNodeID(),
@@ -143,7 +144,7 @@ func TestGetValidatorSet(t *testing.T) {
 		Weight:    1,
 	}
 
-	sk1, err := bls.NewSigner()
+	sk1, err := localsigner.New()
 	require.NoError(err)
 	vdr1 := &validators.GetValidatorOutput{
 		NodeID:    ids.GenerateTestNodeID(),
@@ -181,7 +182,7 @@ func TestGetValidatorSet(t *testing.T) {
 func TestPublicKeyDeserialize(t *testing.T) {
 	require := require.New(t)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 	pk := sk.PublicKey()
 
@@ -222,7 +223,7 @@ func setupValidatorSet(b *testing.B, size int) map[ids.NodeID]*validators.GetVal
 	b.Helper()
 
 	set := make(map[ids.NodeID]*validators.GetValidatorOutput, size)
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(b, err)
 	pk := sk.PublicKey()
 	for i := 0; i < size; i++ {

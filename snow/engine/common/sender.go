@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -12,10 +12,15 @@ import (
 
 // SendConfig is used to specify who to send messages to over the p2p network.
 type SendConfig struct {
-	NodeIDs       set.Set[ids.NodeID]
-	Validators    int
+	NodeIDs set.Set[ids.NodeID]
+	// If Validators >= number of connected validators, the message will be sent to all
+	// connected validators.
+	Validators int
+	// If NonValidators >= number of connected non-validators, the message will be sent to
+	// all connected non-validators.
 	NonValidators int
-	Peers         int
+	// If Peers >= number of connected peers, the message will be sent to all connected peers.
+	Peers int
 }
 
 // Sender defines how a consensus engine sends messages and requests to other

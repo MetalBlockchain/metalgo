@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package router
@@ -19,6 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
 	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
+	"github.com/MetalBlockchain/metalgo/snow/engine/snowman/block"
 	"github.com/MetalBlockchain/metalgo/snow/networking/benchlist"
 	"github.com/MetalBlockchain/metalgo/snow/networking/handler"
 	"github.com/MetalBlockchain/metalgo/snow/networking/handler/handlermock"
@@ -27,6 +28,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/subnets"
+	"github.com/MetalBlockchain/metalgo/tests"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -39,7 +41,7 @@ import (
 )
 
 const (
-	engineType         = p2ppb.EngineType_ENGINE_TYPE_AVALANCHE
+	engineType         = p2ppb.EngineType_ENGINE_TYPE_DAG
 	testThreadPoolSize = 2
 )
 
@@ -105,8 +107,9 @@ func TestShutdown(t *testing.T) {
 
 	h, err := handler.New(
 		chainCtx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -152,12 +155,12 @@ func TestShutdown(t *testing.T) {
 	}
 	engine.HaltF = func(context.Context) {}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -231,7 +234,8 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 
 	h, err := handler.New(
 		chainCtx,
-		nil,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		nil,
 		time.Second,
 		testThreadPoolSize,
@@ -269,12 +273,12 @@ func TestConnectedAfterShutdownErrorLogRegression(t *testing.T) {
 	}
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    &engine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    &engine,
@@ -364,8 +368,9 @@ func TestShutdownTimesOut(t *testing.T) {
 
 	h, err := handler.New(
 		ctx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -410,12 +415,12 @@ func TestShutdownTimesOut(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -533,8 +538,9 @@ func TestRouterTimeout(t *testing.T) {
 
 	h, err := handler.New(
 		ctx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -603,7 +609,7 @@ func TestRouterTimeout(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -613,12 +619,12 @@ func TestRouterTimeout(t *testing.T) {
 		return nil
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    nil,
@@ -641,7 +647,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -659,7 +665,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -677,7 +683,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -695,7 +701,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -712,9 +718,9 @@ func TestRouterTimeout(t *testing.T) {
 				nodeID,
 				ctx.ChainID,
 				requestID,
-				p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+				p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -732,7 +738,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -750,7 +756,7 @@ func TestRouterTimeout(t *testing.T) {
 				ctx.ChainID,
 				requestID,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -770,7 +776,7 @@ func TestRouterTimeout(t *testing.T) {
 				common.ErrTimeout.Code,
 				common.ErrTimeout.Message,
 			),
-			p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+			p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		)
 	}
 
@@ -1065,8 +1071,9 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 
 	h, err := handler.New(
 		ctx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -1093,7 +1100,7 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 		return nil
 	}
 	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.Bootstrapping, // assumed bootstrapping is ongoing
 	})
 
@@ -1103,12 +1110,12 @@ func TestValidatorOnlyMessageDrops(t *testing.T) {
 	}
 	engine.Default(false)
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
@@ -1231,8 +1238,9 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 
 	h, err := handler.New(
 		ctx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -1269,7 +1277,7 @@ func TestValidatorOnlyAllowedNodeMessageDrops(t *testing.T) {
 	engine.Default(false)
 
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
@@ -1483,8 +1491,9 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 
 	h, err := handler.New(
 		ctx,
+		&block.ChangeNotifier{},
+		noopSubscription,
 		vdrs,
-		nil,
 		time.Second,
 		testThreadPoolSize,
 		resourceTracker,
@@ -1512,19 +1521,19 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 		return ctx
 	}
 	h.SetEngineManager(&handler.EngineManager{
-		Avalanche: &handler.Engine{
+		DAG: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
-		Snowman: &handler.Engine{
+		Chain: &handler.Engine{
 			StateSyncer:  nil,
 			Bootstrapper: bootstrapper,
 			Consensus:    engine,
 		},
 	})
 	ctx.State.Set(snow.EngineState{
-		Type:  p2ppb.EngineType_ENGINE_TYPE_SNOWMAN,
+		Type:  p2ppb.EngineType_ENGINE_TYPE_CHAIN,
 		State: snow.NormalOp, // assumed bootstrapping is done
 	})
 
@@ -1542,4 +1551,68 @@ func newChainRouterTest(t *testing.T) (*ChainRouter, *enginetest.Engine) {
 	})
 
 	return chainRouter, engine
+}
+
+// Tests that HandleInbound correctly handles Simplex Messages
+func TestHandleSimplexMessage(t *testing.T) {
+	chainRouter := ChainRouter{}
+	log := tests.NewDefaultLogger("test")
+	log.SetLevel(logging.Debug)
+	require.NoError(t,
+		chainRouter.Initialize(
+			ids.EmptyNodeID,
+			log,
+			nil,
+			time.Second,
+			set.Set[ids.ID]{},
+			true,
+			set.Set[ids.ID]{},
+			nil,
+			HealthConfig{},
+			prometheus.NewRegistry(),
+		))
+	defer chainRouter.Shutdown(context.Background())
+
+	chainRouter.log = log
+	testID := ids.GenerateTestID()
+
+	msg := &p2ppb.Simplex{
+		Message: &p2ppb.Simplex_ReplicationRequest{
+			ReplicationRequest: &p2ppb.ReplicationRequest{
+				Seqs:        []uint64{1, 2, 3},
+				LatestRound: 1,
+			},
+		},
+		ChainId: testID[:],
+	}
+
+	inboundMsg := message.InboundSimplexMessage(ids.NodeID{}, msg)
+
+	ctrl := gomock.NewController(t)
+	h := handlermock.NewHandler(ctrl)
+	snowCtx := snowtest.Context(t, snowtest.CChainID)
+	ctx := snowtest.ConsensusContext(snowCtx)
+	ctx.ChainID = testID
+	h.EXPECT().Context().Return(ctx).AnyTimes()
+	h.EXPECT().SetOnStopped(gomock.Any()).AnyTimes()
+	h.EXPECT().Stop(gomock.Any()).AnyTimes()
+	h.EXPECT().AwaitStopped(gomock.Any()).AnyTimes()
+
+	var receivedMsg bool
+	h.EXPECT().Push(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, msg message.InboundMessage) {
+			if msg.Op() == message.SimplexOp {
+				receivedMsg = true
+			}
+		}).AnyTimes()
+
+	chainRouter.AddChain(context.Background(), h)
+	h.EXPECT().ShouldHandle(gomock.Any()).Return(true).Times(1)
+	chainRouter.HandleInbound(context.Background(), inboundMsg)
+	require.True(t, receivedMsg)
+}
+
+func noopSubscription(ctx context.Context) (common.Message, error) {
+	<-ctx.Done()
+	return common.Message(0), ctx.Err()
 }

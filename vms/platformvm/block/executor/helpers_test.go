@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -21,7 +21,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/database/versiondb"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow"
-	"github.com/MetalBlockchain/metalgo/snow/engine/enginetest"
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
@@ -48,6 +47,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/validators/validatorstest"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/wallet"
+
+	txmempool "github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 )
 
 const (
@@ -81,8 +82,7 @@ type test struct {
 
 type environment struct {
 	blkManager Manager
-	mempool    mempool.Mempool
-	sender     *enginetest.Sender
+	mempool    txmempool.Mempool[*txs.Tx]
 
 	isBootstrapped *utils.Atomic[bool]
 	config         *config.Internal
@@ -148,12 +148,11 @@ func newEnvironment(t *testing.T, ctrl *gomock.Controller, f upgradetest.Fork) *
 	}
 
 	registerer := prometheus.NewRegistry()
-	res.sender = &enginetest.Sender{T: t}
 
 	metrics := metrics.Noop
 
 	var err error
-	res.mempool, err = mempool.New("mempool", registerer, nil)
+	res.mempool, err = mempool.New("mempool", registerer)
 	if err != nil {
 		panic(fmt.Errorf("failed to create mempool: %w", err))
 	}

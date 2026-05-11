@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package cache
@@ -24,20 +24,4 @@ type Cacher[K comparable, V any] interface {
 
 	// Returns fraction of cache currently filled (0 --> 1)
 	PortionFilled() float64
-}
-
-// Evictable allows the object to be notified when it is evicted
-type Evictable[K comparable] interface {
-	Key() K
-	Evict()
-}
-
-// Deduplicator acts as a best effort deduplication service
-type Deduplicator[K comparable, V Evictable[K]] interface {
-	// Deduplicate returns either the provided value, or a previously provided
-	// value with the same ID that hasn't yet been evicted
-	Deduplicate(V) V
-
-	// Flush removes all entries from the cache
-	Flush()
 }

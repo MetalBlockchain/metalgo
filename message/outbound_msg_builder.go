@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -181,6 +181,10 @@ type OutboundMsgBuilder interface {
 		chainID ids.ID,
 		msg []byte,
 	) (OutboundMessage, error)
+
+	SimplexMessage(
+		msg *p2p.Simplex,
+	) (OutboundMessage, error)
 }
 
 type outMsgBuilder struct {
@@ -246,15 +250,13 @@ func (b *outMsgBuilder) Handshake(
 ) (OutboundMessage, error) {
 	subnetIDBytes := make([][]byte, len(trackedSubnets))
 	encodeIDs(trackedSubnets, subnetIDBytes)
-	// TODO: Use .AsSlice() after v1.12.x activates.
-	addr := ip.Addr().As16()
 	return b.builder.createOutbound(
 		&p2p.Message{
 			Message: &p2p.Message_Handshake{
 				Handshake: &p2p.Handshake{
 					NetworkId:      networkID,
 					MyTime:         myTime,
-					IpAddr:         addr[:],
+					IpAddr:         ip.Addr().AsSlice(),
 					IpPort:         uint32(ip.Port()),
 					IpSigningTime:  ipSigningTime,
 					IpNodeIdSig:    ipNodeIDSig,
@@ -306,11 +308,9 @@ func (b *outMsgBuilder) GetPeerList(
 func (b *outMsgBuilder) PeerList(peers []*ips.ClaimedIPPort, bypassThrottling bool) (OutboundMessage, error) {
 	claimIPPorts := make([]*p2p.ClaimedIpPort, len(peers))
 	for i, p := range peers {
-		// TODO: Use .AsSlice() after v1.12.x activates.
-		ip := p.AddrPort.Addr().As16()
 		claimIPPorts[i] = &p2p.ClaimedIpPort{
 			X509Certificate: p.Cert.Raw,
-			IpAddr:          ip[:],
+			IpAddr:          p.AddrPort.Addr().AsSlice(),
 			IpPort:          uint32(p.AddrPort.Port()),
 			Timestamp:       p.Timestamp,
 			Signature:       p.Signature,
@@ -723,6 +723,18 @@ func (b *outMsgBuilder) AppGossip(chainID ids.ID, msg []byte) (OutboundMessage, 
 					ChainId:  chainID[:],
 					AppBytes: msg,
 				},
+			},
+		},
+		b.compressionType,
+		false,
+	)
+}
+
+func (b *outMsgBuilder) SimplexMessage(msg *p2p.Simplex) (OutboundMessage, error) {
+	return b.builder.createOutbound(
+		&p2p.Message{
+			Message: &p2p.Message_Simplex{
+				Simplex: msg,
 			},
 		},
 		b.compressionType,

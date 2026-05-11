@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package subprocess
@@ -14,7 +14,7 @@ import (
 
 var _ runtime.Initializer = (*initializer)(nil)
 
-// Subprocess VM Runtime intializer.
+// Subprocess VM Runtime initializer.
 type initializer struct {
 	path string
 

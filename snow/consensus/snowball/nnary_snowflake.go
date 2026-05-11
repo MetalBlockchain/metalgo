@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package snowball
@@ -39,7 +39,7 @@ type nnarySnowflake struct {
 	// The corresponding beta values give the threshold required to finalize this instance.
 	terminationConditions []terminationCondition
 
-	// confidence is the number of consecutive succcessful polls for a given
+	// confidence is the number of consecutive successful polls for a given
 	// alphaConfidence threshold.
 	// This instance finalizes when confidence[i] >= terminationConditions[i].beta for any i
 	confidence []int

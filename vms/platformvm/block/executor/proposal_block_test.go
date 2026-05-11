@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -18,7 +18,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/snowtest"
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
@@ -1329,7 +1329,9 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 		nodeID             = ids.GenerateTestNodeID()
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(err)
+	pop, err := signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	rewardsOwner := &secp256k1fx.OutputOwners{
@@ -1347,7 +1349,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,
@@ -1370,7 +1372,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	blk := env.blkManager.NewBlock(statelessBlk)
 	require.NoError(blk.Verify(context.Background()))
 	require.NoError(blk.Accept(context.Background()))
-	require.True(env.blkManager.SetPreference(statelessBlk.ID()))
+	env.blkManager.SetPreference(statelessBlk.ID())
 
 	// Should be current
 	staker, err := env.state.GetCurrentValidator(constants.PrimaryNetworkID, nodeID)
@@ -1403,7 +1405,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 		blk = env.blkManager.NewBlock(statelessBlk)
 		require.NoError(blk.Verify(context.Background()))
 		require.NoError(blk.Accept(context.Background()))
-		require.True(env.blkManager.SetPreference(statelessBlk.ID()))
+		env.blkManager.SetPreference(statelessBlk.ID())
 	}
 
 	env.clk.Set(validatorEndTime)
@@ -1414,7 +1416,9 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 	validatorEndTime = validatorStartTime.Add(env.config.MinStakeDuration)
 	nodeID = ids.GenerateTestNodeID()
 
-	sk, err = bls.NewSigner()
+	sk, err = localsigner.New()
+	require.NoError(err)
+	pop, err = signer.NewProofOfPossession(sk)
 	require.NoError(err)
 
 	addValidatorTx2, err := wallet.IssueAddPermissionlessValidatorTx(
@@ -1427,7 +1431,7 @@ func TestAddValidatorProposalBlock(t *testing.T) {
 			},
 			Subnet: constants.PrimaryNetworkID,
 		},
-		signer.NewProofOfPossession(sk),
+		pop,
 		env.ctx.AVAXAssetID,
 		rewardsOwner,
 		rewardsOwner,

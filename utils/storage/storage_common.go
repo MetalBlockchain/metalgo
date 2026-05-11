@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package storage
@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-// fileExists checks if a file exists before we
+// FileExists checks if a file exists before we
 // try using it to prevent further errors.
 func FileExists(filePath string) (bool, error) {
 	info, err := os.Stat(filePath)
@@ -41,7 +41,7 @@ func ReadFileWithName(parentDir string, fileNameNoExt string) ([]byte, error) {
 	}
 }
 
-// folderExists checks if a folder exists before we
+// FolderExists checks if a folder exists before we
 // try using it to prevent further errors.
 func FolderExists(filePath string) (bool, error) {
 	info, err := os.Stat(filePath)

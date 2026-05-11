@@ -4,7 +4,7 @@ package vm.runtime;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/ava-labs/avalanchego/proto/pb/vm/manager";
+option go_package = "github.com/MetalBlockchain/metalgo/proto/pb/vm/manager";
 
 // Manages the lifecycle of a subnet VM process.
 service Runtime {

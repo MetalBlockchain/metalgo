@@ -4,7 +4,7 @@ package sync;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/ava-labs/avalanchego/proto/pb/sync";
+option go_package = "github.com/MetalBlockchain/metalgo/proto/pb/sync";
 
 // The interface required by an x/sync/SyncManager for syncing.
 // Note this service definition only exists for use in tests.

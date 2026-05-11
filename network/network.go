@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -42,10 +42,11 @@ import (
 )
 
 const (
-	ConnectedPeersKey           = "connectedPeers"
-	TimeSinceLastMsgReceivedKey = "timeSinceLastMsgReceived"
-	TimeSinceLastMsgSentKey     = "timeSinceLastMsgSent"
-	SendFailRateKey             = "sendFailRate"
+	PrimaryNetworkValidatorHealthKey = "primary network validator health"
+	ConnectedPeersKey                = "connectedPeers"
+	TimeSinceLastMsgReceivedKey      = "timeSinceLastMsgReceived"
+	TimeSinceLastMsgSentKey          = "timeSinceLastMsgSent"
+	SendFailRateKey                  = "sendFailRate"
 )
 
 var (
@@ -153,11 +154,13 @@ type network struct {
 	connectedPeers  peer.Set
 	closing         bool
 
+	startupTime time.Time
+
 	// router is notified about all peer [Connected] and [Disconnected] events
 	// as well as all non-handshake peer messages.
 	//
 	// It is ensured that [Connected] and [Disconnected] are called in
-	// consistent ways. Specifically, the a peer starts in the disconnected
+	// consistent ways. Specifically, a peer starts in the disconnected
 	// state and the network can change the peer's state from disconnected to
 	// connected and back.
 	//
@@ -257,11 +260,10 @@ func NewNetwork(
 	}
 
 	peerConfig := &peer.Config{
-		ReadBufferSize:  config.PeerReadBufferSize,
-		WriteBufferSize: config.PeerWriteBufferSize,
-		Metrics:         peerMetrics,
-		MessageCreator:  msgCreator,
-
+		ReadBufferSize:       config.PeerReadBufferSize,
+		WriteBufferSize:      config.PeerWriteBufferSize,
+		Metrics:              peerMetrics,
+		MessageCreator:       msgCreator,
 		Log:                  log,
 		InboundMsgThrottler:  inboundMsgThrottler,
 		Network:              nil, // This is set below.
@@ -284,12 +286,13 @@ func NewNetwork(
 
 	onCloseCtx, cancel := context.WithCancel(context.Background())
 	n := &network{
+		startupTime:          time.Now(),
 		config:               config,
 		peerConfig:           peerConfig,
 		metrics:              metrics,
 		outboundMsgThrottler: outboundMsgThrottler,
 
-		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(log, config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
+		inboundConnUpgradeThrottler: throttling.NewInboundConnUpgradeThrottler(config.ThrottlerConfig.InboundConnUpgradeThrottlerConfig),
 		listener:                    listener,
 		dialer:                      dialer,
 		serverUpgrader:              peer.NewTLSServerUpgrader(config.TLSConfig, metrics.tlsConnRejected),
@@ -401,6 +404,15 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	details[SendFailRateKey] = sendFailRate
 	n.metrics.sendFailRate.Set(sendFailRate)
 
+	reachablePrimaryNetworkValidator := true
+	// If we're a primary network validator, make sure we have ingress connections
+	if time.Since(n.startupTime) > n.config.NoIngressValidatorConnectionGracePeriod {
+		connectedPrimaryValidatorInfo, isConnectedPrimaryValidatorErr := checkNoIngressConnections(n.config.MyNodeID, n, n.config.Validators)
+		reachablePrimaryNetworkValidator = isConnectedPrimaryValidatorErr == nil
+		details[PrimaryNetworkValidatorHealthKey] = connectedPrimaryValidatorInfo
+	}
+	healthy = healthy && reachablePrimaryNetworkValidator
+
 	// emit metrics about the lifetime of peer connections
 	n.metrics.updatePeerConnectionLifetimeMetrics()
 
@@ -427,7 +439,16 @@ func (n *network) HealthCheck(context.Context) (interface{}, error) {
 	if !isMsgFailRate {
 		errorReasons = append(errorReasons, fmt.Sprintf("messages failure send rate %g > %g", sendFailRate, n.config.HealthConfig.MaxSendFailRate))
 	}
+
+	if !reachablePrimaryNetworkValidator {
+		errorReasons = append(errorReasons, ErrNoIngressConnections.Error())
+	}
+
 	return details, fmt.Errorf("network layer is unhealthy reason: %s", strings.Join(errorReasons, ", "))
+}
+
+func (n *network) IngressConnCount() int {
+	return int(n.peerConfig.IngressConnectionCount.Load())
 }
 
 // Connected is called after the peer finishes the handshake.
@@ -581,11 +602,7 @@ func (n *network) Peers(
 func (n *network) Dispatch() error {
 	go n.runTimers() // Periodically perform operations
 	go n.inboundConnUpgradeThrottler.Dispatch()
-	for { // Continuously accept new connections
-		if n.onCloseCtx.Err() != nil {
-			break
-		}
-
+	for n.onCloseCtx.Err() == nil { // Continuously accept new connections
 		conn, err := n.listener.Accept() // Returns error when n.Close() is called
 		if err != nil {
 			n.peerConfig.Log.Debug("error during server accept", zap.Error(err))
@@ -630,7 +647,7 @@ func (n *network) Dispatch() error {
 				zap.Stringer("peerIP", ip),
 			)
 
-			if err := n.upgrade(conn, n.serverUpgrader); err != nil {
+			if err := n.upgrade(conn, n.serverUpgrader, true); err != nil {
 				n.peerConfig.Log.Verbo("failed to upgrade connection",
 					zap.String("direction", "inbound"),
 					zap.Error(err),
@@ -977,7 +994,7 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 				zap.Stringer("peerIP", ip.ip),
 			)
 
-			err = n.upgrade(conn, n.clientUpgrader)
+			err = n.upgrade(conn, n.clientUpgrader, false)
 			if err != nil {
 				n.peerConfig.Log.Verbo(
 					"failed to upgrade, attempting again",
@@ -1000,7 +1017,7 @@ func (n *network) dial(nodeID ids.NodeID, ip *trackedIP) {
 // If the connection is desired by the node, then the resulting upgraded
 // connection will be used to create a new peer. Otherwise the connection will
 // be immediately closed.
-func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
+func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader, isIngress bool) error {
 	upgradeTimeout := n.peerConfig.Clock.Time().Add(n.config.ReadHandshakeTimeout)
 	if err := conn.SetReadDeadline(upgradeTimeout); err != nil {
 		_ = conn.Close()
@@ -1100,6 +1117,7 @@ func (n *network) upgrade(conn net.Conn, upgrader peer.Upgrader) error {
 			n.peerConfig.Log,
 			n.outboundMsgThrottler,
 		),
+		isIngress,
 	)
 	n.connectingPeers.Add(peer)
 	n.peersLock.Unlock()

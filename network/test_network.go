@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
@@ -28,7 +28,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
-	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -84,7 +84,7 @@ func NewTestNetworkConfig(
 		return nil, err
 	}
 
-	blsKey, err := bls.NewSigner()
+	blsKey, err := localsigner.New()
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,6 @@ func NewTestNetwork(
 	router router.ExternalHandler,
 ) (Network, error) {
 	msgCreator, err := message.NewCreator(
-		logging.NoLog{},
 		metrics,
 		constants.DefaultNetworkCompressionType,
 		constants.DefaultNetworkMaximumInboundTimeout,
@@ -223,7 +222,7 @@ func NewTestNetwork(
 
 	return NewNetwork(
 		cfg,
-		upgrade.InitiallyActiveTime,
+		upgrade.GetConfig(cfg.NetworkID).FortunaTime, // Must be updated for each network upgrade
 		msgCreator,
 		metrics,
 		log,

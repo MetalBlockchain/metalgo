@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package logging
@@ -35,6 +35,14 @@ func (NoLog) Trace(string, ...zap.Field) {}
 func (NoLog) Debug(string, ...zap.Field) {}
 
 func (NoLog) Verbo(string, ...zap.Field) {}
+
+func (n NoLog) With(...zap.Field) Logger {
+	return n
+}
+
+func (n NoLog) WithOptions(...zap.Option) Logger {
+	return n
+}
 
 func (NoLog) SetLevel(Level) {}
 

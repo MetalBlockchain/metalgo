@@ -1,10 +1,11 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package network
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -21,8 +22,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs/mempool"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/warp"
+	"github.com/MetalBlockchain/metalgo/vms/txs/mempool"
 )
 
 type Network struct {
@@ -31,7 +32,6 @@ type Network struct {
 	log                       logging.Logger
 	mempool                   *gossipMempool
 	partialSyncPrimaryNetwork bool
-	appSender                 common.AppSender
 
 	txPushGossiper        *gossip.PushGossiper[*txs.Tx]
 	txPushGossipFrequency time.Duration
@@ -45,7 +45,7 @@ func New(
 	subnetID ids.ID,
 	vdrs validators.State,
 	txVerifier TxVerifier,
-	mempool mempool.Mempool,
+	mempool mempool.Mempool[*txs.Tx],
 	partialSyncPrimaryNetwork bool,
 	appSender common.AppSender,
 	stateLock sync.Locker,
@@ -54,23 +54,26 @@ func New(
 	registerer prometheus.Registerer,
 	config config.Network,
 ) (*Network, error) {
-	p2pNetwork, err := p2p.NewNetwork(log, appSender, registerer, "p2p")
-	if err != nil {
-		return nil, err
-	}
-
-	marshaller := txMarshaller{}
 	validators := p2p.NewValidators(
-		p2pNetwork.Peers,
 		log,
 		subnetID,
 		vdrs,
 		config.MaxValidatorSetStaleness,
 	)
-	txGossipClient := p2pNetwork.NewClient(
-		p2p.TxGossipHandlerID,
-		p2p.WithValidatorSampling(validators),
+
+	p2pNetwork, err := p2p.NewNetwork(
+		log,
+		appSender,
+		registerer,
+		"p2p",
+		validators,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	marshaller := txMarshaller{}
+	txGossipClient := p2pNetwork.NewClient(p2p.TxGossipHandlerID, validators)
 	txGossipMetrics, err := gossip.NewMetrics(registerer, "tx")
 	if err != nil {
 		return nil, err
@@ -136,15 +139,21 @@ func New(
 		config.TargetGossipSize,
 	)
 
+	throttlerHandler, err := p2p.NewDynamicThrottlerHandler(
+		log,
+		handler,
+		validators,
+		config.PullGossipThrottlingPeriod,
+		config.PullGossipRequestsPerValidator,
+		registerer,
+		"tx_gossip",
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize throttler handler: %w", err)
+	}
+
 	validatorHandler := p2p.NewValidatorHandler(
-		p2p.NewThrottlerHandler(
-			handler,
-			p2p.NewSlidingWindowThrottler(
-				config.PullGossipThrottlingPeriod,
-				config.PullGossipThrottlingLimit,
-			),
-			log,
-		),
+		throttlerHandler,
 		validators,
 		log,
 	)
@@ -176,7 +185,6 @@ func New(
 		log:                       log,
 		mempool:                   gossipMempool,
 		partialSyncPrimaryNetwork: partialSyncPrimaryNetwork,
-		appSender:                 appSender,
 		txPushGossiper:            txPushGossiper,
 		txPushGossipFrequency:     config.PushGossipFrequency,
 		txPullGossiper:            txPullGossiper,

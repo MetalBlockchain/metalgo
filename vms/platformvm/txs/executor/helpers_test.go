@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -68,11 +68,9 @@ type environment struct {
 	baseDB         *versiondb.Database
 	ctx            *snow.Context
 	msm            *mutableSharedMemory
-	fx             fx.Fx
 	state          state.State
 	states         map[ids.ID]state.Chain
 	uptimes        uptime.Manager
-	utxosHandler   utxo.Verifier
 	backend        Backend
 }
 
@@ -137,11 +135,9 @@ func newEnvironment(t *testing.T, f upgradetest.Fork) *environment {
 		baseDB:         baseDB,
 		ctx:            ctx,
 		msm:            msm,
-		fx:             fx,
 		state:          baseState,
 		states:         make(map[ids.ID]state.Chain),
 		uptimes:        uptimes,
-		utxosHandler:   utxosVerifier,
 		backend:        backend,
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package validators
@@ -11,6 +11,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 
 	safemath "github.com/MetalBlockchain/metalgo/utils/math"
@@ -165,7 +166,7 @@ func TestSetGet(t *testing.T) {
 	_, ok := s.Get(nodeID)
 	require.False(ok)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	pk := sk.PublicKey()
@@ -232,7 +233,7 @@ func TestSetMap(t *testing.T) {
 	m := s.Map()
 	require.Empty(m)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	pk := sk.PublicKey()
@@ -330,7 +331,7 @@ func TestSetSample(t *testing.T) {
 	require.NoError(err)
 	require.Empty(sampled)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(err)
 
 	nodeID0 := ids.GenerateTestNodeID()
@@ -385,7 +386,7 @@ func TestSetAddCallback(t *testing.T) {
 	require := require.New(t)
 
 	nodeID0 := ids.BuildTestNodeID([]byte{1})
-	sk0, err := bls.NewSigner()
+	sk0, err := localsigner.New()
 	require.NoError(err)
 	pk0 := sk0.PublicKey()
 	txID0 := ids.GenerateTestID()

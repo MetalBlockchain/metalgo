@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package utils
@@ -36,6 +36,16 @@ func (a *Atomic[T]) Set(value T) {
 	defer a.lock.Unlock()
 
 	a.value = value
+}
+
+func (a *Atomic[T]) Swap(value T) T {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	old := a.value
+	a.value = value
+
+	return old
 }
 
 func (a *Atomic[T]) MarshalJSON() ([]byte, error) {

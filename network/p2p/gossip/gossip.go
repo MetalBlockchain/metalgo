@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package gossip
@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/cache"
+	"github.com/MetalBlockchain/metalgo/cache/lru"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/network/p2p"
 	"github.com/MetalBlockchain/metalgo/snow/engine/common"
@@ -100,6 +101,7 @@ type Metrics struct {
 	tracking                *prometheus.GaugeVec
 	trackingLifetimeAverage prometheus.Gauge
 	topValidators           *prometheus.GaugeVec
+	bloomFilterHitRate      prometheus.Histogram
 }
 
 // NewMetrics returns a common set of metrics
@@ -108,6 +110,15 @@ func NewMetrics(
 	namespace string,
 ) (Metrics, error) {
 	m := Metrics{
+		bloomFilterHitRate: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: namespace,
+			Name:      "bloomfilter_hit_rate",
+			Help:      "Hit rate (%) of the bloom filter sent by pull gossip",
+			// Buckets are (-∞, 0], (0, 25%], (25%, 50%], (50%, 75%], (75%, ∞).
+			// 0% is placed into its own bucket so that useless bloom filters
+			// can be inspected individually.
+			Buckets: prometheus.LinearBuckets(0, 25, 4),
+		}),
 		count: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: namespace,
@@ -147,6 +158,7 @@ func NewMetrics(
 		),
 	}
 	err := errors.Join(
+		metrics.Register(m.bloomFilterHitRate),
 		metrics.Register(m.count),
 		metrics.Register(m.bytes),
 		metrics.Register(m.tracking),
@@ -324,7 +336,7 @@ func NewPushGossiper[T Gossipable](
 		tracking:   make(map[ids.ID]*tracking),
 		toGossip:   buffer.NewUnboundedDeque[T](0),
 		toRegossip: buffer.NewUnboundedDeque[T](0),
-		discarded:  &cache.LRU[ids.ID, struct{}]{Size: discardedSize},
+		discarded:  lru.NewCache[ids.ID, struct{}](discardedSize),
 	}, nil
 }
 
@@ -346,7 +358,7 @@ type PushGossiper[T Gossipable] struct {
 	addedTimeSum float64 // unix nanoseconds
 	toGossip     buffer.Deque[T]
 	toRegossip   buffer.Deque[T]
-	discarded    *cache.LRU[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
+	discarded    *lru.Cache[ids.ID, struct{}] // discarded attempts to avoid overgossiping transactions that are frequently dropped
 }
 
 type BranchingFactor struct {
@@ -516,7 +528,7 @@ func (p *PushGossiper[T]) gossip(
 	)
 }
 
-// Add enqueues new gossipables to be pushed. If a gossiable is already tracked,
+// Add enqueues new gossipables to be pushed. If a gossipable is already tracked,
 // it is not added again.
 func (p *PushGossiper[T]) Add(gossipables ...T) {
 	var (

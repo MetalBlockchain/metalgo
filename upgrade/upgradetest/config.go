@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package upgradetest
@@ -31,8 +31,11 @@ func GetConfigWithUpgradeTime(fork Fork, upgradeTime time.Time) upgrade.Config {
 // to the provided upgradeTime.
 func SetTimesTo(c *upgrade.Config, fork Fork, upgradeTime time.Time) {
 	switch fork {
-	case FUpgrade:
-		c.FUpgradeTime = upgradeTime
+	case Granite:
+		c.GraniteTime = upgradeTime
+		fallthrough
+	case Fortuna:
+		c.FortunaTime = upgradeTime
 		fallthrough
 	case Etna:
 		c.EtnaTime = upgradeTime

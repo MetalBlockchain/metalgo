@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package executor
@@ -260,7 +260,7 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 		require.NoError(err)
 		block := env.blkManager.NewBlock(banffChildBlk)
 		err = block.Verify(context.Background())
-		require.ErrorIs(err, errBanffStandardBlockWithoutChanges)
+		require.ErrorIs(err, ErrStandardBlockWithoutChanges)
 	}
 
 	{

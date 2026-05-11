@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package trace
@@ -19,7 +19,7 @@ const tracerProviderExportCreationTimeout = 5 * time.Second
 type ExporterConfig struct {
 	Type ExporterType `json:"type"`
 
-	// Endpoint to send metrics to
+	// Endpoint to send metrics to. If empty, the default endpoint will be used.
 	Endpoint string `json:"endpoint"`
 
 	// Headers to send with metrics
@@ -34,9 +34,11 @@ func newExporter(config ExporterConfig) (sdktrace.SpanExporter, error) {
 	switch config.Type {
 	case GRPC:
 		opts := []otlptracegrpc.Option{
-			otlptracegrpc.WithEndpoint(config.Endpoint),
 			otlptracegrpc.WithHeaders(config.Headers),
 			otlptracegrpc.WithTimeout(tracerExportTimeout),
+		}
+		if config.Endpoint != "" {
+			opts = append(opts, otlptracegrpc.WithEndpoint(config.Endpoint))
 		}
 		if config.Insecure {
 			opts = append(opts, otlptracegrpc.WithInsecure())
@@ -44,9 +46,11 @@ func newExporter(config ExporterConfig) (sdktrace.SpanExporter, error) {
 		client = otlptracegrpc.NewClient(opts...)
 	case HTTP:
 		opts := []otlptracehttp.Option{
-			otlptracehttp.WithEndpoint(config.Endpoint),
 			otlptracehttp.WithHeaders(config.Headers),
 			otlptracehttp.WithTimeout(tracerExportTimeout),
+		}
+		if config.Endpoint != "" {
+			opts = append(opts, otlptracehttp.WithEndpoint(config.Endpoint))
 		}
 		if config.Insecure {
 			opts = append(opts, otlptracehttp.WithInsecure())

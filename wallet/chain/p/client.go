@@ -1,11 +1,14 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
 
 import (
+	"time"
+
 	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
+	"github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p/wallet"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 )
@@ -13,7 +16,7 @@ import (
 var _ wallet.Client = (*Client)(nil)
 
 func NewClient(
-	c platformvm.Client,
+	c *platformvm.Client,
 	b wallet.Backend,
 ) *Client {
 	return &Client{
@@ -23,7 +26,7 @@ func NewClient(
 }
 
 type Client struct {
-	client  platformvm.Client
+	client  *platformvm.Client
 	backend wallet.Backend
 }
 
@@ -33,13 +36,19 @@ func (c *Client) IssueTx(
 ) error {
 	ops := common.NewOptions(options)
 	ctx := ops.Context()
+	startTime := time.Now()
 	txID, err := c.client.IssueTx(ctx, tx.Bytes())
 	if err != nil {
 		return err
 	}
 
-	if f := ops.PostIssuanceFunc(); f != nil {
-		f(txID)
+	issuanceDuration := time.Since(startTime)
+	if f := ops.IssuanceHandler(); f != nil {
+		f(common.IssuanceReceipt{
+			ChainAlias: builder.Alias,
+			TxID:       txID,
+			Duration:   issuanceDuration,
+		})
 	}
 
 	if ops.AssumeDecided() {
@@ -48,6 +57,18 @@ func (c *Client) IssueTx(
 
 	if err := platformvm.AwaitTxAccepted(c.client, ctx, txID, ops.PollFrequency()); err != nil {
 		return err
+	}
+
+	if f := ops.ConfirmationHandler(); f != nil {
+		totalDuration := time.Since(startTime)
+		confirmationDuration := totalDuration - issuanceDuration
+
+		f(common.ConfirmationReceipt{
+			ChainAlias:           builder.Alias,
+			TxID:                 txID,
+			TotalDuration:        totalDuration,
+			ConfirmationDuration: confirmationDuration,
+		})
 	}
 
 	return c.backend.AcceptTx(ctx, tx)

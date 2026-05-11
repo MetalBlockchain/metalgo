@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package p
@@ -14,6 +14,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/utils/units"
@@ -153,7 +154,7 @@ func TestBaseTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -193,7 +194,7 @@ func TestAddSubnetValidatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -225,7 +226,7 @@ func TestRemoveSubnetValidatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -266,7 +267,7 @@ func TestCreateChainTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -306,7 +307,7 @@ func TestCreateSubnetTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -338,7 +339,7 @@ func TestTransferSubnetOwnershipTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -378,7 +379,7 @@ func TestImportTx(t *testing.T) {
 					constants.PlatformChainID: utxos,
 					sourceChainID:             importedUTXOs,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -415,7 +416,7 @@ func TestExportTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -469,10 +470,11 @@ func TestAddPermissionlessValidatorTx(t *testing.T) {
 		delegationShares       uint32 = reward.PercentDenominator
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(t, err)
 
-	pop := signer.NewProofOfPossession(sk)
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(t, err)
 
 	for _, e := range testEnvironment {
 		t.Run(e.name, func(t *testing.T) {
@@ -481,7 +483,7 @@ func TestAddPermissionlessValidatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr, rewardAddr), e.context, backend)
 			)
 
@@ -534,7 +536,7 @@ func TestAddPermissionlessDelegatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr, rewardAddr), e.context, backend)
 			)
 
@@ -570,9 +572,13 @@ func TestAddPermissionlessDelegatorTx(t *testing.T) {
 }
 
 func TestConvertSubnetToL1Tx(t *testing.T) {
-	sk0, err := bls.NewSigner()
+	sk0, err := localsigner.New()
 	require.NoError(t, err)
-	sk1, err := bls.NewSigner()
+	pop0, err := signer.NewProofOfPossession(sk0)
+	require.NoError(t, err)
+	sk1, err := localsigner.New()
+	require.NoError(t, err)
+	pop1, err := signer.NewProofOfPossession(sk1)
 	require.NoError(t, err)
 
 	var (
@@ -583,7 +589,7 @@ func TestConvertSubnetToL1Tx(t *testing.T) {
 				NodeID:  utils.RandomBytes(ids.NodeIDLen),
 				Weight:  rand.Uint64(), //#nosec G404
 				Balance: units.Avax,
-				Signer:  *signer.NewProofOfPossession(sk0),
+				Signer:  *pop0,
 				RemainingBalanceOwner: message.PChainOwner{
 					Threshold: 1,
 					Addresses: []ids.ShortID{
@@ -601,7 +607,7 @@ func TestConvertSubnetToL1Tx(t *testing.T) {
 				NodeID:                utils.RandomBytes(ids.NodeIDLen),
 				Weight:                rand.Uint64(), //#nosec G404
 				Balance:               2 * units.Avax,
-				Signer:                *signer.NewProofOfPossession(sk1),
+				Signer:                *pop1,
 				RemainingBalanceOwner: message.PChainOwner{},
 				DeactivationOwner:     message.PChainOwner{},
 			},
@@ -614,7 +620,7 @@ func TestConvertSubnetToL1Tx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, subnetOwners)
+				backend = wallet.NewBackend(chainUTXOs, subnetOwners)
 				builder = builder.New(set.Of(utxoAddr, subnetAuthAddr), e.context, backend)
 			)
 
@@ -655,9 +661,10 @@ func TestRegisterL1ValidatorTx(t *testing.T) {
 		balance = units.Avax
 	)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
 	require.NoError(t, err)
-	pop := signer.NewProofOfPossession(sk)
+	pop, err := signer.NewProofOfPossession(sk)
+	require.NoError(t, err)
 
 	addressedCallPayload, err := message.NewRegisterL1Validator(
 		subnetID,
@@ -696,7 +703,9 @@ func TestRegisterL1ValidatorTx(t *testing.T) {
 	signers := set.NewBits(0)
 
 	unsignedBytes := unsignedWarp.Bytes()
-	sig := sk.Sign(unsignedBytes)
+	sig, err := sk.Sign(unsignedBytes)
+	require.NoError(t, err)
+
 	sigBytes := [bls.SignatureLen]byte{}
 	copy(sigBytes[:], bls.SignatureToBytes(sig))
 
@@ -717,7 +726,7 @@ func TestRegisterL1ValidatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -778,7 +787,9 @@ func TestSetL1ValidatorWeightTx(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	sk, err := bls.NewSigner()
+	sk, err := localsigner.New()
+	require.NoError(t, err)
+	sig, err := sk.Sign(unsignedWarp.Bytes())
 	require.NoError(t, err)
 
 	warp, err := warp.NewMessage(
@@ -786,9 +797,7 @@ func TestSetL1ValidatorWeightTx(t *testing.T) {
 		&warp.BitSetSignature{
 			Signers: set.NewBits(0).Bytes(),
 			Signature: ([bls.SignatureLen]byte)(
-				bls.SignatureToBytes(
-					sk.Sign(unsignedWarp.Bytes()),
-				),
+				bls.SignatureToBytes(sig),
 			),
 		},
 	)
@@ -802,7 +811,7 @@ func TestSetL1ValidatorWeightTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -836,7 +845,7 @@ func TestIncreaseL1ValidatorBalanceTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, nil)
+				backend = wallet.NewBackend(chainUTXOs, nil)
 				builder = builder.New(set.Of(utxoAddr), e.context, backend)
 			)
 
@@ -872,7 +881,7 @@ func TestDisableL1ValidatorTx(t *testing.T) {
 				chainUTXOs = utxotest.NewDeterministicChainUTXOs(t, map[ids.ID][]*avax.UTXO{
 					constants.PlatformChainID: utxos,
 				})
-				backend = wallet.NewBackend(e.context, chainUTXOs, validationOwners)
+				backend = wallet.NewBackend(chainUTXOs, validationOwners)
 				builder = builder.New(set.Of(utxoAddr, validationAuthAddr), e.context, backend)
 			)
 

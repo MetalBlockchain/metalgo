@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package peer
@@ -26,6 +26,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/math/meter"
 	"github.com/MetalBlockchain/metalgo/utils/resource"
@@ -48,7 +49,6 @@ func newMessageCreator(t *testing.T) message.Creator {
 	t.Helper()
 
 	mc, err := message.NewCreator(
-		logging.NoLog{},
 		prometheus.NewRegistry(),
 		constants.DefaultNetworkCompressionType,
 		10*time.Second,
@@ -58,7 +58,7 @@ func newMessageCreator(t *testing.T) message.Creator {
 	return mc
 }
 
-func newConfig(t *testing.T) Config {
+func newConfig(t *testing.T) *Config {
 	t.Helper()
 	require := require.New(t)
 
@@ -73,7 +73,7 @@ func newConfig(t *testing.T) Config {
 	)
 	require.NoError(err)
 
-	return Config{
+	return &Config{
 		ReadBufferSize:       constants.DefaultNetworkPeerReadBufferSize,
 		WriteBufferSize:      constants.DefaultNetworkPeerWriteBufferSize,
 		Metrics:              metrics,
@@ -96,7 +96,7 @@ func newConfig(t *testing.T) Config {
 	}
 }
 
-func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
+func newRawTestPeer(t *testing.T, config *Config) *rawTestPeer {
 	t.Helper()
 	require := require.New(t)
 
@@ -111,7 +111,7 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 		1,
 	))
 	tls := tlsCert.PrivateKey.(crypto.Signer)
-	bls, err := bls.NewSigner()
+	bls, err := localsigner.New()
 	require.NoError(err)
 
 	config.IPSigner = NewIPSigner(ip, tls, bls)
@@ -122,7 +122,7 @@ func newRawTestPeer(t *testing.T, config Config) *rawTestPeer {
 	})
 
 	return &rawTestPeer{
-		config:         &config,
+		config:         config,
 		cert:           cert,
 		inboundMsgChan: inboundMsgChan,
 	}
@@ -141,6 +141,7 @@ func startTestPeer(self *rawTestPeer, peer *rawTestPeer, conn net.Conn) *testPee
 				logging.NoLog{},
 				throttling.NewNoOutboundThrottler(),
 			),
+			false,
 		),
 		inboundMsgChan: self.inboundMsgChan,
 	}
@@ -163,13 +164,21 @@ func awaitReady(t *testing.T, peers ...Peer) {
 	}
 }
 
+func must[T any](t *testing.T) func(T, error) T {
+	return func(val T, err error) T {
+		require.NoError(t, err)
+		return val
+	}
+}
+
 func TestReady(t *testing.T) {
 	require := require.New(t)
 
-	config := newConfig(t)
+	config0 := newConfig(t)
+	config1 := newConfig(t)
 
-	rawPeer0 := newRawTestPeer(t, config)
-	rawPeer1 := newRawTestPeer(t, config)
+	rawPeer0 := newRawTestPeer(t, config0)
+	rawPeer1 := newRawTestPeer(t, config1)
 
 	conn0, conn1 := net.Pipe()
 
@@ -187,15 +196,16 @@ func TestReady(t *testing.T) {
 func TestSend(t *testing.T) {
 	require := require.New(t)
 
-	sharedConfig := newConfig(t)
+	config0 := newConfig(t)
+	config1 := newConfig(t)
 
-	rawPeer0 := newRawTestPeer(t, sharedConfig)
-	rawPeer1 := newRawTestPeer(t, sharedConfig)
+	rawPeer0 := newRawTestPeer(t, config0)
+	rawPeer1 := newRawTestPeer(t, config1)
 
 	peer0, peer1 := startTestPeers(rawPeer0, rawPeer1)
 	awaitReady(t, peer0, peer1)
 
-	outboundGetMsg, err := sharedConfig.MessageCreator.Get(ids.Empty, 1, time.Second, ids.Empty)
+	outboundGetMsg, err := config0.MessageCreator.Get(ids.Empty, 1, time.Second, ids.Empty)
 	require.NoError(err)
 
 	require.True(peer0.Send(context.Background(), outboundGetMsg))
@@ -209,12 +219,13 @@ func TestSend(t *testing.T) {
 }
 
 func TestPingUptimes(t *testing.T) {
-	sharedConfig := newConfig(t)
+	config0 := newConfig(t)
+	config1 := newConfig(t)
 
 	// The raw peers are generated outside of the test cases to avoid generating
 	// many TLS keys.
-	rawPeer0 := newRawTestPeer(t, sharedConfig)
-	rawPeer1 := newRawTestPeer(t, sharedConfig)
+	rawPeer0 := newRawTestPeer(t, config0)
+	rawPeer1 := newRawTestPeer(t, config1)
 
 	require := require.New(t)
 
@@ -226,7 +237,7 @@ func TestPingUptimes(t *testing.T) {
 		require.NoError(peer0.AwaitClosed(context.Background()))
 		require.NoError(peer1.AwaitClosed(context.Background()))
 	}()
-	pingMsg, err := sharedConfig.MessageCreator.Ping(1)
+	pingMsg, err := config0.MessageCreator.Ping(1)
 	require.NoError(err)
 	require.True(peer0.Send(context.Background(), pingMsg))
 
@@ -241,9 +252,8 @@ func TestPingUptimes(t *testing.T) {
 }
 
 func TestTrackedSubnets(t *testing.T) {
-	sharedConfig := newConfig(t)
-	rawPeer0 := newRawTestPeer(t, sharedConfig)
-	rawPeer1 := newRawTestPeer(t, sharedConfig)
+	rawPeer0 := newRawTestPeer(t, newConfig(t))
+	rawPeer1 := newRawTestPeer(t, newConfig(t))
 
 	makeSubnetIDs := func(numSubnets int) []ids.ID {
 		subnetIDs := make([]ids.ID, numSubnets)
@@ -314,10 +324,11 @@ func TestTrackedSubnets(t *testing.T) {
 func TestInvalidBLSKeyDisconnects(t *testing.T) {
 	require := require.New(t)
 
-	sharedConfig := newConfig(t)
+	sharedConfig0 := newConfig(t)
+	sharedConfig1 := newConfig(t)
 
-	rawPeer0 := newRawTestPeer(t, sharedConfig)
-	rawPeer1 := newRawTestPeer(t, sharedConfig)
+	rawPeer0 := newRawTestPeer(t, sharedConfig0)
+	rawPeer1 := newRawTestPeer(t, sharedConfig1)
 
 	require.NoError(rawPeer0.config.Validators.AddStaker(
 		constants.PrimaryNetworkID,
@@ -327,7 +338,7 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 		1,
 	))
 
-	bogusBLSKey, err := bls.NewSigner()
+	bogusBLSKey, err := localsigner.New()
 	require.NoError(err)
 	require.NoError(rawPeer1.config.Validators.AddStaker(
 		constants.PrimaryNetworkID,
@@ -348,8 +359,9 @@ func TestInvalidBLSKeyDisconnects(t *testing.T) {
 func TestShouldDisconnect(t *testing.T) {
 	peerID := ids.GenerateTestNodeID()
 	txID := ids.GenerateTestID()
-	blsKey, err := bls.NewSigner()
+	blsKey, err := localsigner.New()
 	require.NoError(t, err)
+	must := must[*bls.Signature](t)
 
 	tests := []struct {
 		name                     string
@@ -556,7 +568,7 @@ func TestShouldDisconnect(t *testing.T) {
 				id:      peerID,
 				version: version.CurrentApp,
 				ip: &SignedIP{
-					BLSSignature: blsKey.SignProofOfPossession([]byte("wrong message")),
+					BLSSignature: must(blsKey.SignProofOfPossession([]byte("wrong message"))),
 				},
 			},
 			expectedPeer: &peer{
@@ -578,7 +590,7 @@ func TestShouldDisconnect(t *testing.T) {
 				id:      peerID,
 				version: version.CurrentApp,
 				ip: &SignedIP{
-					BLSSignature: blsKey.SignProofOfPossession([]byte("wrong message")),
+					BLSSignature: must(blsKey.SignProofOfPossession([]byte("wrong message"))),
 				},
 			},
 			expectedShouldDisconnect: true,
@@ -604,7 +616,7 @@ func TestShouldDisconnect(t *testing.T) {
 				id:      peerID,
 				version: version.CurrentApp,
 				ip: &SignedIP{
-					BLSSignature: blsKey.SignProofOfPossession((&UnsignedIP{}).bytes()),
+					BLSSignature: must(blsKey.SignProofOfPossession((&UnsignedIP{}).bytes())),
 				},
 			},
 			expectedPeer: &peer{
@@ -626,7 +638,7 @@ func TestShouldDisconnect(t *testing.T) {
 				id:      peerID,
 				version: version.CurrentApp,
 				ip: &SignedIP{
-					BLSSignature: blsKey.SignProofOfPossession((&UnsignedIP{}).bytes()),
+					BLSSignature: must(blsKey.SignProofOfPossession((&UnsignedIP{}).bytes())),
 				},
 				txIDOfVerifiedBLSKey: txID,
 			},

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package tmpnet
@@ -10,9 +10,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/MetalBlockchain/coreth/core"
-	"github.com/MetalBlockchain/coreth/params"
-	"github.com/MetalBlockchain/coreth/plugin/evm"
+	"github.com/MetalBlockchain/libevm/core"
+	"github.com/MetalBlockchain/libevm/params"
 
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -117,7 +116,7 @@ func NewTestGenesis(
 	cChainBalances := make(core.GenesisAlloc, len(keysToFund))
 	for _, key := range keysToFund {
 		xChainBalances[key.Address()] = defaultFundedKeyXChainAmount
-		cChainBalances[evm.GetEthAddress(key)] = core.GenesisAccount{
+		cChainBalances[key.EthAddress()] = core.GenesisAccount{
 			Balance: defaultFundedKeyCChainAmount,
 		}
 	}
@@ -150,10 +149,9 @@ func NewTestGenesis(
 	chainID := big.NewInt(int64(networkID))
 	// Define C-Chain genesis
 	cChainGenesis := &core.Genesis{
-		// TODO: remove this after Etna and set only the chainID
-		Config:     params.GetChainConfig(upgrade.Default, chainID), // upgrade will be again set by VM according to the snow.Context
-		Difficulty: big.NewInt(0),                                   // Difficulty is a mandatory field
-		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()),      // This time enables Avalanche upgrades by default
+		Config:     &params.ChainConfig{ChainID: chainID},      // The rest of the config is set in coreth on VM initialization
+		Difficulty: big.NewInt(0),                              // Difficulty is a mandatory field
+		Timestamp:  uint64(upgrade.InitiallyActiveTime.Unix()), // This time enables Avalanche upgrades by default
 		GasLimit:   defaultGasLimit,
 		Alloc:      cChainBalances,
 	}

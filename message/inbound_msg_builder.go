@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2024, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package message
@@ -310,6 +310,19 @@ func InboundAppResponse(
 			RequestId: requestID,
 			AppBytes:  msg,
 		},
+		expiration: mockable.MaxTime,
+	}
+}
+
+// NewInboundSimplexMessage creates a new InboundMessage for simplex messages.
+func InboundSimplexMessage(
+	nodeID ids.NodeID,
+	msg *p2p.Simplex,
+) InboundMessage {
+	return &inboundMessage{
+		nodeID:     nodeID,
+		op:         SimplexOp,
+		message:    msg,
 		expiration: mockable.MaxTime,
 	}
 }
