@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package predicate
@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MetalBlockchain/libevm/common"
-	"github.com/MetalBlockchain/libevm/core/types"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/core/types"
 )
 
 // delimiter separates the actual predicate bytes from the padded zero bytes.

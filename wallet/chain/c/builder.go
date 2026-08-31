@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,8 +8,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/MetalBlockchain/coreth/plugin/evm/atomic"
-
+	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/atomic"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/math"
@@ -18,7 +17,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 	"github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
 
-	ethcommon "github.com/MetalBlockchain/libevm/common"
+	ethcommon "github.com/ava-labs/libevm/common"
 )
 
 const avaxConversionRateInt = 1_000_000_000

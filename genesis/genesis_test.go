@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package genesis
@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/libevm/core"
+	"github.com/ava-labs/libevm/core"
 	"github.com/stretchr/testify/require"
 
 	_ "embed"
@@ -330,8 +330,6 @@ func TestGenesisFromFlag(t *testing.T) {
 				case constants.LocalID:
 					genBytes, err = json.Marshal(&LocalConfig)
 					require.NoError(err)
-				default:
-					genBytes = make([]byte, 0)
 				}
 			} else {
 				genBytes = test.customConfig

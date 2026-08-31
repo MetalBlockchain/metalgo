@@ -3,23 +3,47 @@
         "include": [
             {
                 "runner": "ubuntu-latest",
-                "config": "default",
-                "start-block": 101,
-                "end-block": 250000,
-                "source-block-dir": "s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-1m-ldb/**",
-                "current-state-dir": "s3://avalanchego-bootstrap-testing/cchain-current-state-hashdb-full-100/**"
+                "test": "hashdb-101-250k",
+                "timeout-minutes": 30
             },
             {
                 "runner": "avalanche-avalanchego-runner-2ti",
                 "config": "default",
                 "start-block": 101,
                 "end-block": 250000,
-                "source-block-dir": "s3://avalanchego-bootstrap-testing/cchain-mainnet-blocks-1m-ldb/**",
-                "current-state-dir": "s3://avalanchego-bootstrap-testing/cchain-current-state-hashdb-full-100/**"
+                "block-dir-src": "cchain-mainnet-blocks-1m-ldb",
+                "current-state-dir-src": "cchain-current-state-hashdb-full-100",
+                "timeout-minutes": 30
             }
         ]
     },
     "schedule": {
-        "include": []
+        "include": [
+            {
+                "runner": "avago-runner-m6i-4xlarge-ebs-fast",
+                "test": "hashdb-33m-33m500k",
+                "timeout-minutes": 1440
+            },
+            {
+                "runner": "avago-runner-i4i-4xlarge-local-ssd",
+                "test": "hashdb-33m-33m500k",
+                "timeout-minutes": 1440
+            },
+            {
+                "runner": "avago-runner-i4i-4xlarge-local-ssd",
+                "test": "hashdb-archive-ssc-69m-69m100k",
+                "timeout-minutes": 1440
+            },
+            {
+                "runner": "avago-runner-i4i-4xlarge-local-ssd",
+                "test": "hashdb-69m-69m100k",
+                "timeout-minutes": 1440
+            },
+            {
+                "runner": "avago-runner-i4i-16xlarge-local-ssd",
+                "test": "hashdb-archive-69m-69m100k",
+                "timeout-minutes": 1440
+            }
+        ]
     }
 }

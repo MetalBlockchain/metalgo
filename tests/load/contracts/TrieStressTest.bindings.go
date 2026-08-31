@@ -8,12 +8,12 @@ import (
 	"math/big"
 	"strings"
 
-	ethereum "github.com/MetalBlockchain/libevm"
-	"github.com/MetalBlockchain/libevm/accounts/abi"
-	"github.com/MetalBlockchain/libevm/accounts/abi/bind"
-	"github.com/MetalBlockchain/libevm/common"
-	"github.com/MetalBlockchain/libevm/core/types"
-	"github.com/MetalBlockchain/libevm/event"
+	ethereum "github.com/ava-labs/libevm"
+	"github.com/ava-labs/libevm/accounts/abi"
+	"github.com/ava-labs/libevm/accounts/abi/bind"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/core/types"
+	"github.com/ava-labs/libevm/event"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

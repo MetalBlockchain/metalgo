@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load
@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/MetalBlockchain/libevm/ethclient"
+	"github.com/ava-labs/libevm/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 

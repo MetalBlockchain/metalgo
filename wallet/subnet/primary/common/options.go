@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package common
@@ -12,7 +12,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 
-	ethcommon "github.com/MetalBlockchain/libevm/common"
+	ethcommon "github.com/ava-labs/libevm/common"
 )
 
 const defaultPollFrequency = 100 * time.Millisecond
