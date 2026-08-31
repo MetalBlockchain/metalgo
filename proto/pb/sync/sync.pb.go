@@ -702,7 +702,7 @@ const file_sync_sync_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\fR\x05value\"2\n" +
 	"\bKeyValue\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\fR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\fR\x05valueB/Z-github.com/MetalBlockchain/metalgo/proto/pb/syncb\x06proto3"
+	"\x05value\x18\x02 \x01(\fR\x05valueB2Z0github.com/MetalBlockchain/metalgo/proto/pb/syncb\x06proto3"
 
 var (
 	file_sync_sync_proto_rawDescOnce sync.Once

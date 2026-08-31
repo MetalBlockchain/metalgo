@@ -224,7 +224,7 @@ const file_proposervm_service_proto_rawDesc = "" +
 	"\n" +
 	"ProposerVM\x12]\n" +
 	"\x11GetProposedHeight\x12$.proposervm.GetProposedHeightRequest\x1a\".proposervm.GetProposedHeightReply\x12W\n" +
-	"\x0fGetCurrentEpoch\x12\".proposervm.GetCurrentEpochRequest\x1a .proposervm.GetCurrentEpochReplyB<Z:github.com/MetalBlockchain/metalgo/connectproto/pb/proposervmb\x06proto3"
+	"\x0fGetCurrentEpoch\x12\".proposervm.GetCurrentEpochRequest\x1a .proposervm.GetCurrentEpochReplyB?Z=github.com/MetalBlockchain/metalgo/connectproto/pb/proposervmb\x06proto3"
 
 var (
 	file_proposervm_service_proto_rawDescOnce sync.Once
