@@ -135,7 +135,7 @@ func TestGetConfig(t *testing.T) {
 		{
 			name:       "custom config values",
 			configJSON: []byte(`{"rpc-tx-fee-cap": 11,"eth-apis": ["debug"]}`),
-			networkID:  constants.TestnetID,
+			networkID:  constants.TahoeID,
 			expected: func(t *testing.T, config Config) {
 				require.Equal(t, float64(11), config.RPCTxFeeCap, "Tx Fee Cap should be set")
 				require.Equal(t, []string{"debug"}, config.EthAPIs(), "EnabledEthAPIs should be set")
@@ -144,7 +144,7 @@ func TestGetConfig(t *testing.T) {
 		{
 			name:       "partial config with defaults",
 			configJSON: []byte(`{"rpc-tx-fee-cap": 11,"eth-apis": ["debug"], "tx-pool-price-limit": 100}`),
-			networkID:  constants.TestnetID,
+			networkID:  constants.TahoeID,
 			expected: func(t *testing.T, config Config) {
 				defaultConfig := NewDefaultConfig()
 				require.Equal(t, defaultConfig.PriceOptionMaxTip, config.PriceOptionMaxTip)
@@ -156,7 +156,7 @@ func TestGetConfig(t *testing.T) {
 		{
 			name:       "nil config uses defaults",
 			configJSON: nil,
-			networkID:  constants.TestnetID,
+			networkID:  constants.TahoeID,
 			expected: func(t *testing.T, config Config) {
 				defaultConfig := NewDefaultConfig()
 				require.Equal(t, defaultConfig, config)
