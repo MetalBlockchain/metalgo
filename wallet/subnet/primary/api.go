@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package primary
@@ -7,12 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/MetalBlockchain/coreth/ethclient"
-	"github.com/MetalBlockchain/coreth/plugin/evm/atomic"
-	"github.com/MetalBlockchain/coreth/plugin/evm/client"
-
 	"github.com/MetalBlockchain/metalgo/api/info"
 	"github.com/MetalBlockchain/metalgo/codec"
+	"github.com/MetalBlockchain/metalgo/graft/coreth/ethclient"
+	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/atomic"
+	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/client"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/rpc"
@@ -28,7 +27,7 @@ import (
 	pbuilder "github.com/MetalBlockchain/metalgo/wallet/chain/p/builder"
 	xbuilder "github.com/MetalBlockchain/metalgo/wallet/chain/x/builder"
 	walletcommon "github.com/MetalBlockchain/metalgo/wallet/subnet/primary/common"
-	ethcommon "github.com/MetalBlockchain/libevm/common"
+	ethcommon "github.com/ava-labs/libevm/common"
 )
 
 const (

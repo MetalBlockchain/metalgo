@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package c
@@ -8,19 +8,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MetalBlockchain/coreth/plugin/evm/upgrade/acp176"
-	"github.com/MetalBlockchain/coreth/plugin/evm/upgrade/cortina"
-	"github.com/MetalBlockchain/libevm/accounts/abi"
-	"github.com/MetalBlockchain/libevm/common"
-	"github.com/MetalBlockchain/libevm/core/types"
-	"github.com/MetalBlockchain/libevm/params"
+	"github.com/ava-labs/libevm/accounts/abi"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/core/types"
+	"github.com/ava-labs/libevm/params"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/MetalBlockchain/metalgo/api/info"
+	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/upgrade/cortina"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/e2e"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/tmpnet"
+	"github.com/MetalBlockchain/metalgo/vms/evm/acp176"
 )
 
 // This test uses the compiled bytecode for `consume_gas.sol` as well as its ABI

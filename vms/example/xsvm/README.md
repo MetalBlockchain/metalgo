@@ -45,7 +45,7 @@ Currently there are no fees enforced in the XSVM.
 #### Install
 
 ```bash
-git clone https://github.com/ava-labs/avalanchego.git;
+git clone https://github.com/MetalBlockchain/metalgo.git;
 cd avalanchego;
 go install -v ./vms/example/xsvm/cmd/xsvm;
 ```
@@ -74,7 +74,7 @@ Flags:
 Use "xsvm [command] --help" for more information about a command.
 ```
 
-### [Golang SDK](https://github.com/ava-labs/avalanchego/blob/master/vms/example/xsvm/api/client.go)
+### [Golang SDK](https://github.com/MetalBlockchain/metalgo/blob/master/vms/example/xsvm/api/client.go)
 
 ```golang
 // Client defines xsvm client operations.
@@ -283,9 +283,9 @@ P-Chain.
 
 You can do this by following the [subnet tutorial] or by using the [subnet-cli].
 
-[interchain messaging]: https://github.com/ava-labs/avalanchego/tree/master/vms/platformvm/warp/README.md
+[interchain messaging]: https://github.com/MetalBlockchain/metalgo/tree/master/vms/platformvm/warp/README.md
 [subnet tutorial]: https://build.avax.network/docs/tooling/create-avalanche-l1
-[Coreth]: https://github.com/ava-labs/coreth
+[Coreth]: https://github.com/MetalBlockchain/metalgo/tree/master/graft/coreth
 [C-Chain]: https://build.avax.network/docs/quick-start/primary-network#c-chain
 [Subnet]: https://build.avax.network/docs/avalanche-l1s
 

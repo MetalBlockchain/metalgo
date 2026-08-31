@@ -18,7 +18,7 @@ The minimum recommended hardware specification for nodes connected to Mainnet is
 
 If you plan to build MetalGo from source, you will also need the following software:
 
-- [Go](https://golang.org/doc/install) version >= 1.20.10
+- [Go](https://golang.org/doc/install) version >= 1.25.8
 - [gcc](https://gcc.gnu.org/)
 - g++
 
@@ -104,12 +104,12 @@ MetalGo support tiers:
 | Architecture | Operating system | Support tier  |
 | :----------: | :--------------: | :-----------: |
 |    amd64     |      Linux       |       1       |
-|    arm64     |      Linux       |       2       |
-|    amd64     |      Darwin      |       2       |
+|    arm64     |      Linux       |       1       |
+|    arm64     |      Darwin      |       2       |
+|    amd64     |      Darwin      | Not supported |
 |    amd64     |     Windows      | Not supported |
 |     arm      |      Linux       | Not supported |
 |     i386     |      Linux       | Not supported |
-|    arm64     |      Darwin      | Not supported |
 
 To officially support a new platform, one must satisfy the following requirements:
 
@@ -124,3 +124,7 @@ To officially support a new platform, one must satisfy the following requirement
 **We and our community welcome responsible disclosures.**
 
 We're working on a bug bountry program, in the meantime please submit any bugs or vulnerabilities to bugs@metalblockchain.org
+
+## Licenses
+
+Unless otherwise stated, all code in this repository is licensed under BSD-3. See our [licensing](LICENSE) for more details. Specifically, [grafted repositories](graft/) may use a different license, and one must refer to that project's README and LICENSE for more details.

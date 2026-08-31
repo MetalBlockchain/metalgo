@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package load
@@ -6,15 +6,17 @@ package load
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
+	"errors"
 	"math/big"
 	"time"
 
-	"github.com/MetalBlockchain/libevm/common"
-	"github.com/MetalBlockchain/libevm/core/types"
-	"github.com/MetalBlockchain/libevm/crypto"
-	"github.com/MetalBlockchain/libevm/ethclient"
+	"github.com/ava-labs/libevm/common"
+	"github.com/ava-labs/libevm/core/types"
+	"github.com/ava-labs/libevm/crypto"
+	"github.com/ava-labs/libevm/ethclient"
 )
+
+var errTxExecutionFailed = errors.New("transaction accepted but failed to execute entirely")
 
 type Wallet struct {
 	privKey *ecdsa.PrivateKey
@@ -76,6 +78,9 @@ func (w *Wallet) SendTx(
 		tx.Hash(),
 	)
 	if err != nil {
+		if errors.Is(err, errTxExecutionFailed) {
+			w.nonce++
+		}
 		return err
 	}
 
@@ -118,7 +123,7 @@ func (w Wallet) awaitTx(
 				}
 
 				if receipt.Status != types.ReceiptStatusSuccessful {
-					return fmt.Errorf("failed tx: %d", receipt.Status)
+					return errTxExecutionFailed
 				}
 
 				return nil

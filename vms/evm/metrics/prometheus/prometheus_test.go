@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2025, Ava Labs, Inc. All rights reserved.
+// Copyright (C) 2019, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
 package prometheus
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetalBlockchain/libevm/metrics"
+	"github.com/ava-labs/libevm/metrics"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 
