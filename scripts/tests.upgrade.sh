@@ -17,7 +17,7 @@ fi
 # version with the latest code.
 #
 # v1.13.0 is the earliest version that supports Fortuna.
-DEFAULT_VERSION="1.13.0"
+DEFAULT_VERSION="1.13.5"
 
 VERSION="${1:-${DEFAULT_VERSION}}"
 if [[ -z "${VERSION}" ]]; then

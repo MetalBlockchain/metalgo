@@ -32,7 +32,7 @@ GO_OVERRIDES = {
     "github.com/consensys/gnark-crypto": {
         "patches": ["//.bazel/patches:com_github_consensys_gnark_crypto_asm_includes.patch"],
     },
-    "github.com/ava-labs/libevm": {
+    "github.com/MetalBlockchain/libevm": {
         "patches": ["//.bazel/patches:com_github_ava_labs_libevm.patch"],
         "gazelle_directives": ["gazelle:exclude crypto/secp256k1/**"],
     },
