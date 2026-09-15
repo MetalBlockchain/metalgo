@@ -22,7 +22,7 @@ func TestApplicationString(t *testing.T) {
 				Minor: 0,
 				Patch: 1,
 			},
-			expected: "avalanchego/0.0.1",
+			expected: "metalgo/0.0.1",
 		},
 		{
 			app: &Application{
@@ -31,7 +31,7 @@ func TestApplicationString(t *testing.T) {
 				Minor: 2,
 				Patch: 3,
 			},
-			expected: "avalanchego/1.2.3",
+			expected: "metalgo/1.2.3",
 		},
 		{
 			app: &Application{
