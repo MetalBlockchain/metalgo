@@ -13,9 +13,14 @@ import (
 	"github.com/MetalBlockchain/libevm/common/hexutil"
 	"github.com/spf13/cast"
 
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/components/gas"
+	"github.com/MetalBlockchain/metalgo/vms/evm/sync/customrawdb"
 )
+
+var errNonDefaultCommitInterval = errors.New("cannot use non-default commit interval on production network")
 
 type Duration struct {
 	time.Duration
@@ -130,13 +135,13 @@ type Config struct {
 	MaxOutboundActiveRequests int64 `json:"max-outbound-active-requests"`
 
 	// Sync settings
-	StateSyncEnabled         *bool  `json:"state-sync-enabled"`     // Pointer distinguishes false (no state sync) and not set (state sync only at genesis).
-	StateSyncSkipResume      bool   `json:"state-sync-skip-resume"` // Forces state sync to use the highest available summary block
-	StateSyncServerTrieCache int    `json:"state-sync-server-trie-cache"`
-	StateSyncIDs             string `json:"state-sync-ids"`
-	StateSyncCommitInterval  uint64 `json:"state-sync-commit-interval"`
-	StateSyncMinBlocks       uint64 `json:"state-sync-min-blocks"`
-	StateSyncRequestSize     uint16 `json:"state-sync-request-size"`
+	StateSyncEnabled         *bool               `json:"state-sync-enabled"`     // Pointer distinguishes false (no state sync) and not set (state sync only at genesis).
+	StateSyncSkipResume      bool                `json:"state-sync-skip-resume"` // Forces state sync to use the highest available summary block
+	StateSyncServerTrieCache int                 `json:"state-sync-server-trie-cache"`
+	StateSyncIDs             set.Set[ids.NodeID] `json:"state-sync-ids"`
+	StateSyncCommitInterval  uint64              `json:"state-sync-commit-interval"`
+	StateSyncMinBlocks       uint64              `json:"state-sync-min-blocks"`
+	StateSyncRequestSize     uint16              `json:"state-sync-request-size"`
 
 	// Database Settings
 	InspectDatabase bool `json:"inspect-database"` // Inspects the database on startup if enabled.
@@ -233,9 +238,12 @@ func (c *Config) validate(networkID uint32) error {
 	// Ensure that non-standard commit interval is not allowed for production networks
 	if constants.ProductionNetworkIDs.Contains(networkID) {
 		defaultConfig := NewDefaultConfig()
-		if c.CommitInterval != defaultConfig.CommitInterval {
-			return fmt.Errorf("cannot start non-local network with commit interval %d different than %d", c.CommitInterval, defaultConfig.CommitInterval)
+		// Firewood allows arbitrary commit intervals even on production networks
+		if c.StateScheme != customrawdb.FirewoodScheme && c.CommitInterval != defaultConfig.CommitInterval {
+			return fmt.Errorf("%w: got %d, expected %d", errNonDefaultCommitInterval, c.CommitInterval, defaultConfig.CommitInterval)
 		}
+		// All nodes must agree on the state sync commit interval so they produce
+		// syncable summaries at the same block heights.
 		if c.StateSyncCommitInterval != defaultConfig.StateSyncCommitInterval {
 			return fmt.Errorf("cannot start non-local network with syncable interval %d different than %d", c.StateSyncCommitInterval, defaultConfig.StateSyncCommitInterval)
 		}

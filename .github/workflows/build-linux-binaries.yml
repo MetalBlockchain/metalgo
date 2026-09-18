@@ -18,7 +18,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-go-for-project
 
@@ -35,7 +35,7 @@ jobs:
         run: sudo snap install aws-cli --classic
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
           role-session-name: githubrolesession
@@ -56,7 +56,7 @@ jobs:
         shell: bash
 
       - name: Create tgz package structure and upload to S3
-        run: ./.github/workflows/build-tgz-pkg.sh
+        run: ./scripts/workflow-build-tgz-pkg.sh
         env:
           PKG_ROOT: /tmp/metalgo
           TAG: ${{ env.TAG }}
@@ -65,13 +65,13 @@ jobs:
           RELEASE: "jammy"
 
       - name: Save metalgo as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: avalanchego-amd64
           path: /tmp/metalgo/metalgo-linux-amd64-${{ env.TAG }}.tar.gz
 
       - name: Save subnet-evm as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: subnet-evm-amd64
           path: /tmp/metalgo/subnet-evm-linux-amd64-${{ env.TAG }}.tar.gz
@@ -82,13 +82,13 @@ jobs:
           rm -rf /tmp/metalgo
 
   build-arm64-binaries-tarball:
-    runs-on: custom-arm64-jammy
+    runs-on: ubuntu-22.04-arm
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-go-for-project
 
@@ -105,7 +105,7 @@ jobs:
         run: sudo snap install aws-cli --classic
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_SA_ROLE_ARN }}
           role-session-name: githubrolesession
@@ -126,7 +126,7 @@ jobs:
         shell: bash
 
       - name: Create tgz package structure and upload to S3
-        run: ./.github/workflows/build-tgz-pkg.sh
+        run: ./scripts/workflow-build-tgz-pkg.sh
         env:
           PKG_ROOT: /tmp/metalgo
           TAG: ${{ env.TAG }}
@@ -135,13 +135,13 @@ jobs:
           RELEASE: "jammy"
 
       - name: Save metalgo as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: metalgo-arm64
           path: /tmp/metalgo/metalgo-linux-arm64-${{ env.TAG }}.tar.gz
 
       - name: Save subnet-evm as Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: subnet-evm-arm64
           path: /tmp/metalgo/subnet-evm-linux-arm64-${{ env.TAG }}.tar.gz

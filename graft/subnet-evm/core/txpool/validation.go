@@ -37,6 +37,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/plugin/evm/vmerrors"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/precompile/contracts/txallowlist"
 	"github.com/MetalBlockchain/libevm/common"
+	ethcore "github.com/MetalBlockchain/libevm/core"
 	"github.com/MetalBlockchain/libevm/core/state"
 	"github.com/MetalBlockchain/libevm/core/types"
 	"github.com/MetalBlockchain/libevm/core/vm"
@@ -123,7 +124,7 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 	}
 	// Ensure the transaction has more gas than the bare minimum needed to cover
 	// the transaction metadata
-	intrGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, opts.Config.Rules(head.Number, params.IsMergeTODO, head.Time))
+	intrGas, err := ethcore.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, opts.Config.Rules(head.Number, params.IsMergeTODO, head.Time))
 	if err != nil {
 		return err
 	}

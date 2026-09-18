@@ -39,6 +39,7 @@ function build_antithesis_images {
   local uninstrumented_node_dockerfile=$7
   local target_path=$8
   local node_only=${9:-}
+  local avalanchego_commit=${10:-}
 
   # Define image names
   if [[ -n "${image_prefix}" ]]; then
@@ -65,6 +66,9 @@ function build_antithesis_images {
  --build-arg GO_VERSION=${go_version}\
  --build-arg BUILDER_IMAGE_TAG=${image_tag}\
  --build-arg BUILDER_WORKDIR=${builder_workdir}"
+  if [[ -n "${avalanchego_commit}" ]]; then
+    docker_cmd="${docker_cmd} --build-arg AVALANCHEGO_COMMIT=${avalanchego_commit}"
+  fi
 
   # By default the node image is intended to be local-only.
   AVALANCHEGO_NODE_IMAGE="antithesis-avalanchego-node:${node_image_tag}"
@@ -113,7 +117,15 @@ function gen_antithesis_compose_config {
   # Define the env vars for the compose config generation
   local compose_env="TARGET_PATH=${target_path} IMAGE_TAG=${image_tag} ${extra_compose_args}"
 
-  # Generate compose config for copying into the config image
-  # shellcheck disable=SC2086
-  env ${compose_env} go run "${exe_path}"
+  # If the exe_path is in a graft module, cd to the module root before running
+  # go run to ensure the correct go.mod is used.
+  if [[ "${exe_path}" == */graft/subnet-evm/* ]]; then
+    local module_root="${exe_path%%/graft/subnet-evm/*}/graft/subnet-evm"
+    local relative_path="./${exe_path#*graft/subnet-evm/}"
+    # shellcheck disable=SC2086
+    (cd "${module_root}" && env ${compose_env} go run "${relative_path}")
+  else
+    # shellcheck disable=SC2086
+    env ${compose_env} go run "${exe_path}"
+  fi
 }

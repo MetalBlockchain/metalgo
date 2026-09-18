@@ -7,6 +7,20 @@ if ! [[ "$0" =~ scripts/lint.sh ]]; then
   exit 255
 fi
 
+# Root-level directories to exclude from linting
+EXCLUDE_DIRS=(
+  graft    # Grafted modules have their own lint config
+  .direnv  # direnv cache
+  .idea    # GoLand
+  bazel-*  # Bazel output/symlink dirs at repo root
+)
+
+# Pre-build find exclusion args (root-level only)
+FIND_EXCLUDES=()
+for dir in "${EXCLUDE_DIRS[@]}"; do
+  FIND_EXCLUDES+=(! -path "./${dir}/*")
+done
+
 # The -P option is not supported by the grep version installed by
 # default on macos. Since `-o errexit` is ignored in an if
 # conditional, triggering the problem here ensures script failure when
@@ -29,11 +43,15 @@ fi
 # by default, "./scripts/lint.sh" runs all lint tests
 # to run only "license_header" test
 # TESTS='license_header' ./scripts/lint.sh
-TESTS=${TESTS:-"golangci_lint license_header require_error_is_no_funcs_as_params single_import interface_compliance_nil require_no_error_inline_func import_testing_only_in_tests"}
+TESTS=${TESTS:-"golangci_lint warn_testify_assert license_header single_import interface_compliance_nil require_no_error_inline_func import_testing_only_in_tests"}
 
 function test_golangci_lint {
-  go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6 run --config .golangci.yml
+  ./scripts/run_tool.sh golangci-lint run --config .golangci.yml
 }
+
+# Source shared helper for testify/assert warnings (provides test_warn_testify_assert)
+# shellcheck disable=SC1091
+source ./scripts/lint_warn_assert.sh
 
 # automatically checks license headers
 # to modify the file headers (if missing), remove "--verify" flag
@@ -49,32 +67,26 @@ function test_license_header {
       ! -name 'mocks_*.go' \
       ! -path './**/*mock/*.go' \
       ! -name '*.canoto.go' \
-      ! -name '*.bindings.go'
+      ! -name '*.bindings.go' \
+      "${FIND_EXCLUDES[@]}"
     )
 
   # shellcheck disable=SC2086
-  go run github.com/palantir/go-license@v1.25.0 \
+  ./scripts/run_tool.sh go-license \
   --config=./header.yml \
   ${_addlicense_flags} \
   "${files[@]}"
 }
 
 function test_single_import {
-  if grep -R -zo -P 'import \(\n\t".*"\n\)' .; then
-    echo ""
-    return 1
-  fi
-}
-
-function test_require_error_is_no_funcs_as_params {
-  if grep -R -zo -P 'require.ErrorIs\(.+?\)[^\n]*\)\n' .; then
+  if find . -type f -name '*.go' "${FIND_EXCLUDES[@]}" -print0 | xargs -0 grep -zo -P 'import \(\n\t".*"\n\)'; then
     echo ""
     return 1
   fi
 }
 
 function test_require_no_error_inline_func {
-  if grep -R -zo -P '\t+err :?= ((?!require|if).|\n)*require\.NoError\((t, )?err\)' .; then
+  if find . -type f -name '*.go' "${FIND_EXCLUDES[@]}" -print0 | xargs -0 grep -zo -P '\t+err :?= ((?!require|if).|\n)*require\.NoError\((t, )?err\)'; then
     echo ""
     echo "Checking that a function with a single error return doesn't error should be done in-line."
     echo ""
@@ -84,7 +96,7 @@ function test_require_no_error_inline_func {
 
 # Ref: https://go.dev/doc/effective_go#blank_implements
 function test_interface_compliance_nil {
-  if grep -R -o -P '_ .+? = &.+?\{\}' .; then
+  if find . -type f -name '*.go' "${FIND_EXCLUDES[@]}" -print0 | xargs -0 grep -o -P '_ .+? = &.+?\{\}'; then
     echo ""
     echo "Interface compliance checks need to be of the form:"
     echo "  var _ json.Marshaler = (*RawMessage)(nil)"
@@ -95,31 +107,45 @@ function test_interface_compliance_nil {
 
 function test_import_testing_only_in_tests {
   ROOT=$( git rev-parse --show-toplevel )
-  NON_TEST_GO_FILES=$( find "${ROOT}" -iname '*.go' ! -iname '*_test.go' ! -path "${ROOT}/tests/*" );
+  # Build exclusions with absolute paths (ROOT prefix)
+  local exclude_paths=(! -path "${ROOT}/tests/*")
+  for dir in "${EXCLUDE_DIRS[@]}"; do
+    exclude_paths+=(! -path "${ROOT}/${dir}/*")
+  done
+  NON_TEST_GO_FILES=$( find "${ROOT}" -iname '*.go' ! -iname '*_test.go' "${exclude_paths[@]}" );
 
   IMPORT_TESTING=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '^\s*(import\s+)?"testing"');
   IMPORT_TESTIFY=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/stretchr/testify');
-  IMPORT_FROM_TESTS=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/MetalBlockchain/metalgo/tests/');
-  IMPORT_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '"github.com/MetalBlockchain/metalgo/.*?test"');
+  IMPORT_CMP=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/google/go-cmp/cmp');
+  IMPORT_FROM_TESTS=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"github.com/ava-labs/avalanchego/.*?tests/');
+  IMPORT_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | xargs grep -lP '"github.com/ava-labs/avalanchego/.*?test"');
 
   # TODO(arr4n): send a PR to add support for build tags in `mockgen` and then enable this.
   # IMPORT_GOMOCK=$( echo "${NON_TEST_GO_FILES}" | xargs grep -l '"go.uber.org/mock');
-  HAVE_TEST_LOGIC=$( printf "%s\n%s\n%s\n%s" "${IMPORT_TESTING}" "${IMPORT_TESTIFY}" "${IMPORT_FROM_TESTS}" "${IMPORT_TEST_PKG}" );
+  HAVE_TEST_LOGIC=$( printf "%s\n%s\n%s\n%s\n%s" "${IMPORT_TESTING}" "${IMPORT_TESTIFY}" "${IMPORT_CMP}" "${IMPORT_FROM_TESTS}" "${IMPORT_TEST_PKG}" );
 
-  IN_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | grep -P '.*test/[^/]+\.go$' ) # directory (hence package name) ends in "test"
+  # The //main:avalanchego binary is built with 'prod' and 'nocmpopts' tags.
+  # Note that `./...` does not match a directory whose files are ALL excluded
+  # by the tags, so the excluded set MUST be derived by inverting the built set
+  # rather than read from IgnoredGoFiles.
+  GO_LIST_TEMPLATE='{{range .GoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}'
+  BUILT_WITHOUT_PROD_TAGS=$( go list -e -f "${GO_LIST_TEMPLATE}" "${ROOT}/..." )
+  BUILT_WITH_PROD_TAGS=$( go list -e -tags 'prod,nocmpopts' -f "${GO_LIST_TEMPLATE}" "${ROOT}/..." )
+  IGNORED_BY_PROD_TAGS=$( comm -23 <( echo "${BUILT_WITHOUT_PROD_TAGS}" | sort -u ) <( echo "${BUILT_WITH_PROD_TAGS}" | sort -u ) )
+
+  IN_TEST_PKG=$( echo "${NON_TEST_GO_FILES}" | grep -P '.*test/.+\.go$' ) # ancestral directory (hence package name) ends in "test"
 
   # Files in /tests/ are already excluded by the `find ... ! -path`
-  INTENDED_FOR_TESTING="${IN_TEST_PKG}"
+  INTENDED_FOR_TESTING=$( printf "%s\n%s" "${IN_TEST_PKG}" "${IGNORED_BY_PROD_TAGS}");
 
-  # -3 suppresses files that have test logic and have the "test" build tag
-  # -2 suppresses files that are tagged despite not having detectable test logic
+  # Report files with test-only dependencies outside a test package.
   UNTAGGED=$( comm -23 <( echo "${HAVE_TEST_LOGIC}" | sort -u ) <( echo "${INTENDED_FOR_TESTING}" | sort -u ) );
   if [ -z "${UNTAGGED}" ];
   then
     return 0;
   fi
 
-  echo 'Non-test Go files importing test-only packages MUST (a) be in *test package; or (b) be in /tests/ directory:';
+  echo 'Non-test Go files importing test-only packages MUST (a) be in *test package; (b) be in /tests/ directory; or (c) be excluded by a !prod build constraint:';
   echo "${UNTAGGED}";
   return 1;
 }

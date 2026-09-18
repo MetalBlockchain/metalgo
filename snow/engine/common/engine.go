@@ -9,6 +9,7 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/api/health"
 	"github.com/MetalBlockchain/metalgo/ids"
+	"github.com/MetalBlockchain/metalgo/proto/pb/p2p"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 )
@@ -42,6 +43,7 @@ type Handler interface {
 	ChitsHandler
 	AppHandler
 	InternalHandler
+	SimplexHandler
 }
 
 type AllGetsServer interface {
@@ -426,4 +428,9 @@ type InternalHandler interface {
 
 	// Notify this engine of a message from the virtual machine.
 	Notify(context.Context, Message) error
+}
+
+type SimplexHandler interface {
+	// Notify this engine of a simplex message from nodeID.
+	Simplex(ctx context.Context, nodeID ids.NodeID, msg *p2p.Simplex) error
 }

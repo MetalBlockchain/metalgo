@@ -29,6 +29,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/genesis"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/tests/fixture/stacktrace"
+	"github.com/MetalBlockchain/metalgo/upgrade"
+	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
@@ -366,6 +368,43 @@ func (n *Network) DefaultGenesis() (*genesis.UnparsedConfig, error) {
 	keysToFund = append(keysToFund, n.PreFundedKeys...)
 
 	return NewTestGenesis(defaultNetworkID, n.Nodes, keysToFund)
+}
+
+// UpgradeConfig configures the latest upgrade:
+//   - activateLatestAfter < 0: leave latest unscheduled
+//   - activateLatestAfter == 0: activate latest from genesis
+//   - activateLatestAfter > 0: schedule latest that duration after starting
+func UpgradeConfig(activateLatestAfter time.Duration) upgrade.Config {
+	const previous = upgradetest.Latest - 1
+	var upgrades upgrade.Config
+	switch {
+	case activateLatestAfter < 0:
+		upgrades = upgradetest.GetConfig(previous)
+	case activateLatestAfter == 0:
+		upgrades = upgradetest.GetConfig(upgradetest.Latest)
+	default:
+		upgrades = upgradetest.GetConfigWithUpgradeTime(
+			upgradetest.Latest,
+			time.Now().Add(activateLatestAfter),
+		)
+		upgradetest.SetTimesTo(&upgrades, previous, upgrade.InitiallyActiveTime)
+	}
+	upgrades.GraniteEpochDuration = 4 * time.Second
+	return upgrades
+}
+
+// UpgradeFlags returns flags applying the provided upgrade schedule
+// and a min stake duration compatible with testing staking logic.
+func UpgradeFlags(upgrades upgrade.Config) (FlagsMap, error) {
+	upgradeJSON, err := json.Marshal(upgrades)
+	if err != nil {
+		return nil, stacktrace.Errorf("failed to marshal upgrade config: %w", err)
+	}
+	return FlagsMap{
+		config.UpgradeFileContentKey:      base64.StdEncoding.EncodeToString(upgradeJSON),
+		config.MinStakeDurationKey:        DefaultMinStakeDuration,
+		config.HeliconMinStakeDurationKey: DefaultHeliconMinStakeDuration,
+	}, nil
 }
 
 // Starts the specified nodes

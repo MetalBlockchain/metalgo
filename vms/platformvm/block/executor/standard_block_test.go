@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -17,9 +16,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/upgrade/upgradetest"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
@@ -31,7 +28,6 @@ import (
 
 func TestApricotStandardBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
 
@@ -48,15 +44,8 @@ func TestApricotStandardBlockTimeVerification(t *testing.T) {
 	parentID := apricotParentBlk.ID()
 
 	// store parent block, with relevant quantities
-	chainTime := env.clk.Time().Truncate(time.Second)
-	mockParent := state.NewMockChain(ctrl)
-	mockParent.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
-	mockParent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
-	mockParent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
-	mockParent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
-	mockParent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
-	mockParent.EXPECT().GetActiveL1ValidatorsIterator().Return(&iterator.Empty[state.L1Validator]{}, nil).AnyTimes()
-	onParentAccept, err := state.NewDiffOn(mockParent, state.StakerAdditionAfterDeletionForbidden)
+
+	onParentAccept, err := state.NewDiffOn(env.state, state.StakerAdditionAfterDeletionForbidden)
 	require.NoError(err)
 	env.blkManager.(*manager).blkIDToState[parentID] = &blockState{
 		statelessBlock: apricotParentBlk,
@@ -88,7 +77,6 @@ func TestApricotStandardBlockTimeVerification(t *testing.T) {
 
 func TestBanffStandardBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	env := newEnvironment(t, upgradetest.Banff)
 	now := env.clk.Time()
@@ -123,27 +111,19 @@ func TestBanffStandardBlockTimeVerification(t *testing.T) {
 			Amt: 1,
 		},
 	}
-	utxoID := utxo.InputID()
-	mockParent := state.NewMockChain(ctrl)
-	mockParent.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
-	mockParent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
-	mockParent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
-	mockParent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
-	mockParent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
-	// store just once current staker to mark next staker time.
-	mockParent.EXPECT().GetCurrentStakerIterator().DoAndReturn(func() (iterator.Iterator[*state.Staker], error) {
-		return iterator.FromSlice(
-			&state.Staker{
-				NextTime: nextStakerTime,
-				Priority: txs.PrimaryNetworkValidatorCurrentPriority,
-			},
-		), nil
-	}).AnyTimes()
-	mockParent.EXPECT().GetPendingStakerIterator().Return(iterator.Empty[*state.Staker]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetActiveL1ValidatorsIterator().Return(iterator.Empty[state.L1Validator]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetExpiryIterator().Return(iterator.Empty[state.ExpiryEntry]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetUTXO(utxoID).Return(utxo, nil).AnyTimes()
-	onParentAccept, err := state.NewDiffOn(mockParent, state.StakerAdditionAfterDeletionForbidden)
+
+	// Add the UTXO and a current staker with NextTime=nextStakerTime to the parent state.
+	// Genesis validators have NextTime=DefaultValidatorEndTime (~1 year out), so our staker
+	// sorts first in the iterator, correctly marking nextStakerTime as the next staker event.
+	env.state.AddUTXO(utxo)
+	require.NoError(env.state.PutCurrentValidator(&state.Staker{
+		Priority: txs.PrimaryNetworkValidatorCurrentPriority,
+		NextTime: nextStakerTime,
+		TxID:     ids.GenerateTestID(),
+		NodeID:   ids.GenerateTestNodeID(),
+	}))
+
+	onParentAccept, err := state.NewDiffOn(env.state, state.StakerAdditionAfterDeletionForbidden)
 	require.NoError(err)
 	env.blkManager.(*manager).blkIDToState[parentID] = &blockState{
 		statelessBlock: banffParentBlk,
@@ -627,6 +607,8 @@ func TestBanffStandardBlockRemoveSubnetValidator(t *testing.T) {
 		tx.ID(),
 		addSubnetValTx,
 		addSubnetValTx.StartTime(),
+		addSubnetValTx.EndTime(),
+		addSubnetValTx.Weight(),
 		0,
 	)
 	require.NoError(err)

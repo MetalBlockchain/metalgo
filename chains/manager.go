@@ -48,6 +48,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/buffer"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
+	"github.com/MetalBlockchain/metalgo/utils/lock"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/metric"
 	"github.com/MetalBlockchain/metalgo/utils/perms"
@@ -195,7 +196,7 @@ type ManagerConfig struct {
 	Tracer                    trace.Tracer
 	Log                       logging.Logger
 	LogFactory                logging.Factory
-	VMManager                 vms.Manager // Manage mappings from vm ID --> vm
+	VMManager                 *vms.Manager // Manage mappings from vm ID --> vm
 	BlockAcceptorGroup        snow.AcceptorGroup
 	TxAcceptorGroup           snow.AcceptorGroup
 	VertexAcceptorGroup       snow.AcceptorGroup
@@ -210,10 +211,10 @@ type ManagerConfig struct {
 	Server                    server.Server // Handles HTTP API calls
 	AtomicMemory              *atomic.Memory
 	AVAXAssetID               ids.ID
-	XChainID                  ids.ID          // ID of the X-Chain,
-	CChainID                  ids.ID          // ID of the C-Chain,
-	CriticalChains            set.Set[ids.ID] // Chains that can't exit gracefully
-	TimeoutManager            timeout.Manager // Manages request timeouts when sending messages to other validators
+	XChainID                  ids.ID           // ID of the X-Chain,
+	CChainID                  ids.ID           // ID of the C-Chain,
+	CriticalChains            set.Set[ids.ID]  // Chains that can't exit gracefully
+	TimeoutManager            *timeout.Manager // Manages request timeouts when sending messages to other validators
 	Health                    health.Registerer
 	ProposerMinBlockDelay     time.Duration
 	SubnetConfigs             map[ids.ID]subnets.Config // ID -> SubnetConfig
@@ -254,6 +255,8 @@ type manager struct {
 	// That is, [chainID].String() is an alias for the chain, too
 	ids.Aliaser
 	ManagerConfig
+
+	pChainProgress *lock.ProgressSubscription[uint64]
 
 	// Those notified when a chain is created
 	registrants []Registrant
@@ -1133,6 +1136,8 @@ func (m *manager) createSnowmanChain(
 		messageSender = sender.Trace(messageSender, m.Tracer)
 	}
 
+	var pchainProgressUpdater smeng.PChainProgressUpdater
+
 	var bootstrapFunc func()
 	// If [m.validatorState] is nil then we are creating the P-Chain. Since the
 	// P-Chain is the first chain to be created, we can use it to initialize
@@ -1262,6 +1267,16 @@ func (m *manager) createSnowmanChain(
 		return nil, err
 	}
 
+	if ctx.ChainID == constants.PlatformChainID {
+		lastAcceptedHeight, err := getLastAcceptedHeight(vm)
+		if err != nil {
+			return nil, fmt.Errorf("error while getting last accepted height: %w", err)
+		}
+
+		m.pChainProgress = lock.NewProgressSubscription(lastAcceptedHeight)
+		pchainProgressUpdater = m.pChainProgress
+	}
+
 	bootstrapWeight, err := beacons.TotalWeight(ctx.SubnetID)
 	if err != nil {
 		return nil, fmt.Errorf("error while fetching weight for subnet %s: %w", ctx.SubnetID, err)
@@ -1367,15 +1382,16 @@ func (m *manager) createSnowmanChain(
 	// Create engine, bootstrapper and state-syncer in this order,
 	// to make sure start callbacks are duly initialized
 	engineConfig := smeng.Config{
-		Ctx:                 ctx,
-		AllGetsServer:       snowGetHandler,
-		VM:                  vm,
-		Sender:              messageSender,
-		Validators:          vdrs,
-		ConnectedValidators: connectedValidators,
-		Params:              consensusParams,
-		Consensus:           consensus,
-		PartialSync:         m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
+		Ctx:                   ctx,
+		AllGetsServer:         snowGetHandler,
+		VM:                    vm,
+		Sender:                messageSender,
+		Validators:            vdrs,
+		ConnectedValidators:   connectedValidators,
+		Params:                consensusParams,
+		Consensus:             consensus,
+		PartialSync:           m.PartialSyncPrimaryNetwork && ctx.ChainID == constants.PlatformChainID,
+		PChainProgressUpdater: pchainProgressUpdater,
 	}
 	var engine common.Engine
 	engine, err = smeng.New(engineConfig)
@@ -1616,4 +1632,18 @@ func (m *manager) getOrMakeVMGatherer(vmID ids.ID) (metrics.MultiGatherer, error
 	}
 	m.vmGatherer[vmID] = vmGatherer
 	return vmGatherer, nil
+}
+
+func getLastAcceptedHeight(vm block.ChainVM) (uint64, error) {
+	lastAcceptedBlock, err := vm.LastAccepted(context.Background())
+	if err != nil {
+		return 0, fmt.Errorf("error while determining last accepted block ID: %w", err)
+	}
+
+	lastBlock, err := vm.GetBlock(context.Background(), lastAcceptedBlock)
+	if err != nil {
+		return 0, fmt.Errorf("error while fetching last accepted block %x: %w", lastAcceptedBlock, err)
+	}
+
+	return lastBlock.Height(), nil
 }

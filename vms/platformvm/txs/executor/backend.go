@@ -10,7 +10,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
 )
 
@@ -21,6 +20,5 @@ type Backend struct {
 	Fx           fx.Fx
 	FlowChecker  utxo.Verifier
 	Uptimes      uptime.Calculator
-	Rewards      reward.Calculator
 	Bootstrapped *utils.Atomic[bool]
 }

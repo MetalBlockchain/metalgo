@@ -167,6 +167,8 @@ func getTail(limit uint64, lastAccepted uint64) *uint64 {
 }
 
 func TestTransactionSkipIndexing(t *testing.T) {
+	t.Skip("Flaky test: https://github.com/MetalBlockchain/metalgo/issues/5170")
+
 	// Configure and generate a sample block chain
 	require := require.New(t)
 	var (

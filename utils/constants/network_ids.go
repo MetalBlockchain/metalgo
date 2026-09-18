@@ -78,15 +78,6 @@ var (
 		UnitTestID: UnitTestHRP,
 		LocalID:    LocalHRP,
 	}
-	NetworkHRPToNetworkID = map[string]uint32{
-		MainnetHRP:  MainnetID,
-		CascadeHRP:  CascadeID,
-		DenaliHRP:   DenaliID,
-		EverestHRP:  EverestID,
-		TahoeHRP:    TahoeID,
-		UnitTestHRP: UnitTestID,
-		LocalHRP:    LocalID,
-	}
 	ProductionNetworkIDs = set.Of(MainnetID, TahoeID)
 
 	ValidNetworkPrefix = "network-"

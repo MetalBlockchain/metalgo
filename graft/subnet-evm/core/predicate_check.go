@@ -14,6 +14,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/precompile/precompileconfig"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/evm/predicate"
+
+	ethcore "github.com/MetalBlockchain/libevm/core"
 )
 
 var ErrMissingPredicateContext = errors.New("missing predicate context")
@@ -51,7 +53,7 @@ func CheckTxPredicates(
 	// Check that the transaction can cover its IntrinsicGas, including the gas
 	// required by the predicate, before verifying the predicate.
 	accessList := tx.AccessList()
-	intrinsicGas, err := IntrinsicGas(tx.Data(), accessList, tx.To() == nil, rules)
+	intrinsicGas, err := ethcore.IntrinsicGas(tx.Data(), accessList, tx.To() == nil, rules)
 	if err != nil {
 		return nil, err
 	}

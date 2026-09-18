@@ -8,10 +8,10 @@ set -euo pipefail
 # Use lower_case variables in the scripts and UPPER_CASE variables for override
 # Use the constants.sh for env overrides
 
-METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd ) # Directory above this script
 
-# Where MetalGo binary goes
-metalgo_path="$METAL_PATH/build/metalgo"
+# Where AvalancheGo binary goes
+avalanchego_path="$AVALANCHE_PATH/build/metalgo"
 
 # Static compilation
 static_ld_flags=''

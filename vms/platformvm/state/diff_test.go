@@ -6,6 +6,7 @@ package state
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -44,6 +45,22 @@ func TestNewDiffOn(t *testing.T) {
 	d, err := NewDiffOn(state, StakerAdditionAfterDeletionAllowed)
 	require.NoError(err)
 
+	assertChainsEqual(t, state, d)
+}
+
+func TestDiffTimestamp(t *testing.T) {
+	state := newTestState(t, memdb.New())
+
+	d, err := NewDiffOn(state, StakerAdditionAfterDeletionAllowed)
+	require.NoError(t, err)
+
+	initial := state.GetTimestamp()
+	want := initial.Add(time.Second)
+	d.SetTimestamp(want)
+	require.Equal(t, want, d.GetTimestamp())
+	require.Equal(t, initial, state.GetTimestamp())
+
+	require.NoError(t, d.Apply(state))
 	assertChainsEqual(t, state, d)
 }
 
@@ -153,6 +170,34 @@ func TestDiffExpiry(t *testing.T) {
 			},
 		},
 		{
+			name: "insert multiple",
+			ops: []op{
+				{
+					put:   true,
+					entry: ExpiryEntry{Timestamp: 2},
+				},
+				{
+					put:   true,
+					entry: ExpiryEntry{Timestamp: 1},
+				},
+			},
+		},
+		{
+			// Entries are ordered by timestamp then validationID, so entries
+			// sharing a timestamp must still come back in validationID order.
+			name: "insert sharing a timestamp",
+			ops: []op{
+				{
+					put:   true,
+					entry: ExpiryEntry{Timestamp: 1, ValidationID: ids.ID{2}},
+				},
+				{
+					put:   true,
+					entry: ExpiryEntry{Timestamp: 1, ValidationID: ids.ID{1}},
+				},
+			},
+		},
+		{
 			name: "remove",
 			initialExpiries: []ExpiryEntry{
 				{Timestamp: 1},
@@ -222,7 +267,8 @@ func TestDiffExpiry(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			require := require.New(t)
 
-			state := newTestState(t, memdb.New())
+			db := memdb.New()
+			state := newTestState(t, db)
 			for _, expiry := range test.initialExpiries {
 				state.PutExpiry(expiry)
 			}
@@ -278,6 +324,9 @@ func TestDiffExpiry(t *testing.T) {
 			require.NoError(d.Apply(state))
 			verifyChain(state)
 			assertChainsEqual(t, d, state)
+			state.SetHeight(state.currentHeight + 1)
+			require.NoError(state.Commit())
+			verifyChain(newTestState(t, db))
 		})
 	}
 }
@@ -397,7 +446,7 @@ func TestDiffCurrentValidator(t *testing.T) {
 	require.Equal(currentValidator, gotCurrentValidator)
 
 	// Delete the current validator
-	d.DeleteCurrentValidator(currentValidator)
+	require.NoError(d.DeleteCurrentValidator(currentValidator))
 
 	// Make sure the deletion worked
 	_, err = d.GetCurrentValidator(currentValidator.SubnetID, currentValidator.NodeID)
@@ -436,19 +485,27 @@ func TestDiffPendingValidator(t *testing.T) {
 func TestDiffCurrentDelegator(t *testing.T) {
 	require := require.New(t)
 
-	currentDelegator := &Staker{
-		TxID:     ids.GenerateTestID(),
-		SubnetID: ids.GenerateTestID(),
-		NodeID:   ids.GenerateTestNodeID(),
-	}
-
 	state := newTestState(t, memdb.New())
 
 	d, err := NewDiffOn(state, StakerAdditionAfterDeletionAllowed)
 	require.NoError(err)
 
 	// Put a current delegator
-	d.PutCurrentDelegator(currentDelegator)
+	currentValidator := &Staker{
+		TxID:     ids.GenerateTestID(),
+		SubnetID: ids.GenerateTestID(),
+		NodeID:   ids.GenerateTestNodeID(),
+	}
+
+	require.NoError(d.PutCurrentValidator(currentValidator))
+
+	currentDelegator := &Staker{
+		TxID:     ids.GenerateTestID(),
+		SubnetID: currentValidator.SubnetID,
+		NodeID:   currentValidator.NodeID,
+	}
+
+	require.NoError(d.PutCurrentDelegator(currentDelegator))
 
 	// Assert that we get the current delegator back
 	gotCurrentDelegatorIter, err := d.GetCurrentDelegatorIterator(currentDelegator.SubnetID, currentDelegator.NodeID)
@@ -458,7 +515,7 @@ func TestDiffCurrentDelegator(t *testing.T) {
 	require.Equal(gotCurrentDelegatorIter.Value(), currentDelegator)
 
 	// Delete the current delegator
-	d.DeleteCurrentDelegator(currentDelegator)
+	require.NoError(d.DeleteCurrentDelegator(currentDelegator))
 
 	// Make sure the deletion worked.
 	// The iterator should have no elements.
@@ -643,6 +700,12 @@ func TestDiffTx(t *testing.T) {
 		require.Equal(status.Committed, gotStatus)
 		require.Equal(parentTx, gotParentTx)
 	}
+
+	require.NoError(d.Apply(state))
+	gotTx, gotStatus, err := state.GetTx(tx.ID())
+	require.NoError(err)
+	require.Equal(status.Committed, gotStatus)
+	require.Equal(tx, gotTx)
 }
 
 func TestDiffRewardUTXO(t *testing.T) {
@@ -729,6 +792,13 @@ func TestDiffUTXO(t *testing.T) {
 		require.Equal(parentUTXO, gotParentUTXO)
 	}
 
+	require.NoError(d.Apply(state))
+	gotUTXO, err := state.GetUTXO(utxo.InputID())
+	require.NoError(err)
+	require.Equal(utxo, gotUTXO)
+
+	d, err = NewDiffOn(state, StakerAdditionAfterDeletionAllowed)
+	require.NoError(err)
 	{
 		// Delete the UTXO
 		d.DeleteUTXO(utxo.InputID())
@@ -737,6 +807,10 @@ func TestDiffUTXO(t *testing.T) {
 		_, err = d.GetUTXO(utxo.InputID())
 		require.ErrorIs(err, database.ErrNotFound)
 	}
+
+	require.NoError(d.Apply(state))
+	_, err = state.GetUTXO(utxo.InputID())
+	require.ErrorIs(err, database.ErrNotFound)
 }
 
 func assertChainsEqual(t *testing.T, expected, actual Chain) {
@@ -896,6 +970,28 @@ func TestDiffSubnetToL1Conversion(t *testing.T) {
 	actualConversion, err = state.GetSubnetToL1Conversion(subnetID)
 	require.NoError(err)
 	require.Equal(expectedConversion, actualConversion)
+}
+
+func TestDiffSubnetTransformation(t *testing.T) {
+	state := newTestState(t, memdb.New())
+	subnetID := ids.GenerateTestID()
+
+	d, err := NewDiffOn(state, StakerAdditionAfterDeletionAllowed)
+	require.NoError(t, err)
+
+	wantTx := &txs.Tx{Unsigned: &txs.TransformSubnetTx{Subnet: subnetID}}
+	d.AddSubnetTransformation(wantTx)
+
+	gotTx, err := d.GetSubnetTransformation(subnetID)
+	require.NoError(t, err)
+	require.Equal(t, wantTx, gotTx)
+	_, err = state.GetSubnetTransformation(subnetID)
+	require.ErrorIs(t, err, database.ErrNotFound)
+
+	require.NoError(t, d.Apply(state))
+	gotTx, err = state.GetSubnetTransformation(subnetID)
+	require.NoError(t, err)
+	require.Equal(t, wantTx, gotTx)
 }
 
 func TestDiffStacking(t *testing.T) {

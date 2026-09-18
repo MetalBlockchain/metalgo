@@ -20,6 +20,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
 	"github.com/MetalBlockchain/metalgo/utils/logging"
+	"github.com/MetalBlockchain/metalgo/utils/logging/loggingtest"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/avm/fxs"
 	"github.com/MetalBlockchain/metalgo/vms/avm/state"
@@ -38,7 +39,7 @@ func TestSemanticVerifierBaseTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		loggingtest.New(t, logging.Warn),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -395,7 +396,7 @@ func TestSemanticVerifierExportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		loggingtest.New(t, logging.Warn),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -763,7 +764,7 @@ func TestSemanticVerifierExportTxDifferentSubnet(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		loggingtest.New(t, logging.Warn),
 		[]fxs.Fx{
 			secpFx,
 		},
@@ -879,7 +880,7 @@ func TestSemanticVerifierImportTx(t *testing.T) {
 	parser, err := txs.NewCustomParser(
 		typeToFxIndex,
 		new(mockable.Clock),
-		logging.NoWarn{},
+		loggingtest.New(t, logging.Warn),
 		[]fxs.Fx{
 			fx,
 		},

@@ -19,6 +19,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/logging"
 	"github.com/MetalBlockchain/metalgo/utils/sampler"
 	"github.com/MetalBlockchain/metalgo/utils/set"
+	"github.com/MetalBlockchain/metalgo/version"
 )
 
 var (
@@ -214,7 +215,7 @@ func (v *Validators) Len(ctx context.Context) int {
 	return v.connectedValidators.Len()
 }
 
-func (v *Validators) Connected(nodeID ids.NodeID) {
+func (v *Validators) Connected(nodeID ids.NodeID, _ *version.Application) {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 

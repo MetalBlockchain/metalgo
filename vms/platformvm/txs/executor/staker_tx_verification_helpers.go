@@ -10,6 +10,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/math"
+	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
@@ -23,6 +24,13 @@ type addValidatorRules struct {
 	minDelegationFee  uint32
 }
 
+func primaryNetworkValidatorMinStakeDuration(cfg *config.Internal, timestamp time.Time) time.Duration {
+	if cfg.UpgradeConfig.IsHeliconActivated(timestamp) {
+		return cfg.HeliconMinStakeDuration
+	}
+	return cfg.MinStakeDuration
+}
+
 func getValidatorRules(
 	backend *Backend,
 	chainState state.Chain,
@@ -33,7 +41,7 @@ func getValidatorRules(
 			assetID:           backend.Ctx.AVAXAssetID,
 			minValidatorStake: backend.Config.MinValidatorStake,
 			maxValidatorStake: backend.Config.MaxValidatorStake,
-			minStakeDuration:  backend.Config.MinStakeDuration,
+			minStakeDuration:  primaryNetworkValidatorMinStakeDuration(backend.Config, chainState.GetTimestamp()),
 			maxStakeDuration:  backend.Config.MaxStakeDuration,
 			minDelegationFee:  backend.Config.MinDelegationFee,
 		}, nil

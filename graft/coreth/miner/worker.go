@@ -39,9 +39,9 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/graft/coreth/consensus"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/core"
-	"github.com/MetalBlockchain/metalgo/graft/coreth/core/extstate"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/core/txpool"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/params"
+	"github.com/MetalBlockchain/metalgo/graft/coreth/params/extras"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/customheader"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/customtypes"
 	"github.com/MetalBlockchain/metalgo/graft/coreth/plugin/evm/upgrade/cortina"
@@ -50,6 +50,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/evm/acp176"
 	"github.com/MetalBlockchain/metalgo/vms/evm/predicate"
+	"github.com/MetalBlockchain/metalgo/vms/evm/prefetch"
 	"github.com/MetalBlockchain/libevm/common"
 	"github.com/MetalBlockchain/libevm/consensus/misc/eip4844"
 	"github.com/MetalBlockchain/libevm/core/state"
@@ -139,6 +140,13 @@ func (w *worker) setEtherbase(addr common.Address) {
 	w.coinbase = addr
 }
 
+func nextTimestamp(cc *extras.ChainConfig, parent *types.Header, now time.Time) time.Time {
+	if cc.IsHelicon(uint64(now.Unix())) {
+		now = time.Unix(int64(*cc.HeliconTimestamp-1), 0)
+	}
+	return customheader.GetNextTimestamp(parent, now)
+}
+
 // commitNewWork generates several new sealing tasks based on the parent block.
 func (w *worker) commitNewWork(predicateContext *precompileconfig.PredicateContext) (*types.Block, error) {
 	w.mu.RLock()
@@ -146,7 +154,7 @@ func (w *worker) commitNewWork(predicateContext *precompileconfig.PredicateConte
 	var (
 		parent      = w.chain.CurrentBlock()
 		chainExtra  = params.GetExtra(w.chainConfig)
-		tstart      = customheader.GetNextTimestamp(parent, w.clock.Time())
+		tstart      = nextTimestamp(chainExtra, parent, w.clock.Time())
 		timestamp   = uint64(tstart.Unix())
 		timestampMS = uint64(tstart.UnixMilli())
 	)
@@ -301,7 +309,7 @@ func (w *worker) createCurrentEnvironment(predicateContext *precompileconfig.Pre
 		}
 	}
 	numPrefetchers := w.chain.CacheConfig().TriePrefetcherParallelism
-	currentState.StartPrefetcher("miner", extstate.WithConcurrentWorkers(numPrefetchers))
+	currentState.StartPrefetcher("miner", prefetch.WithConcurrentWorkers(numPrefetchers))
 	return &environment{
 		signer:           types.MakeSigner(w.chainConfig, header.Number, header.Time),
 		state:            currentState,

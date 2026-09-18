@@ -9,6 +9,8 @@ import (
 
 	"github.com/MetalBlockchain/libevm/metrics"
 	"github.com/stretchr/testify/require"
+
+	"github.com/MetalBlockchain/metalgo/utils/logging"
 )
 
 func TestETAShouldNotOverflow(t *testing.T) {
@@ -17,6 +19,7 @@ func TestETAShouldNotOverflow(t *testing.T) {
 	start := now.Add(-6 * time.Hour)
 
 	stats := &trieSyncStats{
+		log:            logging.NoLog{},
 		triesStartTime: start,
 		triesSynced:    100_000,
 		triesRemaining: 450_000,

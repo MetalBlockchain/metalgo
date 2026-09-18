@@ -9,11 +9,11 @@ set -euo pipefail
 # TODO(marun) Perform more extensive validation (e.g. e2e testing) against one or more images
 
 # Directory above this script
-METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
-source "$METAL_PATH"/scripts/constants.sh
-source "$METAL_PATH"/scripts/git_commit.sh
-source "$METAL_PATH"/scripts/image_tag.sh
+source "$AVALANCHE_PATH"/scripts/constants.sh
+source "$AVALANCHE_PATH"/scripts/git_commit.sh
+source "$AVALANCHE_PATH"/scripts/image_tag.sh
 
 build_and_test() {
   local image_name=$1

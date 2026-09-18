@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"github.com/MetalBlockchain/metalgo/database"
 	"github.com/MetalBlockchain/metalgo/ids"
@@ -19,10 +18,8 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls/signer/localsigner"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/secp256k1"
-	"github.com/MetalBlockchain/metalgo/utils/iterator"
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/vms/components/avax"
-	"github.com/MetalBlockchain/metalgo/vms/components/gas"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/block"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/genesis/genesistest"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
@@ -38,7 +35,6 @@ import (
 
 func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	env := newEnvironment(t, upgradetest.ApricotPhase5)
 
@@ -58,8 +54,11 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 
 	// create a proposal transaction to be included into proposal block
 	utx := &txs.AddValidatorTx{
-		BaseTx:    txs.BaseTx{},
-		Validator: txs.Validator{End: uint64(chainTime.Unix())},
+		BaseTx: txs.BaseTx{},
+		Validator: txs.Validator{
+			End:  uint64(chainTime.Unix()),
+			Wght: 1,
+		},
 		StakeOuts: []*avax.TransferableOutput{
 			{
 				Asset: avax.Asset{
@@ -82,27 +81,19 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 	}
 
 	// setup state to validate proposal block transaction
-	mockParent := state.NewMockChain(ctrl)
-	mockParent.EXPECT().GetTimestamp().Return(chainTime).AnyTimes()
-	mockParent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
-	mockParent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
-	mockParent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
-	mockParent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
-	mockParent.EXPECT().GetCurrentStakerIterator().Return(
-		iterator.FromSlice(&state.Staker{
-			TxID:      addValTx.ID(),
-			NodeID:    utx.NodeID(),
-			SubnetID:  utx.SubnetID(),
-			StartTime: utx.StartTime(),
-			NextTime:  chainTime,
-			EndTime:   chainTime,
-		}),
-		nil,
-	)
-	mockParent.EXPECT().GetTx(addValTx.ID()).Return(addValTx, status.Committed, nil)
-	mockParent.EXPECT().GetCurrentSupply(constants.PrimaryNetworkID).Return(uint64(1000), nil).AnyTimes()
-	mockParent.EXPECT().GetStakingInfo(constants.PrimaryNetworkID, utx.NodeID()).Return(state.StakingInfo{}, nil).AnyTimes()
-	onParentAccept, err := state.NewDiffOn(mockParent, state.StakerAdditionAfterDeletionForbidden)
+	env.state.AddTx(addValTx, status.Committed)
+	require.NoError(env.state.PutCurrentValidator(&state.Staker{
+		TxID:      addValTx.ID(),
+		NodeID:    utx.NodeID(),
+		SubnetID:  utx.SubnetID(),
+		Weight:    utx.Weight(),
+		StartTime: utx.StartTime(),
+		EndTime:   chainTime,
+		NextTime:  chainTime,
+	}))
+	require.NoError(env.state.Commit())
+
+	onParentAccept, err := state.NewDiffOn(env.state, state.StakerAdditionAfterDeletionForbidden)
 	require.NoError(err)
 	env.blkManager.(*manager).blkIDToState[parentID] = &blockState{
 		statelessBlock: apricotParentBlk,
@@ -137,7 +128,6 @@ func TestApricotProposalBlockTimeVerification(t *testing.T) {
 
 func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	require := require.New(t)
-	ctrl := gomock.NewController(t)
 
 	env := newEnvironment(t, upgradetest.Banff)
 
@@ -159,8 +149,11 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	// setup state to validate proposal block transaction
 	nextStakerTime := chainTime.Add(executor.SyncBound).Add(-1 * time.Second)
 	unsignedNextStakerTx := &txs.AddValidatorTx{
-		BaseTx:    txs.BaseTx{},
-		Validator: txs.Validator{End: uint64(nextStakerTime.Unix())},
+		BaseTx: txs.BaseTx{},
+		Validator: txs.Validator{
+			End:  uint64(nextStakerTime.Unix()),
+			Wght: 1,
+		},
 		StakeOuts: []*avax.TransferableOutput{
 			{
 				Asset: avax.Asset{
@@ -178,29 +171,20 @@ func TestBanffProposalBlockTimeVerification(t *testing.T) {
 	require.NoError(nextStakerTx.Initialize(txs.Codec))
 	nextStakerTxID := nextStakerTx.ID()
 
-	mockParent := state.NewMockChain(ctrl)
-	mockParent.EXPECT().GetTimestamp().Return(parentTime).AnyTimes()
-	mockParent.EXPECT().GetFeeState().Return(gas.State{}).AnyTimes()
-	mockParent.EXPECT().GetL1ValidatorExcess().Return(gas.Gas(0)).AnyTimes()
-	mockParent.EXPECT().GetAccruedFees().Return(uint64(0)).AnyTimes()
-	mockParent.EXPECT().NumActiveL1Validators().Return(0).AnyTimes()
-	mockParent.EXPECT().GetCurrentSupply(constants.PrimaryNetworkID).Return(uint64(1000), nil).AnyTimes()
-	mockParent.EXPECT().GetTx(nextStakerTxID).Return(nextStakerTx, status.Processing, nil)
-	mockParent.EXPECT().GetCurrentStakerIterator().DoAndReturn(func() (iterator.Iterator[*state.Staker], error) {
-		return iterator.FromSlice(
-			&state.Staker{
-				TxID:     nextStakerTxID,
-				EndTime:  nextStakerTime,
-				NextTime: nextStakerTime,
-				Priority: txs.PrimaryNetworkValidatorCurrentPriority,
-			},
-		), nil
-	}).AnyTimes()
-	mockParent.EXPECT().GetPendingStakerIterator().Return(iterator.Empty[*state.Staker]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetActiveL1ValidatorsIterator().Return(iterator.Empty[state.L1Validator]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetExpiryIterator().Return(iterator.Empty[state.ExpiryEntry]{}, nil).AnyTimes()
-	mockParent.EXPECT().GetStakingInfo(constants.PrimaryNetworkID, unsignedNextStakerTx.NodeID()).Return(state.StakingInfo{}, nil).AnyTimes()
-	onParentAccept, err := state.NewDiffOn(mockParent, state.StakerAdditionAfterDeletionForbidden)
+	env.state.AddTx(nextStakerTx, status.Committed)
+	require.NoError(env.state.PutCurrentValidator(&state.Staker{
+		TxID:      nextStakerTxID,
+		NodeID:    unsignedNextStakerTx.NodeID(),
+		SubnetID:  unsignedNextStakerTx.SubnetID(),
+		Priority:  txs.PrimaryNetworkValidatorCurrentPriority,
+		Weight:    unsignedNextStakerTx.Weight(),
+		StartTime: nextStakerTime,
+		EndTime:   nextStakerTime,
+		NextTime:  nextStakerTime,
+	}))
+	require.NoError(env.state.Commit())
+
+	onParentAccept, err := state.NewDiffOn(env.state, state.StakerAdditionAfterDeletionForbidden)
 	require.NoError(err)
 	env.blkManager.(*manager).blkIDToState[parentID] = &blockState{
 		statelessBlock: banffParentBlk,
@@ -592,6 +576,8 @@ func TestBanffProposalBlockUpdateStakers(t *testing.T) {
 					addStaker0.ID(),
 					addValTx,
 					addValTx.StartTime(),
+					addValTx.EndTime(),
+					addValTx.Weight(),
 					0,
 				)
 				require.NoError(err)
@@ -695,6 +681,8 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 		tx.ID(),
 		addSubnetValTx,
 		addSubnetValTx.StartTime(),
+		addSubnetValTx.EndTime(),
+		addSubnetValTx.Weight(),
 		0,
 	)
 	require.NoError(err)
@@ -763,6 +751,8 @@ func TestBanffProposalBlockRemoveSubnetValidator(t *testing.T) {
 		addStaker0.ID(),
 		addValTx,
 		addValTx.StartTime(),
+		addValTx.EndTime(),
+		addValTx.Weight(),
 		0,
 	)
 	require.NoError(err)
@@ -885,6 +875,8 @@ func TestBanffProposalBlockTrackedSubnet(t *testing.T) {
 				addStaker0.ID(),
 				addValTx,
 				addValTx.StartTime(),
+				addValTx.EndTime(),
+				addValTx.Weight(),
 				0,
 			)
 			require.NoError(err)
@@ -977,6 +969,8 @@ func TestBanffProposalBlockDelegatorStakerWeight(t *testing.T) {
 		addStaker0.ID(),
 		addValTx,
 		addValTx.StartTime(),
+		addValTx.EndTime(),
+		addValTx.Weight(),
 		0,
 	)
 	require.NoError(err)
@@ -1066,6 +1060,8 @@ func TestBanffProposalBlockDelegatorStakerWeight(t *testing.T) {
 		addStaker0.ID(),
 		addValTx,
 		addValTx.StartTime(),
+		addValTx.EndTime(),
+		addValTx.Weight(),
 		0,
 	)
 	require.NoError(err)
@@ -1162,6 +1158,8 @@ func TestBanffProposalBlockDelegatorStakers(t *testing.T) {
 		addStaker0.ID(),
 		addValTx,
 		addValTx.StartTime(),
+		addValTx.EndTime(),
+		addValTx.Weight(),
 		0,
 	)
 	require.NoError(err)
@@ -1251,6 +1249,8 @@ func TestBanffProposalBlockDelegatorStakers(t *testing.T) {
 		addStaker0.ID(),
 		addValTx,
 		addValTx.StartTime(),
+		addValTx.EndTime(),
+		addValTx.Weight(),
 		0,
 	)
 	require.NoError(err)

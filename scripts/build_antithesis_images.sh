@@ -7,20 +7,23 @@ set -euo pipefail
 # e.g.,
 # TEST_SETUP=avalanchego ./scripts/build_antithesis_images.sh                                          # Build local images for avalanchego
 # TEST_SETUP=avalanchego NODE_ONLY=1 ./scripts/build_antithesis_images.sh                              # Build only a local node image for avalanchego
-# TEST_SETUP=xsvm ./scripts/build_antithesis_images.sh                                                 # Build local images for xsvm
-# TEST_SETUP=xsvm IMAGE_PREFIX=<registry>/<repo> IMAGE_TAG=latest ./scripts/build_antithesis_images.sh # Specify a prefix to enable image push and use a specific tag
+# TEST_SETUP=subnet-evm ./scripts/build_antithesis_images.sh                                                 # Build local images for subnet-evm
+# TEST_SETUP=subnet-evm IMAGE_PREFIX=<registry>/<repo> IMAGE_TAG=latest ./scripts/build_antithesis_images.sh # Specify a prefix to enable image push and use a specific tag
 
 TEST_SETUP="${TEST_SETUP:-}"
-if [[ "${TEST_SETUP}" != "metalgo" && "${TEST_SETUP}" != "xsvm" ]]; then
-  echo "TEST_SETUP must be set. Valid values are 'metalgo' or 'xsvm'"
+if [[ "${TEST_SETUP}" != "avalanchego" && "${TEST_SETUP}" != "subnet-evm" ]]; then
+  echo "TEST_SETUP must be set. Valid values are 'avalanchego' or 'subnet-evm'"
   exit 255
 fi
 
 # Directory above this script
-METAL_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+AVALANCHE_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
+
+source "${AVALANCHE_PATH}"/scripts/constants.sh
+source "${AVALANCHE_PATH}"/scripts/git_commit.sh
 
 # Import common functions used to build images for antithesis test setups
-source "${METAL_PATH}"/scripts/lib_build_antithesis_images.sh
+source "${AVALANCHE_PATH}"/scripts/lib_build_antithesis_images.sh
 
 # Specifying an image prefix will ensure the image is pushed after build
 IMAGE_PREFIX="${IMAGE_PREFIX:-}"
@@ -28,18 +31,18 @@ IMAGE_PREFIX="${IMAGE_PREFIX:-}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 if [[ -z "${IMAGE_TAG}" ]]; then
   # Default to tagging with the commit hash
-  source "${METAL_PATH}"/scripts/constants.sh
   IMAGE_TAG="${commit_hash}"
 fi
 
 # The dockerfiles don't specify the golang version to minimize the changes required to bump
-# the version. Instead, the golang version is provided as an argument.
-GO_VERSION="$(go list -m -f '{{.GoVersion}}')"
+# the version. Instead, the golang version is provided as an argument. Use head -1 because
+# go workspaces list multiple modules; CI validates all modules use the same Go version.
+GO_VERSION="$(go list -m -f '{{.GoVersion}}' | head -1)"
 
 # Helper to simplify calling build_builder_image for test setups in this repo
 function build_builder_image_for_avalanchego {
   echo "Building builder image"
-  build_antithesis_builder_image "${GO_VERSION}" "antithesis-avalanchego-builder:${IMAGE_TAG}" "${METAL_PATH}" "${METAL_PATH}"
+  build_antithesis_builder_image "${GO_VERSION}" "antithesis-avalanchego-builder:${IMAGE_TAG}" "${AVALANCHE_PATH}" "${AVALANCHE_PATH}"
 }
 
 # Helper to simplify calling build_antithesis_images for test setups in this repo
@@ -55,35 +58,39 @@ function build_antithesis_images_for_avalanchego {
     echo "Building images for ${test_setup}"
   fi
   build_antithesis_images "${GO_VERSION}" "${image_prefix}" "antithesis-${test_setup}" "${IMAGE_TAG}" "${IMAGE_TAG}" \
-                          "${METAL_PATH}/tests/antithesis/${test_setup}/Dockerfile" "${uninstrumented_node_dockerfile}" \
-                          "${METAL_PATH}" "${node_only}"
+                          "${AVALANCHE_PATH}/tests/antithesis/${test_setup}/Dockerfile" "${uninstrumented_node_dockerfile}" \
+                          "${AVALANCHE_PATH}" "${node_only}" "${git_commit}"
 }
 
-if [[ "${TEST_SETUP}" == "metalgo" ]]; then
+if [[ "${TEST_SETUP}" == "avalanchego" ]]; then
   build_builder_image_for_avalanchego
 
   echo "Generating compose configuration for ${TEST_SETUP}"
-  gen_antithesis_compose_config "${IMAGE_TAG}" "${METAL_PATH}/tests/antithesis/avalanchego/gencomposeconfig" \
-                                "${METAL_PATH}/build/antithesis/avalanchego"
+  gen_antithesis_compose_config "${IMAGE_TAG}" "${AVALANCHE_PATH}/tests/antithesis/avalanchego/gencomposeconfig" \
+                                "${AVALANCHE_PATH}/build/antithesis/avalanchego"
 
-  build_antithesis_images_for_avalanchego "${TEST_SETUP}" "${IMAGE_PREFIX}" "${METAL_PATH}/Dockerfile" "${NODE_ONLY:-}"
+  build_antithesis_images_for_avalanchego "${TEST_SETUP}" "${IMAGE_PREFIX}" "${AVALANCHE_PATH}/Dockerfile" "${NODE_ONLY:-}"
 else
+  # VM test setup follows a common pattern.
   build_builder_image_for_avalanchego
 
-  # Only build the avalanchego node image to use as the base for the xsvm image. Provide an empty
+  # Only build the avalanchego node image to use as the base for the VM image. Provide an empty
   # image prefix (the 1st argument) to prevent the image from being pushed
   NODE_ONLY=1
-  build_antithesis_images_for_avalanchego metalgo "" "${METAL_PATH}/Dockerfile" "${NODE_ONLY}"
+  build_antithesis_images_for_avalanchego avalanchego "" "${AVALANCHE_PATH}/Dockerfile" "${NODE_ONLY}"
 
-  # Ensure avalanchego and xsvm binaries are available to create an initial db state that includes subnets.
+  # Set VM-specific paths and build the VM binary
   echo "Building binaries required for configuring the ${TEST_SETUP} test setup"
-  "${METAL_PATH}"/scripts/build.sh
-  "${METAL_PATH}"/scripts/build_xsvm.sh
+  "${AVALANCHE_PATH}"/scripts/build.sh
+  "${AVALANCHE_PATH}"/graft/subnet-evm/scripts/build.sh
+  vm_dockerfile="${AVALANCHE_PATH}/graft/subnet-evm/Dockerfile"
+  gencomposeconfig_path="${AVALANCHE_PATH}/graft/subnet-evm/tests/antithesis/gencomposeconfig"
 
   echo "Generating compose configuration for ${TEST_SETUP}"
-  gen_antithesis_compose_config "${IMAGE_TAG}" "${METAL_PATH}/tests/antithesis/xsvm/gencomposeconfig" \
-                                "${METAL_PATH}/build/antithesis/xsvm" \
-                                "METALGO_PATH=${METAL_PATH}/build/metalgo METALGO_PLUGIN_DIR=${HOME}/.metalgo/plugins"
+  gen_antithesis_compose_config "${IMAGE_TAG}" \
+    "${gencomposeconfig_path}" \
+    "${AVALANCHE_PATH}/build/antithesis/${TEST_SETUP}" \
+    "AVALANCHEGO_PATH=${AVALANCHE_PATH}/build/avalanchego AVAGO_PLUGIN_DIR=${AVALANCHE_PATH}/build/plugins"
 
-  build_antithesis_images_for_avalanchego "${TEST_SETUP}" "${IMAGE_PREFIX}" "${METAL_PATH}/vms/example/xsvm/Dockerfile"
+  build_antithesis_images_for_avalanchego "${TEST_SETUP}" "${IMAGE_PREFIX}" "${vm_dockerfile}"
 fi

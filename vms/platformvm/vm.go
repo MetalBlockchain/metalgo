@@ -35,7 +35,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/config"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/fx"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/network"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm/reward"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/state"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/utxo"
@@ -133,8 +132,6 @@ func (vm *VM) Initialize(
 		return err
 	}
 
-	rewards := reward.NewCalculator(vm.RewardConfig)
-
 	vm.state, err = state.New(
 		vm.db,
 		genesisBytes,
@@ -144,7 +141,7 @@ func (vm *VM) Initialize(
 		execConfig,
 		vm.ctx,
 		vm.metrics,
-		rewards,
+		vm.RewardConfig,
 	)
 	if err != nil {
 		return err
@@ -163,7 +160,6 @@ func (vm *VM) Initialize(
 		Fx:           vm.fx,
 		FlowChecker:  utxoVerifier,
 		Uptimes:      vm.uptimeManager,
-		Rewards:      rewards,
 		Bootstrapped: &vm.bootstrapped,
 	}
 

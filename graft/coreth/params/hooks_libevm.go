@@ -23,7 +23,9 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow"
 	"github.com/MetalBlockchain/metalgo/utils/set"
 	"github.com/MetalBlockchain/metalgo/vms/evm/predicate"
+	"github.com/MetalBlockchain/metalgo/vms/saevm/hook"
 
+	evmprecompileconfig "github.com/MetalBlockchain/metalgo/graft/evm/precompileconfig"
 	ethparams "github.com/MetalBlockchain/libevm/params"
 )
 
@@ -49,9 +51,38 @@ func (RulesExtra) CanExecuteTransaction(_ common.Address, _ *common.Address, _ l
 	return nil
 }
 
-// MinimumGasConsumption is a no-op.
-func (RulesExtra) MinimumGasConsumption(x uint64) uint64 {
-	return (ethparams.NOOPHooks{}).MinimumGasConsumption(x)
+func (r RulesExtra) ShouldRefundGas() bool {
+	return !r.IsApricotPhase1
+}
+
+// MinimumGasConsumption returns the ACP-194 gas-charged floor (ceil(limit/2)).
+func (r RulesExtra) MinimumGasConsumption(limit uint64) uint64 {
+	if extras.Rules(r).IsHelicon {
+		return hook.MinimumGasConsumption(limit)
+	}
+	return (ethparams.NOOPHooks{}).MinimumGasConsumption(limit)
+}
+
+// ShouldCreditBaseFeeToCoinbase returns true to credit the base fee to the
+// coinbase (the blackhole address on the C-Chain). The C-Chain has
+// historically credited the full fee (base + priority) to the blackhole
+// address, but by default libevm's state transition only credits the priority
+// fee and discards the base fee.
+func (RulesExtra) ShouldCreditBaseFeeToCoinbase() bool {
+	return true
+}
+
+// AccessListGas computes the intrinsic gas for an access list.
+// When predicaters exist, it calculates gas per-tuple, delegating to predicate
+// contracts for addresses that have them. Otherwise, it returns override=false
+// to use the default calculation.
+func (r RulesExtra) AccessListGas(accessList libevm.AccessList) (uint64, bool, error) {
+	rules := extras.Rules(r)
+	if !rules.PredicatersExist() {
+		return 0, false, nil
+	}
+	gas, err := evmprecompileconfig.AccessListGasWithPredicates(rules.AvalancheRules, rules.Predicaters, accessList)
+	return gas, true, err
 }
 
 var PrecompiledContractsApricotPhase2 = map[common.Address]vm.PrecompiledContract{

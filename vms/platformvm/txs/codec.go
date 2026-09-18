@@ -9,13 +9,17 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/signer"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/stakeable"
 	"github.com/MetalBlockchain/metalgo/vms/secp256k1fx"
 )
 
-const CodecVersion = 0
+const (
+	CodecVersion = 0
+	maxTxSize    = constants.DefaultMaxMessageSize
+)
 
 var (
 	Codec codec.Manager
@@ -48,10 +52,11 @@ func init() {
 		errs.Add(
 			RegisterDurangoTypes(c),
 			RegisterEtnaTypes(c),
+			RegisterHeliconTypes(c),
 		)
 	}
 
-	Codec = codec.NewDefaultManager()
+	Codec = codec.NewManager(maxTxSize)
 	GenesisCodec = codec.NewManager(math.MaxInt32)
 	errs.Add(
 		Codec.RegisterCodec(CodecVersion, c),
@@ -127,5 +132,15 @@ func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 		targetCodec.RegisterType(&SetL1ValidatorWeightTx{}),
 		targetCodec.RegisterType(&IncreaseL1ValidatorBalanceTx{}),
 		targetCodec.RegisterType(&DisableL1ValidatorTx{}),
+	)
+}
+
+// RegisterHeliconTypes registers the type information for transactions that
+// were valid during the Helicon series of upgrades.
+func RegisterHeliconTypes(targetCodec linearcodec.Codec) error {
+	return errors.Join(
+		targetCodec.RegisterType(&AddAutoRenewedValidatorTx{}),
+		targetCodec.RegisterType(&SetAutoRenewedValidatorConfigTx{}),
+		targetCodec.RegisterType(&RewardAutoRenewedValidatorTx{}),
 	)
 }

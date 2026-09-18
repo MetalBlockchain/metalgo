@@ -1,8 +1,0 @@
-Package: metalgo
-Version: 0.1.0
-Section: misc 
-Priority: optional
-Architecture: arm64 
-Depends:
-Maintainer: Glenn Marien <glenn@metalpay.co>
-Description: The Metal platform binaries 

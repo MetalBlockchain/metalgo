@@ -12,10 +12,13 @@ import (
 	"github.com/MetalBlockchain/libevm/common"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
+	"github.com/MetalBlockchain/metalgo/utils/set"
 )
 
 func TestUnmarshalConfig(t *testing.T) {
+	nodeID := ids.GenerateTestNodeID()
 	tests := []struct {
 		name        string
 		givenJSON   []byte
@@ -69,8 +72,8 @@ func TestUnmarshalConfig(t *testing.T) {
 		},
 		{
 			"state sync sources",
-			[]byte(`{"state-sync-ids": "NodeID-CaBYJ9kzHvrQFiYWowMkJGAQKGMJqZoat"}`),
-			Config{StateSyncIDs: "NodeID-CaBYJ9kzHvrQFiYWowMkJGAQKGMJqZoat"},
+			[]byte(fmt.Sprintf(`{"state-sync-ids": ["%s"]}`, nodeID)),
+			Config{StateSyncIDs: set.Of(nodeID)},
 			false,
 		},
 		{

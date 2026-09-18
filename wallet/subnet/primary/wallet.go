@@ -9,7 +9,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/keychain"
-	"github.com/MetalBlockchain/metalgo/vms/platformvm"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/c"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/p"
 	"github.com/MetalBlockchain/metalgo/wallet/chain/x"
@@ -66,6 +65,9 @@ type WalletConfig struct {
 	// Validation IDs that the wallet should know about to be able to generate
 	// transactions.
 	ValidationIDs []ids.ID // optional
+	// Auto-renewed validator tx IDs that the wallet should know about to
+	// be able to generate SetAutoRenewedValidatorConfigTx transactions.
+	AutoRenewedValidatorTxIDs []ids.ID // optional
 }
 
 // MakeWallet returns a wallet that supports issuing transactions to the chains
@@ -97,7 +99,7 @@ func MakeWallet(
 		return nil, err
 	}
 
-	owners, err := platformvm.GetOwners(avaxState.PClient, ctx, config.SubnetIDs, config.ValidationIDs)
+	owners, err := avaxState.PClient.GetOwners(ctx, config.SubnetIDs, config.ValidationIDs, config.AutoRenewedValidatorTxIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +150,7 @@ func MakePWallet(
 		return nil, err
 	}
 
-	owners, err := platformvm.GetOwners(client, ctx, config.SubnetIDs, config.ValidationIDs)
+	owners, err := client.GetOwners(ctx, config.SubnetIDs, config.ValidationIDs, config.AutoRenewedValidatorTxIDs)
 	if err != nil {
 		return nil, err
 	}

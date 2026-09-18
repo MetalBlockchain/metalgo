@@ -32,6 +32,6 @@ source "${REPO_ROOT}"/scripts/constants.sh
 source "${REPO_ROOT}"/scripts/git_commit.sh
 
 echo "Building MetalGo with [$(go version)]..."
-go build ${race} -o "${metalgo_path}" \
+go build ${race} -o "${avalanchego_path}" \
    -ldflags "-X github.com/MetalBlockchain/metalgo/version.GitCommit=$git_commit $static_ld_flags" \
    "${REPO_ROOT}"/main

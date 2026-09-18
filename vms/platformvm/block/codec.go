@@ -9,11 +9,15 @@ import (
 
 	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/codec/linearcodec"
+	"github.com/MetalBlockchain/metalgo/utils/constants"
 	"github.com/MetalBlockchain/metalgo/utils/wrappers"
 	"github.com/MetalBlockchain/metalgo/vms/platformvm/txs"
 )
 
-const CodecVersion = txs.CodecVersion
+const (
+	CodecVersion = txs.CodecVersion
+	maxBlockSize = constants.DefaultMaxMessageSize
+)
 
 var (
 	// GenesisCodec allows blocks of larger than usual size to be parsed.
@@ -36,10 +40,11 @@ func init() {
 			RegisterBanffTypes(c),
 			RegisterDurangoTypes(c),
 			RegisterEtnaTypes(c),
+			RegisterHeliconTypes(c),
 		)
 	}
 
-	Codec = codec.NewDefaultManager()
+	Codec = codec.NewManager(maxBlockSize)
 	GenesisCodec = codec.NewManager(math.MaxInt32)
 	errs.Add(
 		Codec.RegisterCodec(CodecVersion, c),
@@ -85,4 +90,10 @@ func RegisterDurangoTypes(targetCodec linearcodec.Codec) error {
 // during the Etna series of upgrades.
 func RegisterEtnaTypes(targetCodec linearcodec.Codec) error {
 	return txs.RegisterEtnaTypes(targetCodec)
+}
+
+// RegisterHeliconTypes registers the type information for blocks that were
+// valid during the Helicon series of upgrades.
+func RegisterHeliconTypes(targetCodec linearcodec.Codec) error {
+	return txs.RegisterHeliconTypes(targetCodec)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/snow/networking/tracker"
 	"github.com/MetalBlockchain/metalgo/snow/uptime"
 	"github.com/MetalBlockchain/metalgo/snow/validators"
+	"github.com/MetalBlockchain/metalgo/upgrade"
 	"github.com/MetalBlockchain/metalgo/utils"
 	"github.com/MetalBlockchain/metalgo/utils/compression"
 	"github.com/MetalBlockchain/metalgo/utils/crypto/bls"
@@ -118,6 +119,7 @@ type Config struct {
 	MyNodeID           ids.NodeID                    `json:"myNodeID"`
 	MyIPPort           *utils.Atomic[netip.AddrPort] `json:"myIP"`
 	NetworkID          uint32                        `json:"networkID"`
+	UpgradeConfig      upgrade.Config                `json:"-"`
 	MaxClockDifference time.Duration                 `json:"maxClockDifference"`
 	PingFrequency      time.Duration                 `json:"pingFrequency"`
 	AllowPrivateIPs    bool                          `json:"allowPrivateIPs"`

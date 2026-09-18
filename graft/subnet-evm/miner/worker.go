@@ -40,7 +40,6 @@ import (
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/commontype"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/consensus"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/core"
-	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/core/extstate"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/core/txpool"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/params"
 	"github.com/MetalBlockchain/metalgo/graft/subnet-evm/plugin/evm/customheader"
@@ -49,6 +48,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/utils/timer/mockable"
 	"github.com/MetalBlockchain/metalgo/utils/units"
 	"github.com/MetalBlockchain/metalgo/vms/evm/predicate"
+	"github.com/MetalBlockchain/metalgo/vms/evm/prefetch"
 	"github.com/MetalBlockchain/libevm/common"
 	"github.com/MetalBlockchain/libevm/consensus/misc/eip4844"
 	"github.com/MetalBlockchain/libevm/core/state"
@@ -293,7 +293,7 @@ func (w *worker) createCurrentEnvironment(predicateContext *precompileconfig.Pre
 		return nil, fmt.Errorf("calculating gas capacity: %w", err)
 	}
 	numPrefetchers := w.chain.CacheConfig().TriePrefetcherParallelism
-	currentState.StartPrefetcher("miner", extstate.WithConcurrentWorkers(numPrefetchers))
+	currentState.StartPrefetcher("miner", prefetch.WithConcurrentWorkers(numPrefetchers))
 	return &environment{
 		signer:           types.MakeSigner(w.chainConfig, header.Number, header.Time),
 		state:            currentState,

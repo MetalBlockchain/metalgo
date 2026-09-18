@@ -18,27 +18,25 @@ env:
 
 jobs:
   antithesis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v5
 
-    - name: Login to GAR
-      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 #v3.4.0
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: _json_key
-        password: ${{ secrets.ANTITHESIS_GAR_JSON_KEY }}
+      - name: Login to GAR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: _json_key
+          password: ${{ secrets.ANTITHESIS_GAR_JSON_KEY }}
 
-    - name: Build and push images for avalanchego test setup
-      run: ./scripts/run_task.sh build-antithesis-images-avalanchego
-      env:
-        IMAGE_PREFIX: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-        IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
-
-    - name: Build and push images for xsvm test setup
-      run: ./scripts/run_task.sh build-antithesis-images-xsvm
-      env:
-        IMAGE_PREFIX: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-        IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+      - name: Build and push Antithesis images
+        uses: ./.github/actions/run-docker-with-disk-space
+        with:
+          run: |
+            ./scripts/run_task.sh build-antithesis-images-avalanchego
+            ./scripts/run_task.sh build-antithesis-images-subnet-evm
+        env:
+          IMAGE_PREFIX: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}

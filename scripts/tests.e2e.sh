@@ -6,8 +6,9 @@ set -euo pipefail
 # ./scripts/tests.e2e.sh
 # ./scripts/tests.e2e.sh --ginkgo.label-filter=x                                       # All arguments are supplied to ginkgo
 # E2E_SERIAL=1 ./scripts/tests.e2e.sh                                                  # Run tests serially
+# E2E_TARGET=./graft/coreth/tests/warp ./scripts/tests.e2e.sh                          # Run the warp e2e tests
 # E2E_RANDOM_SEED=1234882 ./scripts/tests.e2e.sh                                       # Specify a specific seed to order test execution by
-# METALGO_PATH=./build/metalgo ./scripts/tests.e2e.sh                          # Customization of avalanchego path
+# AVALANCHEGO_PATH=./build/avalanchego ./scripts/tests.e2e.sh                          # Customization of avalanchego path
 if ! [[ "$0" =~ scripts/tests.e2e.sh ]]; then
   echo "must be run from repository root"
   exit 255
@@ -22,11 +23,11 @@ source ./scripts/constants.sh
 
 E2E_ARGS=("${@}")
 
-# If not running in kubernetes, default to using a local metalgo binary
-if ! [[ "${E2E_ARGS[*]}" =~ "--runtime=kube" && ! "${E2E_ARGS[*]}" =~ "--metalgo-path" ]]; then
+# If not running in kubernetes, default to using a local avalanchego binary
+if ! [[ "${E2E_ARGS[*]}" =~ "--runtime=kube" && ! "${E2E_ARGS[*]}" =~ "--avalanchego-path" ]]; then
   # Ensure an absolute path to avoid dependency on the working directory of script execution.
-  METALGO_PATH="$(realpath "${METALGO_PATH:-./build/metalgo}")"
-  E2E_ARGS+=("--metalgo-path=${METALGO_PATH}")
+  AVALANCHEGO_PATH="$(realpath "${AVALANCHEGO_PATH:-./build/metalgo}")"
+  E2E_ARGS+=("--avalanchego-path=${AVALANCHEGO_PATH}")
 fi
 
 #################################
@@ -59,4 +60,4 @@ fi
 
 #################################
 # shellcheck disable=SC2086
-./bin/ginkgo ${GINKGO_ARGS} -v ./tests/e2e -- "${E2E_ARGS[@]}"
+./bin/ginkgo ${GINKGO_ARGS} -v "${E2E_TARGET:-./tests/e2e}" -- "${E2E_ARGS[@]}"

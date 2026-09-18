@@ -8,6 +8,9 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
+	"github.com/MetalBlockchain/metalgo/codec"
 	"github.com/MetalBlockchain/metalgo/ids"
 	"github.com/MetalBlockchain/metalgo/snow/consensus/snowman"
 	"github.com/MetalBlockchain/metalgo/utils/set"
@@ -136,6 +139,10 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 		}
 	}
 
+	if err := m.verifyTransactionSizePreHelicon(tx); err != nil {
+		return err
+	}
+
 	var (
 		recommendedPChainHeight uint64
 		err                     error
@@ -214,4 +221,17 @@ func (m *manager) VerifyTx(tx *txs.Tx) error {
 
 func (m *manager) VerifyUniqueInputs(blkID ids.ID, inputs set.Set[ids.ID]) error {
 	return m.backend.verifyUniqueInputs(blkID, inputs)
+}
+
+func (m *manager) verifyTransactionSizePreHelicon(tx *txs.Tx) error {
+	if !m.txExecutorBackend.Config.UpgradeConfig.IsHeliconActivated(m.txExecutorBackend.Clk.Time()) {
+		txSize := tx.Size()
+		if txSize > codec.DefaultMaxSize {
+			m.ctx.Log.Debug("transaction verification failed, transaction too big",
+				zap.Int("txSize", txSize), zap.Int("maxTxSize", codec.DefaultMaxSize))
+			return ErrTxTooBigPreHelicon
+		}
+	}
+
+	return nil
 }

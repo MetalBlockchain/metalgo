@@ -37,6 +37,7 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/evm/sync/customrawdb"
 	"github.com/MetalBlockchain/libevm/common"
 	"github.com/MetalBlockchain/libevm/common/math"
+	ethcore "github.com/MetalBlockchain/libevm/core"
 	"github.com/MetalBlockchain/libevm/core/rawdb"
 	"github.com/MetalBlockchain/libevm/core/types"
 	"github.com/MetalBlockchain/libevm/core/vm"
@@ -91,7 +92,7 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 	return func(i int, gen *BlockGen) {
 		toaddr := common.Address{}
 		data := make([]byte, nbytes)
-		gas, _ := IntrinsicGas(data, nil, false, params.Rules{}) // Disable Istanbul and EIP-2028 for this test
+		gas, _ := ethcore.IntrinsicGas(data, nil, false, params.Rules{}) // Disable Istanbul and EIP-2028 for this test
 		signer := gen.Signer()
 		gasPrice := big.NewInt(0)
 		if gen.header.BaseFee != nil {
