@@ -28,6 +28,39 @@ import (
 
 const chainConfigFilenameExtension = ".ex"
 
+func TestGetNodeConfigRejectsMainnet(t *testing.T) {
+	for _, network := range []string{"", "mainnet", "MAINNET", "1", "network-1"} {
+		t.Run("network="+network, func(t *testing.T) {
+			v := setupViperFlags()
+			if network != "" {
+				v.Set(NetworkNameKey, network)
+			}
+			dataDir := filepath.Join(t.TempDir(), "data")
+			v.Set(DataDirKey, dataDir)
+
+			_, err := GetNodeConfig(v)
+			require.ErrorIs(t, err, errMainnetDisabled)
+			require.NoDirExists(t, dataDir)
+		})
+	}
+}
+
+func TestGetNodeConfigAllowsNonMainnet(t *testing.T) {
+	for _, network := range []string{constants.TahoeName, constants.LocalName, constants.UnitTestName, "network-12345"} {
+		t.Run(network, func(t *testing.T) {
+			v := setupViperFlags()
+			v.Set(NetworkNameKey, network)
+			v.Set(DataDirKey, t.TempDir())
+
+			config, err := GetNodeConfig(v)
+			require.NoError(t, err)
+			expectedID, err := constants.NetworkID(network)
+			require.NoError(t, err)
+			require.Equal(t, expectedID, config.NetworkID)
+		})
+	}
+}
+
 func TestGetChainConfigsFromFiles(t *testing.T) {
 	tests := map[string]struct {
 		configs  map[string]string
@@ -896,6 +929,7 @@ func TestGetStakingSigner(t *testing.T) {
 			// Avoid using the mainnet network name by default because not all
 			// builds support mainnet configurations.
 			v.Set(NetworkNameKey, constants.UnitTestName)
+			v.Set(DataDirKey, t.TempDir())
 			for key, value := range tt.config {
 				v.Set(key, value)
 			}
@@ -950,6 +984,8 @@ func TestGetDiskSpaceConfig(t *testing.T) {
 			require := require.New(t)
 			v := setupViperFlags()
 
+			v.Set(NetworkNameKey, constants.UnitTestName)
+			v.Set(DataDirKey, t.TempDir())
 			for key, value := range tt.config {
 				v.Set(key, value)
 			}

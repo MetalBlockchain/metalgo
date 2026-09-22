@@ -77,6 +77,7 @@ var (
 	}
 
 	errConflictingACPOpinion                  = errors.New("supporting and objecting to the same ACP")
+	errMainnetDisabled                        = errors.New("mainnet startup is disabled: this version of metalgo is not ready for mainnet")
 	errConflictingImplicitACPOpinion          = errors.New("objecting to enabled ACP")
 	errSybilProtectionDisabledStakerWeights   = errors.New("sybil protection disabled weights must be positive")
 	errSybilProtectionDisabledOnPublicNetwork = errors.New("sybil protection disabled on public network")
@@ -1337,6 +1338,15 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 		err        error
 	)
 
+	// Reject mainnet before creating directories or initializing node resources.
+	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
+	if err != nil {
+		return node.Config{}, err
+	}
+	if nodeConfig.NetworkID == constants.MainnetID {
+		return node.Config{}, errMainnetDisabled
+	}
+
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {
 		return node.Config{}, err
@@ -1363,12 +1373,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 
 	// Logging
 	nodeConfig.LoggingConfig, err = getLoggingConfig(v)
-	if err != nil {
-		return node.Config{}, err
-	}
-
-	// Network ID
-	nodeConfig.NetworkID, err = constants.NetworkID(v.GetString(NetworkNameKey))
 	if err != nil {
 		return node.Config{}, err
 	}
