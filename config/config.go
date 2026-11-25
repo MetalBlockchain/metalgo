@@ -1219,6 +1219,7 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	if nodeConfig.ConsensusShutdownTimeout < 0 {
 		return node.Config{}, fmt.Errorf("%q must be >= 0", ConsensusShutdownTimeoutKey)
 	}
+	nodeConfig.ShutdownOnChainCreationFailure = v.GetBool(ShutdownOnChainCreationFailureKey)
 
 	// Gossiping
 	nodeConfig.FrontierPollFrequency = v.GetDuration(ConsensusFrontierPollFrequencyKey)

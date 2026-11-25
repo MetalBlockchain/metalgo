@@ -167,8 +167,9 @@ type Config struct {
 	// Metrics
 	MeterVMEnabled bool `json:"meterVMEnabled"`
 
-	RouterHealthConfig       router.HealthConfig `json:"routerHealthConfig"`
-	ConsensusShutdownTimeout time.Duration       `json:"consensusShutdownTimeout"`
+	RouterHealthConfig             router.HealthConfig `json:"routerHealthConfig"`
+	ConsensusShutdownTimeout       time.Duration       `json:"consensusShutdownTimeout"`
+	ShutdownOnChainCreationFailure bool                `json:"shutdownOnChainCreationFailure"`
 	// Poll for new frontiers every [FrontierPollFrequency]
 	FrontierPollFrequency time.Duration `json:"consensusGossipFreq"`
 	// ConsensusAppConcurrency defines the maximum number of goroutines to

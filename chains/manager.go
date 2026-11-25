@@ -219,7 +219,11 @@ type ManagerConfig struct {
 	ChainConfigs              map[string]ChainConfig    // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
-	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
+	// ShutdownOnChainCreationFailure shuts down the node if a non-critical chain
+	// fails to initialize. Validators for that chain otherwise remain in the
+	// subnet set while unable to answer its consensus requests.
+	ShutdownOnChainCreationFailure bool
+	MeterVMEnabled                 bool // Should each VM be wrapped with a MeterVM
 
 	Metrics        metrics.MultiGatherer
 	MeterDBMetrics metrics.MultiGatherer
@@ -393,6 +397,16 @@ func (m *manager) createChain(chainParams ChainParameters) {
 		if m.CriticalChains.Contains(chainParams.ID) {
 			// Shut down if we fail to create a required chain (i.e. X, P or C)
 			m.Log.Fatal("error creating required chain",
+				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("chainID", chainParams.ID),
+				zap.Stringer("vmID", chainParams.VMID),
+				zap.Error(err),
+			)
+			go m.ShutdownNodeFunc(1)
+			return
+		}
+		if m.ShutdownOnChainCreationFailure {
+			m.Log.Error("shutting down node after chain creation failure",
 				zap.Stringer("subnetID", chainParams.SubnetID),
 				zap.Stringer("chainID", chainParams.ID),
 				zap.Stringer("vmID", chainParams.VMID),

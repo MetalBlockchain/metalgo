@@ -152,6 +152,7 @@ const (
 	MeterVMsEnabledKey                                 = "meter-vms-enabled"
 	ConsensusAppConcurrencyKey                         = "consensus-app-concurrency"
 	ConsensusShutdownTimeoutKey                        = "consensus-shutdown-timeout"
+	ShutdownOnChainCreationFailureKey                  = "shutdown-on-chain-creation-failure"
 	ConsensusFrontierPollFrequencyKey                  = "consensus-frontier-poll-frequency"
 	ProposerVMUseCurrentHeightKey                      = "proposervm-use-current-height"
 	ProposerVMMinBlockDelayKey                         = "proposervm-min-block-delay"
