@@ -199,7 +199,7 @@ func addNodeFlags(fs *pflag.FlagSet) {
 	// Router
 	fs.Uint(ConsensusAppConcurrencyKey, constants.DefaultConsensusAppConcurrency, "Maximum number of goroutines to use when handling App messages on a chain")
 	fs.Duration(ConsensusShutdownTimeoutKey, constants.DefaultConsensusShutdownTimeout, "Timeout before killing an unresponsive chain")
-	fs.Bool(ShutdownOnChainCreationFailureKey, false, "Shut down the node if a non-critical chain fails to initialize")
+	fs.Bool(ShutdownOnChainCreationFailureKey, false, "Shut down the node if a non-critical chain fails to initialize or its VM remains unhealthy")
 	fs.Duration(ConsensusFrontierPollFrequencyKey, constants.DefaultFrontierPollFrequency, "Frequency of polling for new consensus frontiers")
 
 	// Inbound Throttling

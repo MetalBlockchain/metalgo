@@ -344,7 +344,7 @@ Some of these parameters can only be set on a local or private network, not on F
 | Flag | Env Var | Type | Default | Description |
 |--------|--------|------|----|--------------------|
 | `--consensus-shutdown-timeout` | `AVAGO_CONSENSUS_SHUTDOWN_TIMEOUT` | duration | `5s` | Timeout before killing an unresponsive chain. |
-| `--shutdown-on-chain-creation-failure` | `AVAGO_SHUTDOWN_ON_CHAIN_CREATION_FAILURE` | bool | `false` | Shut down the node if a non-critical chain fails to initialize, so it does not remain in the subnet validator set while unable to validate that chain. |
+| `--shutdown-on-chain-creation-failure` | `AVAGO_SHUTDOWN_ON_CHAIN_CREATION_FAILURE` | bool | `false` | Shut down the node if a non-critical chain fails to initialize or its VM reports unhealthy on three consecutive health checks, so it does not remain in the subnet validator set while unable to validate that chain. |
 | `--create-asset-tx-fee` | `AVAGO_CREATE_ASSET_TX_FEE` | int | `10000000` | Transaction fee, in nAVAX, for transactions that create new assets. This can only be changed on a local network. |
 | `--tx-fee` | `AVAGO_TX_FEE` | int | `1000000` | The required amount of nAVAX to be burned for a transaction to be valid on the X-Chain, and for import/export transactions on the P-Chain. This parameter requires network agreement in its current form. Changing this value from the default should only be done on private networks or local network. |
 | `--uptime-requirement` | `AVAGO_UPTIME_REQUIREMENT` | float | `0.8` | Fraction of time a validator must be online to receive rewards. This can only be changed on a local network. |

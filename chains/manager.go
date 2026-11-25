@@ -76,8 +76,9 @@ import (
 const (
 	ChainLabel = "chain"
 
-	defaultChannelSize = 1
-	initialQueueSize   = 3
+	defaultChannelSize                = 1
+	initialQueueSize                  = 3
+	chainHealthFailuresBeforeShutdown = 3
 
 	avalancheNamespace    = constants.PlatformName + metric.NamespaceSeparator + "metal"
 	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
@@ -220,8 +221,9 @@ type ManagerConfig struct {
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
 	// ShutdownOnChainCreationFailure shuts down the node if a non-critical chain
-	// fails to initialize. Validators for that chain otherwise remain in the
-	// subnet set while unable to answer its consensus requests.
+	// fails to initialize or its VM remains unhealthy across consecutive health
+	// checks. Validators for that chain otherwise remain in the subnet set while
+	// unable to answer its consensus requests.
 	ShutdownOnChainCreationFailure bool
 	MeterVMEnabled                 bool // Should each VM be wrapped with a MeterVM
 
@@ -447,6 +449,22 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			)
 		}
 		return
+	}
+	if m.ShutdownOnChainCreationFailure && !m.CriticalChains.Contains(chainParams.ID) {
+		checker := &shutdownOnUnhealthyChecker{
+			checker:   chain.VM,
+			threshold: chainHealthFailuresBeforeShutdown,
+			shutdown:  m.ShutdownNodeFunc,
+		}
+		if err := m.Health.RegisterHealthCheck(chain.Name+"-vm", checker, chainParams.SubnetID.String()); err != nil {
+			m.Log.Error("shutting down node after failing to register VM health check",
+				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("chainID", chainParams.ID),
+				zap.Error(err),
+			)
+			go m.ShutdownNodeFunc(1)
+			return
+		}
 	}
 
 	m.chainsLock.Lock()
