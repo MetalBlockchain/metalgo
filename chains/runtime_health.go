@@ -24,10 +24,9 @@ type shutdownOnUnhealthyChecker struct {
 }
 
 func (c *shutdownOnUnhealthyChecker) HealthCheck(ctx context.Context) (interface{}, error) {
-	details, err := c.checker.HealthCheck(ctx)
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	details, err := c.checker.HealthCheck(ctx)
 	if err == nil {
 		c.consecutiveFailures = 0
 		return details, nil
