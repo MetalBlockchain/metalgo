@@ -1343,9 +1343,6 @@ func GetNodeConfig(v *viper.Viper) (node.Config, error) {
 	if err != nil {
 		return node.Config{}, err
 	}
-	if nodeConfig.NetworkID == constants.MainnetID {
-		return node.Config{}, errMainnetDisabled
-	}
 
 	nodeConfig.PluginDir, err = getPluginDir(v)
 	if err != nil {
