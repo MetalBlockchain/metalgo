@@ -662,6 +662,18 @@ func setupViperFlags() *viper.Viper {
 	return v
 }
 
+func TestShutdownOnChainCreationFailureConfig(t *testing.T) {
+	v := setupViperFlags()
+	config, err := GetNodeConfig(v)
+	require.NoError(t, err)
+	require.False(t, config.ShutdownOnChainCreationFailure)
+
+	v.Set(ShutdownOnChainCreationFailureKey, true)
+	config, err = GetNodeConfig(v)
+	require.NoError(t, err)
+	require.True(t, config.ShutdownOnChainCreationFailure)
+}
+
 func setupViper(configFilePath string) *viper.Viper {
 	v := setupViperFlags()
 	v.SetConfigFile(configFilePath)

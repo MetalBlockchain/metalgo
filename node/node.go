@@ -80,10 +80,10 @@ import (
 	"github.com/MetalBlockchain/metalgo/vms/registry"
 	"github.com/MetalBlockchain/metalgo/vms/rpcchainvm/runtime"
 
+	coreth "github.com/MetalBlockchain/coreth/plugin/factory"
 	databasefactory "github.com/MetalBlockchain/metalgo/database/factory"
 	avmconfig "github.com/MetalBlockchain/metalgo/vms/avm/config"
 	platformconfig "github.com/MetalBlockchain/metalgo/vms/platformvm/config"
-	coreth "github.com/MetalBlockchain/coreth/plugin/factory"
 )
 
 const (
@@ -1130,6 +1130,7 @@ func (n *Node) initChainManager(avaxAssetID ids.ID) error {
 			XChainID:                                xChainID,
 			CChainID:                                cChainID,
 			CriticalChains:                          criticalChains,
+			ShutdownOnChainCreationFailure:          n.Config.ShutdownOnChainCreationFailure,
 			TimeoutManager:                          n.timeoutManager,
 			Health:                                  n.health,
 			ShutdownNodeFunc:                        n.Shutdown,

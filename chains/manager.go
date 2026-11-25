@@ -76,8 +76,9 @@ import (
 const (
 	ChainLabel = "chain"
 
-	defaultChannelSize = 1
-	initialQueueSize   = 3
+	defaultChannelSize                = 1
+	initialQueueSize                  = 3
+	chainHealthFailuresBeforeShutdown = 3
 
 	avalancheNamespace    = constants.PlatformName + metric.NamespaceSeparator + "metal"
 	handlerNamespace      = constants.PlatformName + metric.NamespaceSeparator + "handler"
@@ -219,7 +220,12 @@ type ManagerConfig struct {
 	ChainConfigs              map[string]ChainConfig    // alias -> ChainConfig
 	// ShutdownNodeFunc allows the chain manager to issue a request to shutdown the node
 	ShutdownNodeFunc func(exitCode int)
-	MeterVMEnabled   bool // Should each VM be wrapped with a MeterVM
+	// ShutdownOnChainCreationFailure shuts down the node if a non-critical chain
+	// fails to initialize or its VM remains unhealthy across consecutive health
+	// checks. Validators for that chain otherwise remain in the subnet set while
+	// unable to answer its consensus requests.
+	ShutdownOnChainCreationFailure bool
+	MeterVMEnabled                 bool // Should each VM be wrapped with a MeterVM
 
 	Metrics        metrics.MultiGatherer
 	MeterDBMetrics metrics.MultiGatherer
@@ -401,6 +407,16 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			go m.ShutdownNodeFunc(1)
 			return
 		}
+		if m.ShutdownOnChainCreationFailure {
+			m.Log.Error("shutting down node after chain creation failure",
+				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("chainID", chainParams.ID),
+				zap.Stringer("vmID", chainParams.VMID),
+				zap.Error(err),
+			)
+			go m.ShutdownNodeFunc(1)
+			return
+		}
 
 		chainAlias := m.PrimaryAliasOrDefault(chainParams.ID)
 		m.Log.Error("error creating chain",
@@ -433,6 +449,22 @@ func (m *manager) createChain(chainParams ChainParameters) {
 			)
 		}
 		return
+	}
+	if m.ShutdownOnChainCreationFailure && !m.CriticalChains.Contains(chainParams.ID) {
+		checker := &shutdownOnUnhealthyChecker{
+			checker:   chain.VM,
+			threshold: chainHealthFailuresBeforeShutdown,
+			shutdown:  m.ShutdownNodeFunc,
+		}
+		if err := m.Health.RegisterHealthCheck(chain.Name+"-vm", checker, chainParams.SubnetID.String()); err != nil {
+			m.Log.Error("shutting down node after failing to register VM health check",
+				zap.Stringer("subnetID", chainParams.SubnetID),
+				zap.Stringer("chainID", chainParams.ID),
+				zap.Error(err),
+			)
+			go m.ShutdownNodeFunc(1)
+			return
+		}
 	}
 
 	m.chainsLock.Lock()
@@ -524,14 +556,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 
 	// The Banff timestamp for mainnet c-chain needs to change, no way around this
-	if chainParams.ID == mainnetCChainID {
+	switch chainParams.ID {
+	case mainnetCChainID:
 		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase4Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase5Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.BanffTime = time.Date(2022, time.October, 19, 14, 0, 0, 0, time.UTC)
-	} else if chainParams.ID == tahoeCChainID {
+	case tahoeCChainID:
 		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
