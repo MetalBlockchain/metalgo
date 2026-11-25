@@ -556,14 +556,15 @@ func (m *manager) buildChain(chainParams ChainParameters, sb subnets.Subnet) (*c
 	}
 
 	// The Banff timestamp for mainnet c-chain needs to change, no way around this
-	if chainParams.ID == mainnetCChainID {
+	switch chainParams.ID {
+	case mainnetCChainID:
 		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase4Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase5Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.BanffTime = time.Date(2022, time.October, 19, 14, 0, 0, 0, time.UTC)
-	} else if chainParams.ID == tahoeCChainID {
+	case tahoeCChainID:
 		ctx.NetworkUpgrades.ApricotPhase1Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase2Time = time.Unix(0, 0)
 		ctx.NetworkUpgrades.ApricotPhase3Time = time.Unix(0, 0)
